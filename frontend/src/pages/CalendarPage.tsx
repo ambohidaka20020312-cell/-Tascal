@@ -115,24 +115,34 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div className="bg-gray-50 p-4 md:p-8 mb-16 md:mb-0">
       <div className="max-w-6xl mx-auto space-y-4">
         {/* Page header */}
         <div>
           <h1 className="text-2xl font-bold text-gray-800">カレンダー</h1>
-          <p className="text-sm text-gray-500 mt-0.5">日付をクリックしてタスクを追加、タスクをクリックして詳細を確認</p>
+          <p className="text-sm text-gray-500 mt-0.5 hidden sm:block">日付をクリックしてタスクを追加、タスクをクリックして詳細を確認</p>
+          <p className="text-sm text-gray-500 mt-0.5 sm:hidden">日付をタップしてタスクを追加</p>
         </div>
 
-        {/* Calendar */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 overflow-hidden">
+        {/* Calendar
+            Mobile: listWeek (list view is more touch-friendly)
+            Tablet+: dayGridMonth
+        */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 sm:p-4 overflow-hidden">
           <FullCalendar
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView="dayGridMonth"
+            initialView="timeGridWeek"
+            views={{
+              timeGridWeek: { buttonText: "週" },
+              dayGridMonth: { buttonText: "月" },
+              timeGridDay: { buttonText: "日" },
+            }}
             headerToolbar={{
               left: "prev,next today",
               center: "title",
-              right: "dayGridMonth,timeGridWeek,timeGridDay",
+              right: "timeGridWeek,dayGridMonth,timeGridDay",
             }}
+            windowResizeDelay={0}
             buttonText={{
               today: "今日",
               month: "月",
@@ -147,6 +157,7 @@ export default function CalendarPage() {
             height="auto"
             eventDisplay="block"
             dayMaxEvents={3}
+            longPressDelay={500}
           />
         </div>
       </div>
@@ -240,7 +251,7 @@ export default function CalendarPage() {
               value={newTaskForm.title}
               onChange={(e) => setNewTaskForm((f) => ({ ...f, title: e.target.value }))}
               placeholder="タスクのタイトル"
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="w-full border border-gray-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-400"
             />
           </div>
 
@@ -251,7 +262,7 @@ export default function CalendarPage() {
               onChange={(e) => setNewTaskForm((f) => ({ ...f, description: e.target.value }))}
               placeholder="詳細（任意）"
               rows={2}
-              className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+              className="w-full border border-gray-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
             />
           </div>
 
@@ -263,7 +274,7 @@ export default function CalendarPage() {
                 onChange={(e) =>
                   setNewTaskForm((f) => ({ ...f, priority: e.target.value as Task["priority"] }))
                 }
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                className="w-full border border-gray-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-400"
               >
                 <option value="low">低</option>
                 <option value="medium">中</option>
@@ -281,7 +292,7 @@ export default function CalendarPage() {
                 }
                 placeholder="例: 60"
                 min="1"
-                className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                className="w-full border border-gray-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
             </div>
           </div>

@@ -145,27 +145,32 @@ export default function SubscriptionPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
+    <div className="bg-gray-50 py-8 sm:py-12 px-4 mb-16 md:mb-0">
       <div className="mx-auto max-w-5xl">
         {/* Header */}
-        <div className="mb-10 text-center">
-          <h1 className="text-3xl font-bold text-gray-900">料金プラン</h1>
-          <p className="mt-2 text-gray-500">
+        <div className="mb-8 sm:mb-10 text-center">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">料金プラン</h1>
+          <p className="mt-2 text-gray-500 text-sm sm:text-base">
             あなたのワークフローに合ったプランを選びましょう
           </p>
           {isLoading && (
             <p className="mt-1 text-sm text-gray-400">サブスク情報を取得中…</p>
           )}
           {!isLoading && (
-            <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-4 py-1.5 shadow-sm border border-gray-200 text-sm text-gray-600">
+            <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-sm border border-gray-200 text-sm text-gray-600">
               現在のプラン:
               <PlanBadge plan={currentPlan} />
+              {currentPlan !== "free" && (
+                <span className="ml-1 text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
+                  ご利用中
+                </span>
+              )}
             </div>
           )}
         </div>
 
-        {/* Plan cards */}
-        <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+        {/* Plan cards — 1 column mobile, 3 columns md+ */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
           {plans.map((plan) => {
             const isCurrent = plan.id === currentPlan;
             const isDowngrade =
@@ -176,7 +181,8 @@ export default function SubscriptionPage() {
               <div
                 key={plan.id}
                 className={[
-                  "relative flex flex-col rounded-2xl bg-white shadow-sm p-8 transition-transform hover:-translate-y-1 hover:shadow-md",
+                  "relative flex flex-col rounded-2xl bg-white shadow-sm p-6 sm:p-8 transition-transform hover:shadow-md",
+                  isCurrent ? "scale-[1.02]" : "hover:-translate-y-1",
                   cardBorderClass(plan),
                 ].join(" ")}
               >

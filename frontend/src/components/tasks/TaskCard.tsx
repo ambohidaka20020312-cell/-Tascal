@@ -10,12 +10,12 @@ interface TaskCardProps {
 
 const priorityConfig: Record<
   Task["priority"],
-  { label: string; className: string }
+  { label: string; className: string; barColor: string }
 > = {
-  urgent: { label: "緊急", className: "bg-red-100 text-red-700" },
-  high: { label: "高", className: "bg-orange-100 text-orange-700" },
-  medium: { label: "中", className: "bg-blue-100 text-blue-700" },
-  low: { label: "低", className: "bg-gray-100 text-gray-600" },
+  urgent: { label: "緊急", className: "bg-red-100 text-red-700", barColor: "bg-red-500" },
+  high: { label: "高", className: "bg-orange-100 text-orange-700", barColor: "bg-orange-400" },
+  medium: { label: "中", className: "bg-blue-100 text-blue-700", barColor: "bg-blue-400" },
+  low: { label: "低", className: "bg-gray-100 text-gray-600", barColor: "bg-gray-300" },
 };
 
 const statusConfig: Record<Task["status"], { label: string; className: string }> = {
@@ -58,74 +58,81 @@ export default function TaskCard({ task }: TaskCardProps) {
 
   return (
     <>
+      {/* Touch-friendly card: min 44px height, priority color bar on left */}
       <div
         className={[
-          "bg-white rounded-xl border p-4 shadow-sm hover:shadow-md transition-shadow",
+          "bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow overflow-hidden flex min-h-touch",
           task.status === "completed" ? "opacity-60" : "",
         ].join(" ")}
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span
-                className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${priority.className}`}
-              >
-                {priority.label}
-              </span>
-              <span className={`text-xs font-medium ${status.className}`}>
-                {status.label}
-              </span>
-            </div>
-            <h3
-              className={[
-                "font-semibold text-gray-800 truncate",
-                task.status === "completed" ? "line-through text-gray-400" : "",
-              ].join(" ")}
-            >
-              {task.title}
-            </h3>
-            {task.description && (
-              <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-                {task.description}
-              </p>
-            )}
-            {task.estimated_minutes != null && (
-              <p className="text-xs text-gray-400 mt-1">
-                目標: {task.estimated_minutes}分
-                {task.actual_minutes != null &&
-                  ` / 実績: ${task.actual_minutes}分`}
-              </p>
-            )}
-          </div>
+        {/* Priority color bar — left vertical stripe */}
+        <div className={`w-1 shrink-0 ${priority.barColor}`} />
 
-          <div className="flex flex-col gap-1 shrink-0">
-            {task.status !== "completed" && (
+        <div className="flex-1 p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${priority.className}`}
+                >
+                  {priority.label}
+                </span>
+                <span className={`text-xs font-medium ${status.className}`}>
+                  {status.label}
+                </span>
+              </div>
+              <h3
+                className={[
+                  "font-semibold text-gray-800 truncate",
+                  task.status === "completed" ? "line-through text-gray-400" : "",
+                ].join(" ")}
+              >
+                {task.title}
+              </h3>
+              {/* Description truncated on mobile */}
+              {task.description && (
+                <p className="text-sm text-gray-500 mt-1 truncate sm:line-clamp-2 sm:whitespace-normal">
+                  {task.description}
+                </p>
+              )}
+              {task.estimated_minutes != null && (
+                <p className="text-xs text-gray-400 mt-1">
+                  目標: {task.estimated_minutes}分
+                  {task.actual_minutes != null &&
+                    ` / 実績: ${task.actual_minutes}分`}
+                </p>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-1 shrink-0">
+              {task.status !== "completed" && (
+                <Button
+                  size="sm"
+                  variant="primary"
+                  onClick={() => setShowCompleteModal(true)}
+                  loading={completeTask.isPending}
+                >
+                  完了
+                </Button>
+              )}
               <Button
                 size="sm"
-                variant="primary"
-                onClick={() => setShowCompleteModal(true)}
-                loading={completeTask.isPending}
+                variant="danger"
+                onClick={handleDelete}
+                loading={deleteTask.isPending}
               >
-                完了
+                削除
               </Button>
-            )}
-            <Button
-              size="sm"
-              variant="danger"
-              onClick={handleDelete}
-              loading={deleteTask.isPending}
-            >
-              削除
-            </Button>
+            </div>
           </div>
-        </div>
 
-        {/* OverrunAlert: in_progress かつ actual_minutes が estimated_minutes を超過した場合 */}
-        {isOverrunning && task.actual_minutes != null && (
-          <div className="mt-3">
-            <OverrunAlert task={task} actualMinutes={task.actual_minutes} />
-          </div>
-        )}
+          {/* OverrunAlert: in_progress かつ actual_minutes が estimated_minutes を超過した場合 */}
+          {isOverrunning && task.actual_minutes != null && (
+            <div className="mt-3">
+              <OverrunAlert task={task} actualMinutes={task.actual_minutes} />
+            </div>
+          )}
+        </div>
       </div>
 
       {showCompleteModal && (
@@ -141,7 +148,8 @@ export default function TaskCard({ task }: TaskCardProps) {
               value={actualMinutes}
               onChange={(e) => setActualMinutes(e.target.value)}
               placeholder="例: 45"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 mb-4"
+              className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary-500 mb-4"
+              style={{ fontSize: "16px" }}
             />
             <div className="flex gap-2">
               <Button
