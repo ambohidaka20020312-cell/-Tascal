@@ -18,6 +18,9 @@ class Task(db.Model):
     scheduled_date = db.Column(db.Date, nullable=True, index=True)
     due_datetime = db.Column(db.DateTime, nullable=True)
 
+    recurrence = db.Column(db.String(20), nullable=True)  # none/daily/weekly/monthly/weekdays
+    recurrence_end_date = db.Column(db.Date, nullable=True)
+
     sort_order = db.Column(db.Integer, default=0)
     is_deleted = db.Column(db.Boolean, default=False)
     completed_at = db.Column(db.DateTime, nullable=True)
@@ -35,6 +38,8 @@ class Task(db.Model):
             "actual_minutes": self.actual_minutes,
             "scheduled_date": self.scheduled_date.isoformat() if self.scheduled_date else None,
             "due_datetime": self.due_datetime.isoformat() if self.due_datetime else None,
+            "recurrence": self.recurrence,
+            "recurrence_end_date": self.recurrence_end_date.isoformat() if self.recurrence_end_date else None,
             "sort_order": self.sort_order,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "created_at": self.created_at.isoformat(),

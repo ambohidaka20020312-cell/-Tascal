@@ -7,6 +7,7 @@ import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import CalendarPage from "./pages/CalendarPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
+import InsightsPage from "./pages/InsightsPage";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -57,6 +58,16 @@ export default function App() {
           <PrivateRoute>
             <AppLayout>
               <SubscriptionPage />
+            </AppLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/insights"
+        element={
+          <PrivateRoute>
+            <AppLayout>
+              <InsightsPage />
             </AppLayout>
           </PrivateRoute>
         }

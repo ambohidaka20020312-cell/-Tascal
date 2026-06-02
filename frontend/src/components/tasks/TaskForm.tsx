@@ -18,6 +18,8 @@ export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
   const [scheduledDate, setScheduledDate] = useState(
     defaultDate ?? new Date().toISOString().split("T")[0]
   );
+  const [recurrence, setRecurrence] = useState<string>("none");
+  const [recurrenceEndDate, setRecurrenceEndDate] = useState<string>("");
   const [error, setError] = useState("");
 
   const createTask = useCreateTask();
@@ -39,6 +41,8 @@ export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
           ? parseInt(estimatedMinutes, 10)
           : null,
         scheduled_date: scheduledDate || null,
+        recurrence: recurrence !== "none" ? recurrence : undefined,
+        recurrence_end_date: recurrenceEndDate || null,
       } as Partial<Task>);
       onClose();
     } catch {
@@ -139,6 +143,37 @@ export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
             />
           </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              繰り返し
+            </label>
+            <select
+              value={recurrence}
+              onChange={(e) => setRecurrence(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 bg-white"
+            >
+              <option value="none">なし</option>
+              <option value="daily">毎日</option>
+              <option value="weekly">毎週</option>
+              <option value="monthly">毎月</option>
+              <option value="weekdays">平日のみ</option>
+            </select>
+          </div>
+
+          {recurrence !== "none" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                繰り返し終了日（任意）
+              </label>
+              <input
+                type="date"
+                value={recurrenceEndDate}
+                onChange={(e) => setRecurrenceEndDate(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              />
+            </div>
+          )}
 
           <div className="flex gap-2 pt-2">
             <Button
