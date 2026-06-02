@@ -1,0 +1,51 @@
+/* ============================================================
+   Capacitor / Mobile-specific styles
+   ============================================================ */
+
+/* iOS Safe Area ------------------------------------------------ */
+:root {
+  --safe-area-top: env(safe-area-inset-top);
+  --safe-area-bottom: env(safe-area-inset-bottom);
+  --safe-area-left: env(safe-area-inset-left);
+  --safe-area-right: env(safe-area-inset-right);
+}
+
+/* Utility classes consumed by AppLayout */
+.pt-safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.pb-safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ネイティブアプリでのスクロールバー非表示 -------------------- */
+.capacitor-native ::-webkit-scrollbar {
+  display: none;
+}
+
+.capacitor-native * {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* タップハイライト無効化 --------------------------------------- */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* フォントサイズ自動調整無効化 --------------------------------- */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+/* Prevent overscroll / bounce effect on iOS inside the app ---- */
+body.capacitor-native {
+  overscroll-behavior: none;
+}
+
+/* Smooth momentum scrolling for scroll containers on iOS ------- */
+.capacitor-native .scroll-container {
+  -webkit-overflow-scrolling: touch;
+}
