@@ -56,6 +56,8 @@ def create_task():
         estimated_minutes=data.get("estimated_minutes"),
         scheduled_date=data.get("scheduled_date"),
         due_datetime=data.get("due_datetime"),
+        recurrence=data.get("recurrence"),
+        recurrence_end_date=data.get("recurrence_end_date"),
     )
     db.session.add(task)
     db.session.commit()
@@ -69,7 +71,7 @@ def update_task(task_id):
     task = Task.query.filter_by(id=task_id, user_id=user_id, is_deleted=False).first_or_404()
 
     data = request.get_json()
-    for field in ["title", "description", "priority", "estimated_minutes", "scheduled_date", "due_datetime", "sort_order", "status"]:
+    for field in ["title", "description", "priority", "estimated_minutes", "scheduled_date", "due_datetime", "sort_order", "status", "recurrence", "recurrence_end_date"]:
         if field in data:
             setattr(task, field, data[field])
 
@@ -97,5 +99,50 @@ def complete_task(task_id):
     task.status = "completed"
     task.actual_minutes = data.get("actual_minutes")
     task.completed_at = datetime.datetime.utcnow()
+
+    next_task = None
+    if task.recurrence and task.recurrence != "none":
+        base_date = task.scheduled_date or datetime.date.today()
+        next_date = _next_recurrence_date(task.recurrence, base_date)
+
+        # Skip if past recurrence_end_date
+        if task.recurrence_end_date is None or next_date <= task.recurrence_end_date:
+            next_task = Task(
+                user_id=task.user_id,
+                title=task.title,
+                description=task.description,
+                priority=task.priority,
+                estimated_minutes=task.estimated_minutes,
+                scheduled_date=next_date,
+                due_datetime=task.due_datetime,
+                recurrence=task.recurrence,
+                recurrence_end_date=task.recurrence_end_date,
+                sort_order=task.sort_order,
+            )
+            db.session.add(next_task)
+
     db.session.commit()
-    return jsonify({"data": task.to_dict(), "message": "タスクを完了しました"})
+    response_data = {"data": task.to_dict(), "message": "タスクを完了しました"}
+    if next_task:
+        response_data["next_task"] = next_task.to_dict()
+    return jsonify(response_data)
+
+
+def _next_recurrence_date(recurrence: str, base_date: datetime.date) -> datetime.date:
+    if recurrence == "daily":
+        return base_date + datetime.timedelta(days=1)
+    elif recurrence == "weekly":
+        return base_date + datetime.timedelta(weeks=1)
+    elif recurrence == "monthly":
+        month = base_date.month + 1
+        year = base_date.year + (month - 1) // 12
+        month = ((month - 1) % 12) + 1
+        import calendar
+        day = min(base_date.day, calendar.monthrange(year, month)[1])
+        return datetime.date(year, month, day)
+    elif recurrence == "weekdays":
+        next_d = base_date + datetime.timedelta(days=1)
+        while next_d.weekday() >= 5:  # Saturday=5, Sunday=6
+            next_d += datetime.timedelta(days=1)
+        return next_d
+    return base_date + datetime.timedelta(days=1)
