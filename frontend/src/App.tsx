@@ -1,5 +1,7 @@
+import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/authStore";
+import AppLayout from "./components/layout/AppLayout";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
@@ -14,13 +16,18 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <Routes>
+      {/* 認証不要ページ — AppLayoutなし */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+
+      {/* 認証必要ページ — AppLayoutでラップ */}
       <Route
         path="/"
         element={
           <PrivateRoute>
-            <DashboardPage />
+            <AppLayout>
+              <DashboardPage />
+            </AppLayout>
           </PrivateRoute>
         }
       />
@@ -28,7 +35,9 @@ export default function App() {
         path="/calendar"
         element={
           <PrivateRoute>
-            <CalendarPage />
+            <AppLayout>
+              <CalendarPage />
+            </AppLayout>
           </PrivateRoute>
         }
       />
@@ -36,7 +45,19 @@ export default function App() {
         path="/subscription"
         element={
           <PrivateRoute>
-            <SubscriptionPage />
+            <AppLayout>
+              <SubscriptionPage />
+            </AppLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/plans"
+        element={
+          <PrivateRoute>
+            <AppLayout>
+              <SubscriptionPage />
+            </AppLayout>
           </PrivateRoute>
         }
       />

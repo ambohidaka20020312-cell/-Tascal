@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Task } from "../../store/taskStore";
 import Button from "../common/Button";
 import { useCompleteTask, useDeleteTask } from "../../hooks/useTasks";
+import OverrunAlert from "../ai/OverrunAlert";
 
 interface TaskCardProps {
   task: Task;
@@ -32,6 +33,13 @@ export default function TaskCard({ task }: TaskCardProps) {
 
   const priority = priorityConfig[task.priority];
   const status = statusConfig[task.status];
+
+  // OverrunAlert表示条件: in_progress かつ actual_minutes が estimated_minutes を超過
+  const isOverrunning =
+    task.status === "in_progress" &&
+    task.estimated_minutes != null &&
+    task.actual_minutes != null &&
+    task.actual_minutes > task.estimated_minutes;
 
   const handleComplete = () => {
     const mins = parseInt(actualMinutes, 10);
@@ -111,6 +119,13 @@ export default function TaskCard({ task }: TaskCardProps) {
             </Button>
           </div>
         </div>
+
+        {/* OverrunAlert: in_progress かつ actual_minutes が estimated_minutes を超過した場合 */}
+        {isOverrunning && task.actual_minutes != null && (
+          <div className="mt-3">
+            <OverrunAlert task={task} actualMinutes={task.actual_minutes} />
+          </div>
+        )}
       </div>
 
       {showCompleteModal && (
