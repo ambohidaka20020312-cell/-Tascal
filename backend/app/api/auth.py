@@ -8,7 +8,10 @@ bp = Blueprint("auth", __name__)
 
 @bp.post("/register")
 def register():
-    data = request.get_json()
+    data = request.get_json() or {}
+    if not data.get("email") or not data.get("password"):
+        return jsonify({"error": {"code": "MISSING_FIELDS", "message": "email と password は必須です"}}), 400
+
     if User.query.filter_by(email=data["email"]).first():
         return jsonify({"error": {"code": "EMAIL_EXISTS", "message": "このメールアドレスは既に使用されています"}}), 409
 

@@ -29,6 +29,23 @@ def list_tasks():
 @jwt_required()
 def create_task():
     user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+
+    if user and user.plan == "free":
+        now = datetime.datetime.utcnow()
+        month_count = Task.query.filter(
+            Task.user_id == user_id,
+            Task.is_deleted == False,
+            Task.created_at >= datetime.datetime(now.year, now.month, 1),
+        ).count()
+        if month_count >= FREE_MONTHLY_TASK_LIMIT:
+            return jsonify({
+                "error": {
+                    "code": "TASK_LIMIT_EXCEEDED",
+                    "message": f"Freeプランでは1か月に{FREE_MONTHLY_TASK_LIMIT}件までタスクを作成できます",
+                }
+            }), 403
+
     data = request.get_json()
 
     task = Task(
