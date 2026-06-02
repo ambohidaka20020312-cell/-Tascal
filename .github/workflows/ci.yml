@@ -64,3 +64,19 @@ jobs:
           VITE_API_BASE_URL: http://localhost:5000/api/v1
           VITE_STRIPE_PUBLISHABLE_KEY: pk_test_placeholder
           VITE_ADSENSE_CLIENT_ID: ca-pub-placeholder
+
+# Railwayへの自動デプロイ（mainブランチへのマージ時に有効化）
+# RAILWAY_TOKENをGitHub Secretsに設定してからコメントを外してください。
+#
+# deploy:
+#   name: Deploy to Railway
+#   needs: [backend, frontend]
+#   if: github.ref == 'refs/heads/main'
+#   runs-on: ubuntu-latest
+#   steps:
+#     - uses: actions/checkout@v4
+#     - name: Deploy tascal-api to Railway
+#       uses: bervProject/railway-deploy@main
+#       with:
+#         railway_token: ${{ secrets.RAILWAY_TOKEN }}
+#         service: tascal-api
