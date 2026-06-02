@@ -1,8 +1,11 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..models.task import Task
+from ..models.user import User
 from .. import db
 import datetime
+
+FREE_MONTHLY_TASK_LIMIT = 20
 
 bp = Blueprint("tasks", __name__)
 
