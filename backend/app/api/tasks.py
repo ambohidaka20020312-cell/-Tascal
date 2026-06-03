@@ -5,6 +5,7 @@ from ..models.user import User
 from .. import db
 from ..utils.validators import validate_task_fields
 from ..utils.cache import cached, invalidate_user_cache
+from ..utils.plan_limits import check_task_limit
 from sqlalchemy import func
 import datetime
 
@@ -52,24 +53,11 @@ def reorder_tasks():
 @bp.post("")
 @jwt_required()
 def create_task():
+    limit_error = check_task_limit()
+    if limit_error is not None:
+        return limit_error
+
     user_id = get_jwt_identity()
-    user = User.query.get(user_id)
-
-    if user and user.plan == "free":
-        now = datetime.datetime.utcnow()
-        month_count = Task.query.filter(
-            Task.user_id == user_id,
-            Task.is_deleted == False,
-            Task.created_at >= datetime.datetime(now.year, now.month, 1),
-        ).count()
-        if month_count >= FREE_MONTHLY_TASK_LIMIT:
-            return jsonify({
-                "error": {
-                    "code": "TASK_LIMIT_EXCEEDED",
-                    "message": f"Freeプランでは1か月に{FREE_MONTHLY_TASK_LIMIT}件までタスクを作成できます",
-                }
-            }), 403
-
     data = request.get_json() or {}
 
     if not data.get("title"):

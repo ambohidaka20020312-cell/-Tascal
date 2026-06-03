@@ -12,6 +12,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     plan = db.Column(db.String(20), nullable=False, default="free")
     stripe_customer_id = db.Column(db.String(100), unique=True, nullable=True)
+    stripe_subscription_id = db.Column(db.String(100), unique=True, nullable=True)
     analytics_opt_out = db.Column(db.Boolean, nullable=False, default=False)
     digest_unsubscribed = db.Column(db.Boolean, nullable=False, default=False)
     onboarding_completed = db.Column(db.Boolean, nullable=False, default=False)

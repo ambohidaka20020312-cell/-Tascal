@@ -1,3 +1,4 @@
+import os
 import stripe
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -5,6 +6,11 @@ from ..models.user import User
 from .. import db
 
 bp = Blueprint("billing", __name__)
+
+PRICE_TO_PLAN = {
+    os.getenv("STRIPE_PRICE_ID_PRO"): "pro",
+    os.getenv("STRIPE_PRICE_ID_TEAM"): "team",
+}
 
 # Plan definitions for GET /billing/plans
 PLANS = [
@@ -149,10 +155,23 @@ def webhook():
     except Exception:
         return jsonify({"error": {"code": "INVALID_SIGNATURE", "message": "Invalid signature"}}), 400
 
-    if event["type"] == "checkout.session.completed":
-        _handle_checkout_completed(event["data"]["object"])
-    elif event["type"] in ("customer.subscription.updated", "customer.subscription.deleted"):
-        _handle_subscription_change(event["data"]["object"])
+    event_type = event["type"]
+    obj = event["data"]["object"]
+
+    if event_type == "checkout.session.completed":
+        _handle_checkout_completed(obj)
+    elif event_type in ("customer.subscription.created", "customer.subscription.updated"):
+        _handle_subscription_upsert(obj)
+    elif event_type == "customer.subscription.deleted":
+        _handle_subscription_deleted(obj)
+    elif event_type == "invoice.payment_succeeded":
+        current_app.logger.info(
+            "invoice.payment_succeeded: invoice=%s customer=%s",
+            obj.get("id"),
+            obj.get("customer"),
+        )
+    elif event_type == "invoice.payment_failed":
+        _handle_payment_failed(obj)
 
     return jsonify({"received": True})
 
@@ -177,6 +196,11 @@ def _handle_checkout_completed(session):
 
 def _resolve_plan_from_price_id(price_id: str) -> str:
     """Map a Stripe price ID to our internal plan name."""
+    # Check env-var-based PRICE_TO_PLAN first (pro/team)
+    env_plan = PRICE_TO_PLAN.get(price_id)
+    if env_plan:
+        return env_plan
+    # Then check app-config extended mapping
     mapping = {
         current_app.config.get("STRIPE_PRICE_ID_PERSONAL_PRO"): "personal_pro",
         current_app.config.get("STRIPE_PRICE_ID_BUSINESS"): "business",
@@ -188,16 +212,54 @@ def _resolve_plan_from_price_id(price_id: str) -> str:
     return mapping.get(price_id, "personal_pro")
 
 
-def _handle_subscription_change(subscription):
+def _handle_subscription_upsert(subscription):
+    """Handle customer.subscription.created and customer.subscription.updated."""
     customer_id = subscription["customer"]
     user = User.query.filter_by(stripe_customer_id=customer_id).first()
     if not user:
         return
+    items = subscription.get("items", {}).get("data", [])
+    price_id = items[0]["price"]["id"] if items else None
     if subscription["status"] == "active":
-        # Resolve plan name from the first subscription item's price ID
-        items = subscription.get("items", {}).get("data", [])
-        price_id = items[0]["price"]["id"] if items else None
         user.plan = _resolve_plan_from_price_id(price_id) if price_id else "personal_pro"
     else:
         user.plan = "free"
+    user.stripe_subscription_id = subscription.get("id")
     db.session.commit()
+
+
+def _handle_subscription_deleted(subscription):
+    """Handle customer.subscription.deleted → downgrade to free."""
+    customer_id = subscription["customer"]
+    user = User.query.filter_by(stripe_customer_id=customer_id).first()
+    if not user:
+        return
+    user.plan = "free"
+    user.stripe_subscription_id = None
+    db.session.commit()
+
+
+def _handle_payment_failed(invoice):
+    """Handle invoice.payment_failed → downgrade to free as fallback."""
+    customer_id = invoice.get("customer")
+    if not customer_id:
+        return
+    user = User.query.filter_by(stripe_customer_id=customer_id).first()
+    if not user:
+        return
+    current_app.logger.warning(
+        "invoice.payment_failed: invoice=%s customer=%s — downgrading user %s to free",
+        invoice.get("id"),
+        customer_id,
+        user.id,
+    )
+    user.plan = "free"
+    db.session.commit()
+
+
+def _handle_subscription_change(subscription):
+    """Legacy handler kept for backwards compat — delegates to upsert/deleted."""
+    if subscription.get("status") == "canceled":
+        _handle_subscription_deleted(subscription)
+    else:
+        _handle_subscription_upsert(subscription)

@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..services.ai_optimizer import AIOptimizer
 from ..models.task import Task
 from ..utils.cache import cached
+from ..utils.plan_limits import check_ai_limit, require_plan
 import anthropic
 import datetime
 
@@ -17,6 +18,10 @@ def get_llm_client():
 @jwt_required()
 @cached("ai_optimize", ttl=300)
 def optimize():
+    limit_error = check_ai_limit()
+    if limit_error is not None:
+        return limit_error
+
     user_id = get_jwt_identity()
     date_str = request.args.get("date", datetime.date.today().isoformat())
     date = datetime.date.fromisoformat(date_str)
@@ -30,6 +35,10 @@ def optimize():
 @bp.post("/replan")
 @jwt_required()
 def replan():
+    limit_error = check_ai_limit()
+    if limit_error is not None:
+        return limit_error
+
     user_id = get_jwt_identity()
     data = request.get_json()
 
@@ -52,6 +61,7 @@ def replan():
 
 @bp.get("/insights")
 @jwt_required()
+@require_plan("pro")
 @cached("insights", ttl=3600)
 def insights():
     user_id = get_jwt_identity()
