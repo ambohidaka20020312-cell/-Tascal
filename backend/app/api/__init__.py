@@ -12,6 +12,7 @@ def register_blueprints(app: Flask):
     from .org_tasks import bp as org_tasks_bp
     from .skills import bp as skills_bp
     from .templates import bp as templates_bp
+    from .account import account_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
     app.register_blueprint(tasks_bp, url_prefix="/api/v1/tasks")
@@ -23,3 +24,4 @@ def register_blueprints(app: Flask):
     app.register_blueprint(org_tasks_bp, url_prefix="/api/v1/org")
     app.register_blueprint(skills_bp, url_prefix="/api/v1")
     app.register_blueprint(templates_bp, url_prefix="/api/v1/templates")
+    app.register_blueprint(account_bp, url_prefix="/api/v1/account")
