@@ -25,9 +25,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     environment:
       FLASK_ENV: production
       DATABASE_URL: postgresql://tascal:${POSTGRES_PASSWORD}@db/tascal_prod
@@ -42,14 +45,53 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  celery:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    command: ["celery", "-A", "app.celery_app:celery", "worker", "--loglevel=info"]
+    environment:
+      FLASK_ENV: production
+      DATABASE_URL: postgresql://tascal:${POSTGRES_PASSWORD}@db/tascal_prod
+      REDIS_URL: redis://redis:6379/0
+    env_file:
+      - ./backend/.env
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "celery", "-A", "app.celery_app:celery", "inspect", "ping", "-d", "celery@$$HOSTNAME"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   frontend:
     build:
       context: ./frontend
-      dockerfile: Dockerfile.prod
+      dockerfile: Dockerfile
     expose:
       - "80"
     restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
   nginx:
     image: nginx:1.27-alpine
@@ -63,6 +105,12 @@ services:
     depends_on:
       - backend
       - frontend
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
 
 volumes:
   pgdata_prod:
