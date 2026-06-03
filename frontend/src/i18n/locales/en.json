@@ -1,0 +1,109 @@
+{
+  "nav": {
+    "today": "Today",
+    "calendar": "Calendar",
+    "insights": "Insights",
+    "settings": "Settings",
+    "org": "Organization"
+  },
+  "task": {
+    "add": "Add Task",
+    "edit": "Edit Task",
+    "delete": "Delete",
+    "complete": "Complete",
+    "start": "Start",
+    "pause": "Pause",
+    "title": "Title",
+    "description": "Description",
+    "priority": "Priority",
+    "priority_low": "Low",
+    "priority_medium": "Medium",
+    "priority_high": "High",
+    "priority_urgent": "Urgent",
+    "estimated_time": "Estimated Time",
+    "actual_time": "Actual Time",
+    "due_date": "Due Date",
+    "save": "Save",
+    "cancel": "Cancel",
+    "no_tasks": "No tasks",
+    "focus": "Focus",
+    "template_save": "Save as Template"
+  },
+  "ai": {
+    "optimize": "Optimize with AI",
+    "optimizing": "Optimizing...",
+    "replan": "Replan",
+    "insights": "Insights",
+    "provider_cloud": "Claude AI",
+    "provider_local": "Local AI",
+    "overrun_message": "Task is running over time",
+    "briefing_dismiss": "Dismiss"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Create Account",
+    "email": "Email Address",
+    "password": "Password",
+    "name": "Name",
+    "login_error": "Invalid email or password"
+  },
+  "subscription": {
+    "title": "Plans",
+    "free": "Free",
+    "personal_pro": "Personal Pro",
+    "business": "Business",
+    "enterprise": "Enterprise",
+    "upgrade": "Upgrade",
+    "current_plan": "Current Plan",
+    "personal_tab": "Personal",
+    "corporate_tab": "Corporate"
+  },
+  "settings": {
+    "title": "Settings",
+    "theme": "Theme",
+    "theme_light": "Light",
+    "theme_dark": "Dark",
+    "theme_system": "System",
+    "accent_color": "Accent Color",
+    "language": "Language",
+    "pomodoro": "Pomodoro",
+    "pomodoro_work": "Work Duration (min)",
+    "pomodoro_break": "Break Duration (min)",
+    "pomodoro_long_break": "Long Break Duration (min)",
+    "pomodoro_sound": "Beep Sound",
+    "notifications": "Notifications",
+    "daily_briefing": "Daily Briefing",
+    "briefing_time": "Notification Time",
+    "display": "Display",
+    "task_density": "Task Density",
+    "density_compact": "Compact",
+    "density_normal": "Normal",
+    "density_comfortable": "Comfortable",
+    "default_view": "Default View"
+  },
+  "stats": {
+    "streak": "Streak",
+    "streak_days": "{{count}} days",
+    "streak_start": "Start today",
+    "weekly": "This Week",
+    "monthly": "This Month",
+    "completion_rate": "{{rate}}% Complete",
+    "time_accuracy": "Time Accuracy",
+    "total_completed": "Total Completed",
+    "total_tasks": "{{count}} tasks"
+  },
+  "offline": {
+    "banner": "Offline — showing cached data",
+    "back_online": "You are back online"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "retry": "Retry",
+    "close": "Close",
+    "confirm": "Confirm",
+    "minutes": "min",
+    "hours": "hr"
+  }
+}

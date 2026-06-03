@@ -1,0 +1,109 @@
+{
+  "nav": {
+    "today": "اليوم",
+    "calendar": "التقويم",
+    "insights": "الإحصاءات",
+    "settings": "الإعدادات",
+    "org": "المؤسسة"
+  },
+  "task": {
+    "add": "إضافة مهمة",
+    "edit": "تعديل المهمة",
+    "delete": "حذف",
+    "complete": "إكمال",
+    "start": "بدء",
+    "pause": "إيقاف مؤقت",
+    "title": "العنوان",
+    "description": "الوصف",
+    "priority": "الأولوية",
+    "priority_low": "منخفضة",
+    "priority_medium": "متوسطة",
+    "priority_high": "عالية",
+    "priority_urgent": "عاجل",
+    "estimated_time": "الوقت المقدر",
+    "actual_time": "الوقت الفعلي",
+    "due_date": "تاريخ الاستحقاق",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "no_tasks": "لا توجد مهام",
+    "focus": "تركيز",
+    "template_save": "حفظ كقالب"
+  },
+  "ai": {
+    "optimize": "تحسين بالذكاء الاصطناعي",
+    "optimizing": "جارٍ التحسين...",
+    "replan": "إعادة التخطيط",
+    "insights": "الإحصاءات",
+    "provider_cloud": "Claude AI",
+    "provider_local": "ذكاء اصطناعي محلي",
+    "overrun_message": "تجاوزت المهمة الوقت المحدد",
+    "briefing_dismiss": "إغلاق"
+  },
+  "auth": {
+    "login": "تسجيل الدخول",
+    "logout": "تسجيل الخروج",
+    "register": "إنشاء حساب",
+    "email": "البريد الإلكتروني",
+    "password": "كلمة المرور",
+    "name": "الاسم",
+    "login_error": "البريد الإلكتروني أو كلمة المرور غير صحيحة"
+  },
+  "subscription": {
+    "title": "الخطط",
+    "free": "مجاني",
+    "personal_pro": "Personal Pro",
+    "business": "Business",
+    "enterprise": "Enterprise",
+    "upgrade": "ترقية",
+    "current_plan": "الخطة الحالية",
+    "personal_tab": "شخصي",
+    "corporate_tab": "مؤسسي"
+  },
+  "settings": {
+    "title": "الإعدادات",
+    "theme": "المظهر",
+    "theme_light": "فاتح",
+    "theme_dark": "داكن",
+    "theme_system": "النظام",
+    "accent_color": "لون التمييز",
+    "language": "اللغة",
+    "pomodoro": "بومودورو",
+    "pomodoro_work": "مدة العمل (دقيقة)",
+    "pomodoro_break": "مدة الاستراحة (دقيقة)",
+    "pomodoro_long_break": "استراحة طويلة (دقيقة)",
+    "pomodoro_sound": "صوت التنبيه",
+    "notifications": "الإشعارات",
+    "daily_briefing": "الملخص اليومي",
+    "briefing_time": "وقت الإشعار",
+    "display": "العرض",
+    "task_density": "كثافة المهام",
+    "density_compact": "مضغوط",
+    "density_normal": "عادي",
+    "density_comfortable": "مريح",
+    "default_view": "العرض الافتراضي"
+  },
+  "stats": {
+    "streak": "سلسلة",
+    "streak_days": "{{count}} أيام",
+    "streak_start": "ابدأ اليوم",
+    "weekly": "هذا الأسبوع",
+    "monthly": "هذا الشهر",
+    "completion_rate": "{{rate}}% مكتمل",
+    "time_accuracy": "دقة الوقت",
+    "total_completed": "إجمالي المكتملة",
+    "total_tasks": "{{count}} مهام"
+  },
+  "offline": {
+    "banner": "غير متصل — يتم عرض البيانات المخزنة مؤقتاً",
+    "back_online": "تمت استعادة الاتصال"
+  },
+  "common": {
+    "loading": "جارٍ التحميل...",
+    "error": "حدث خطأ",
+    "retry": "إعادة المحاولة",
+    "close": "إغلاق",
+    "confirm": "تأكيد",
+    "minutes": "دقيقة",
+    "hours": "ساعة"
+  }
+}

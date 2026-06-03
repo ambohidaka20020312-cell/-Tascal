@@ -1,4 +1,5 @@
 import { useState, FormEvent } from "react";
+import { useTranslation } from "react-i18next";
 import Button from "../common/Button";
 import { useCreateTask } from "../../hooks/useTasks";
 import { Task } from "../../store/taskStore";
@@ -11,6 +12,7 @@ interface TaskFormProps {
 type Priority = Task["priority"];
 
 export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
+  const { t } = useTranslation();
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<Priority>("medium");
@@ -25,7 +27,7 @@ export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
-      setError("タイトルは必須です");
+      setError(t('task.title') + "は必須です");
       return;
     }
     setError("");
@@ -42,38 +44,31 @@ export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
       } as Partial<Task>);
       onClose();
     } catch {
-      setError("タスクの作成に失敗しました。再度お試しください。");
+      setError(t('common.error'));
     }
   };
 
-  // Shared input classes — font-size 16px+ to prevent iOS zoom
   const inputCls =
     "w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary-500";
 
   return (
-    /*
-     * Mobile:   bottom sheet (items-end, sheet slides up from bottom)
-     * PC (sm+): center modal (items-center justify-center)
-     */
     <div
       className="fixed inset-0 bg-black/50 z-50 flex sm:items-center sm:justify-center items-end"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      {/* Sheet / modal panel */}
       <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-xl max-h-[90dvh] flex flex-col overflow-hidden">
-        {/* Handle (mobile only) */}
         <div className="sm:hidden flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 bg-gray-300 rounded-full" />
         </div>
 
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-800">新しいタスク</h2>
+          <h2 className="text-lg font-bold text-gray-800">{t('task.add')}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors min-w-touch min-h-touch flex items-center justify-center"
-            aria-label="閉じる"
+            aria-label={t('common.close')}
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -81,7 +76,6 @@ export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
           </button>
         </div>
 
-        {/* Scrollable form body — scrolls when keyboard appears */}
         <div className="overflow-y-auto flex-1 px-6 py-4">
           {error && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
@@ -92,13 +86,13 @@ export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                タイトル <span className="text-red-500">*</span>
+                {t('task.title')} <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                placeholder="タスクのタイトルを入力"
+                placeholder={t('task.title')}
                 className={inputCls}
                 required
               />
@@ -106,12 +100,12 @@ export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                説明
+                {t('task.description')}
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="タスクの詳細（任意）"
+                placeholder={t('task.description')}
                 rows={3}
                 className={`${inputCls} resize-none`}
               />
@@ -120,30 +114,30 @@ export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  優先度
+                  {t('task.priority')}
                 </label>
                 <select
                   value={priority}
                   onChange={(e) => setPriority(e.target.value as Priority)}
                   className={`${inputCls} bg-white`}
                 >
-                  <option value="low">低</option>
-                  <option value="medium">中</option>
-                  <option value="high">高</option>
-                  <option value="urgent">緊急</option>
+                  <option value="low">{t('task.priority_low')}</option>
+                  <option value="medium">{t('task.priority_medium')}</option>
+                  <option value="high">{t('task.priority_high')}</option>
+                  <option value="urgent">{t('task.priority_urgent')}</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  目標時間（分）
+                  {t('task.estimated_time')}（{t('common.minutes')}）
                 </label>
                 <input
                   type="number"
                   min={1}
                   value={estimatedMinutes}
                   onChange={(e) => setEstimatedMinutes(e.target.value)}
-                  placeholder="例: 60"
+                  placeholder="60"
                   className={inputCls}
                 />
               </div>
@@ -151,7 +145,7 @@ export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                予定日
+                {t('task.due_date')}
               </label>
               <input
                 type="date"
@@ -168,7 +162,7 @@ export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
                 className="flex-1"
                 onClick={onClose}
               >
-                キャンセル
+                {t('task.cancel')}
               </Button>
               <Button
                 type="submit"
@@ -176,7 +170,7 @@ export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
                 className="flex-1"
                 loading={createTask.isPending}
               >
-                作成する
+                {t('task.save')}
               </Button>
             </div>
           </form>

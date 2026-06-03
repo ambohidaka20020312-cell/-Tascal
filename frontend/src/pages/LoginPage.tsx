@@ -1,10 +1,13 @@
 import { useState, FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import api from "../utils/api";
 import { useAuthStore } from "../store/authStore";
 import Button from "../components/common/Button";
+import LanguageSwitcher from "../components/common/LanguageSwitcher";
 
 export default function LoginPage() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -26,7 +29,7 @@ export default function LoginPage() {
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { error?: { message?: string } } } })
-          ?.response?.data?.error?.message ?? "メールアドレスまたはパスワードが正しくありません";
+          ?.response?.data?.error?.message ?? t('auth.login_error');
       setError(msg);
     } finally {
       setLoading(false);
@@ -36,6 +39,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+        <div className="flex justify-end mb-2">
+          <LanguageSwitcher />
+        </div>
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-primary-500 rounded-2xl mb-3">
             <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -55,7 +61,7 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              メールアドレス
+              {t('auth.email')}
             </label>
             <input
               type="email"
@@ -69,7 +75,7 @@ export default function LoginPage() {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              パスワード
+              {t('auth.password')}
             </label>
             <input
               type="password"
@@ -88,14 +94,14 @@ export default function LoginPage() {
             className="w-full mt-2"
             loading={loading}
           >
-            ログイン
+            {t('auth.login')}
           </Button>
         </form>
 
         <p className="text-center text-sm text-gray-500 mt-6">
           アカウントをお持ちでない方は{" "}
           <Link to="/register" className="text-primary-600 hover:underline font-medium">
-            新規登録
+            {t('auth.register')}
           </Link>
         </p>
       </div>

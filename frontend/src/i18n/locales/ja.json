@@ -1,0 +1,109 @@
+{
+  "nav": {
+    "today": "今日",
+    "calendar": "カレンダー",
+    "insights": "インサイト",
+    "settings": "設定",
+    "org": "組織"
+  },
+  "task": {
+    "add": "タスクを追加",
+    "edit": "タスクを編集",
+    "delete": "削除",
+    "complete": "完了",
+    "start": "開始",
+    "pause": "一時停止",
+    "title": "タイトル",
+    "description": "説明",
+    "priority": "優先度",
+    "priority_low": "低",
+    "priority_medium": "中",
+    "priority_high": "高",
+    "priority_urgent": "緊急",
+    "estimated_time": "目標時間",
+    "actual_time": "実際の時間",
+    "due_date": "期限",
+    "save": "保存",
+    "cancel": "キャンセル",
+    "no_tasks": "タスクがありません",
+    "focus": "フォーカス",
+    "template_save": "テンプレートとして保存"
+  },
+  "ai": {
+    "optimize": "AIで最適化",
+    "optimizing": "最適化中...",
+    "replan": "再計画する",
+    "insights": "インサイト",
+    "provider_cloud": "Claude AI",
+    "provider_local": "ローカルAI",
+    "overrun_message": "タスクが時間超過しています",
+    "briefing_dismiss": "閉じる"
+  },
+  "auth": {
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "register": "アカウント作成",
+    "email": "メールアドレス",
+    "password": "パスワード",
+    "name": "名前",
+    "login_error": "メールアドレスまたはパスワードが正しくありません"
+  },
+  "subscription": {
+    "title": "プラン",
+    "free": "フリー",
+    "personal_pro": "Personal Pro",
+    "business": "Business",
+    "enterprise": "Enterprise",
+    "upgrade": "アップグレード",
+    "current_plan": "現在のプラン",
+    "personal_tab": "個人",
+    "corporate_tab": "法人"
+  },
+  "settings": {
+    "title": "設定",
+    "theme": "テーマ",
+    "theme_light": "ライト",
+    "theme_dark": "ダーク",
+    "theme_system": "システム",
+    "accent_color": "アクセントカラー",
+    "language": "言語",
+    "pomodoro": "ポモドーロ",
+    "pomodoro_work": "作業時間（分）",
+    "pomodoro_break": "休憩時間（分）",
+    "pomodoro_long_break": "長休憩時間（分）",
+    "pomodoro_sound": "ビープ音",
+    "notifications": "通知",
+    "daily_briefing": "デイリーブリーフィング",
+    "briefing_time": "通知時刻",
+    "display": "表示",
+    "task_density": "タスク表示密度",
+    "density_compact": "コンパクト",
+    "density_normal": "標準",
+    "density_comfortable": "ゆったり",
+    "default_view": "デフォルトビュー"
+  },
+  "stats": {
+    "streak": "連続達成",
+    "streak_days": "{{count}}日",
+    "streak_start": "今日から始めよう",
+    "weekly": "今週",
+    "monthly": "今月",
+    "completion_rate": "{{rate}}% 完了",
+    "time_accuracy": "時間精度",
+    "total_completed": "累計完了",
+    "total_tasks": "{{count}}件"
+  },
+  "offline": {
+    "banner": "オフライン中 — キャッシュされたデータを表示しています",
+    "back_online": "オンラインに復帰しました"
+  },
+  "common": {
+    "loading": "読み込み中...",
+    "error": "エラーが発生しました",
+    "retry": "再試行",
+    "close": "閉じる",
+    "confirm": "確認",
+    "minutes": "分",
+    "hours": "時間"
+  }
+}
