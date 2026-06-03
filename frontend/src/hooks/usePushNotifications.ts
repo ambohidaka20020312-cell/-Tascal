@@ -1,103 +1,66 @@
-import { useEffect, useCallback } from 'react';
-import { Capacitor } from '@capacitor/core';
-import {
-  PushNotifications,
-  Token,
-  PushNotificationSchema,
-  ActionPerformed,
-} from '@capacitor/push-notifications';
+import { useState, useCallback } from 'react';
 import api from '../utils/api';
 
-const isNative = Capacitor.isNativePlatform();
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}
 
-/**
- * Hook that registers for push notifications and keeps the backend token
- * up-to-date.
- *
- * - On native (iOS/Android): uses Capacitor PushNotifications
- * - On web: falls back to the Web Push API (if supported by the browser)
- */
 export function usePushNotifications() {
-  // ── Native push registration ──────────────────────────────────────────────
-  const registerNative = useCallback(async () => {
-    const permission = await PushNotifications.requestPermissions();
-    if (permission.receive !== 'granted') return;
+  const [permission, setPermission] = useState<NotificationPermission>(
+    typeof Notification !== 'undefined' ? Notification.permission : 'default'
+  );
 
-    await PushNotifications.register();
-
-    // Send token to backend
-    await PushNotifications.addListener('registration', async (token: Token) => {
-      try {
-        await api.post('/notifications/register', {
-          token: token.value,
-          platform: Capacitor.getPlatform(),
-        });
-      } catch {
-        // Non-fatal — the app works without push notifications
-      }
-    });
-
-    // Handle registration errors (log only)
-    await PushNotifications.addListener('registrationError', (err) => {
-      console.error('[PushNotifications] Registration error:', err);
-    });
-
-    // Foreground notification handler — display as in-app alert or toast
-    await PushNotifications.addListener(
-      'pushNotificationReceived',
-      (notification: PushNotificationSchema) => {
-        console.info('[PushNotifications] Foreground notification:', notification);
-        // TODO: dispatch to a global notification store / toast system
-      }
-    );
-
-    // Action handler (user taps a notification)
-    await PushNotifications.addListener(
-      'pushNotificationActionPerformed',
-      (action: ActionPerformed) => {
-        console.info('[PushNotifications] Action performed:', action);
-        // TODO: navigate based on action.notification.data
-      }
-    );
-  }, []);
-
-  // ── Web Push fallback ─────────────────────────────────────────────────────
-  const registerWeb = useCallback(async () => {
+  const subscribe = useCallback(async () => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
 
     try {
-      const permission = await Notification.requestPermission();
-      if (permission !== 'granted') return;
+      const perm = await Notification.requestPermission();
+      setPermission(perm);
+      if (perm !== 'granted') return;
 
       const registration = await navigator.serviceWorker.ready;
-      const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-      if (!vapidKey) return;
+      const vapidKey = import.meta.env.VITE_VAPID_PUBLIC_KEY as string | undefined;
+      if (!vapidKey) {
+        console.warn('[PushNotifications] VITE_VAPID_PUBLIC_KEY is not set');
+        return;
+      }
 
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: vapidKey,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
 
-      await api.post('/notifications/register', {
-        subscription: subscription.toJSON(),
-        platform: 'web',
+      const json = subscription.toJSON();
+      await api.post('/push/subscribe', {
+        endpoint: json.endpoint,
+        p256dh: json.keys?.p256dh,
+        auth: json.keys?.auth,
       });
-    } catch {
-      // Non-fatal
+    } catch (err) {
+      console.error('[PushNotifications] subscribe error:', err);
     }
   }, []);
 
-  useEffect(() => {
-    if (isNative) {
-      registerNative();
-    } else {
-      registerWeb();
-    }
+  const unsubscribe = useCallback(async () => {
+    if (!('serviceWorker' in navigator)) return;
 
-    return () => {
-      if (isNative) {
-        PushNotifications.removeAllListeners();
-      }
-    };
-  }, [registerNative, registerWeb]);
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.getSubscription();
+      if (!subscription) return;
+
+      const endpoint = subscription.endpoint;
+      await subscription.unsubscribe();
+
+      await api.delete('/push/subscribe', { data: { endpoint } });
+      setPermission('default');
+    } catch (err) {
+      console.error('[PushNotifications] unsubscribe error:', err);
+    }
+  }, []);
+
+  return { permission, subscribe, unsubscribe };
 }

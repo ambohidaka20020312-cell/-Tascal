@@ -12,6 +12,7 @@ redis==5.2.1
 flask-mail==0.10.0
 marshmallow==3.23.2
 gunicorn==23.0.0
+pywebpush==2.0.1
 
 # Dev/test
 pytest==8.3.4

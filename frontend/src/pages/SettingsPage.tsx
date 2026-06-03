@@ -1,5 +1,6 @@
 import React from "react";
 import { useSettingsStore } from "../store/settingsStore";
+import PushNotificationToggle from "../components/settings/PushNotificationToggle";
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -167,6 +168,10 @@ export default function SettingsPage() {
             disabled={!s.dailyBriefingEnabled}
             className="rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] px-2 py-1 text-sm focus:outline-none focus:border-[var(--accent)] disabled:opacity-40"
           />
+        </Row>
+
+        <Row label="プッシュ通知">
+          <PushNotificationToggle />
         </Row>
       </Section>
 
