@@ -1,4 +1,5 @@
 import os
+import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -7,6 +8,8 @@ load_dotenv()
 class BaseConfig:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-jwt-secret")
+    JWT_ACCESS_TOKEN_EXPIRES = datetime.timedelta(minutes=15)
+    JWT_REFRESH_TOKEN_EXPIRES = datetime.timedelta(days=30)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     CORS_ORIGINS = ["http://localhost:5173"]
 
