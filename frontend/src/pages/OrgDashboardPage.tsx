@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useOrgStore } from "../store/orgStore";
+import MemberLoadBar from "../components/org/MemberLoadBar";
+import PriorityMatrix from "../components/tasks/PriorityMatrix";
+import DelegatedTaskInbox from "../components/org/DelegatedTaskInbox";
+import { skillApi } from "../utils/api";
+import { Task } from "../store/taskStore";
 
 interface DeptSummary {
   department_id: number;
@@ -13,8 +18,11 @@ interface DeptSummary {
 
 interface MemberLoad {
   user_id: number;
+  name?: string;
   role: string;
   active_tasks: number;
+  total_minutes?: number;
+  task_count?: number;
 }
 
 interface DashboardData {
@@ -24,6 +32,18 @@ interface DashboardData {
   total_members: number;
 }
 
+interface DelegatedTask {
+  id: number;
+  title: string;
+  priority: string;
+  estimated_minutes: number;
+  required_skills: string[];
+  delegation_level: number;
+  due_datetime?: string;
+}
+
+type Tab = "overview" | "matrix" | "inbox";
+
 export default function OrgDashboardPage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -31,6 +51,9 @@ export default function OrgDashboardPage() {
   const [dashboard, setDashboard] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>("overview");
+  const [receivedTasks, setReceivedTasks] = useState<DelegatedTask[]>([]);
+  const [allTasks, setAllTasks] = useState<Task[]>([]);
 
   const apiBase = import.meta.env.VITE_API_BASE_URL || "/api/v1";
   const token = localStorage.getItem("access_token");
@@ -63,6 +86,12 @@ export default function OrgDashboardPage() {
         if (orgRes.ok) {
           const orgData = await orgRes.json();
           setOrg(orgData.data);
+
+          try {
+            const res = await skillApi.getReceivedTasks(orgData.data.id);
+            setReceivedTasks(res.data?.data ?? []);
+          } catch {
+          }
         }
         if (deptsRes.ok) {
           const deptsData = await deptsRes.json();
@@ -71,6 +100,14 @@ export default function OrgDashboardPage() {
         if (membersRes.ok) {
           const membersData = await membersRes.json();
           setMembers(membersData.data);
+        }
+
+        const tasksRes = await fetch(`${apiBase}/tasks`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (tasksRes.ok) {
+          const tasksData = await tasksRes.json();
+          setAllTasks(tasksData.data ?? []);
         }
       } catch (err) {
         setError(err instanceof Error ? err.message : "エラーが発生しました");
@@ -99,11 +136,22 @@ export default function OrgDashboardPage() {
   }
 
   const planLabel = dashboard.org.plan === "enterprise" ? "Enterprise" : "Business";
-  const maxBarValue = Math.max(...dashboard.member_loads.map((m) => m.active_tasks), 1);
+
+  const memberLoadBarData = dashboard.member_loads.map((m) => ({
+    id: m.user_id,
+    name: m.name ?? `User ${m.user_id}`,
+    totalMinutes: m.total_minutes ?? m.active_tasks * 30,
+    taskCount: m.task_count ?? m.active_tasks,
+  }));
+
+  const tabs: { key: Tab; label: string }[] = [
+    { key: "overview", label: "概要" },
+    { key: "matrix", label: "優先度マトリクス" },
+    { key: "inbox", label: `受信タスク${receivedTasks.length > 0 ? ` (${receivedTasks.length})` : ""}` },
+  ];
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      {/* Header */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
           <div>
@@ -124,71 +172,94 @@ export default function OrgDashboardPage() {
         <p className="mt-2 text-gray-500">メンバー数: {dashboard.total_members}</p>
       </div>
 
-      {/* Department Cards */}
-      <section className="mb-10">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">部署別進捗</h2>
-        {dashboard.department_summaries.length === 0 ? (
-          <p className="text-gray-400">部署がまだありません。</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {dashboard.department_summaries.map((dept) => (
-              <div key={dept.department_id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
-                <h3 className="font-semibold text-gray-900 text-lg mb-3">{dept.department_name}</h3>
-                <div className="flex justify-between text-sm text-gray-600 mb-2">
-                  <span>タスク</span>
-                  <span>
-                    {dept.completed_tasks} / {dept.total_tasks} 完了
-                  </span>
-                </div>
-                {/* Progress bar */}
-                <div className="w-full bg-gray-200 rounded-full h-2.5 mb-3">
-                  <div
-                    className="bg-indigo-500 h-2.5 rounded-full transition-all"
-                    style={{ width: `${dept.completion_rate}%` }}
-                  />
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-gray-500">メンバー: {dept.member_count}名</span>
-                  <span className="font-medium text-indigo-700">{dept.completion_rate}%</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </section>
+      <div className="flex gap-1 mb-6 border-b border-gray-200">
+        {tabs.map((t) => (
+          <button
+            key={t.key}
+            onClick={() => setActiveTab(t.key)}
+            className={`px-4 py-2 text-sm font-medium rounded-t-lg transition-colors ${
+              activeTab === t.key
+                ? "bg-white border border-b-white border-gray-200 text-indigo-700 -mb-px"
+                : "text-gray-500 hover:text-gray-700"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
 
-      {/* Member Load Chart */}
-      <section>
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">メンバー別タスク負荷</h2>
-        {dashboard.member_loads.length === 0 ? (
-          <p className="text-gray-400">メンバーがいません。</p>
-        ) : (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <div className="space-y-3">
-              {dashboard.member_loads.map((m) => {
-                const widthPct = (m.active_tasks / maxBarValue) * 100;
-                return (
-                  <div key={m.user_id} className="flex items-center gap-4">
-                    <div className="w-24 text-sm text-gray-600 truncate">
-                      <span>User {m.user_id}</span>
-                      <span className="ml-1 text-xs text-gray-400">({m.role})</span>
+      {activeTab === "overview" && (
+        <>
+          <section className="mb-10">
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">部署別進捗</h2>
+            {dashboard.department_summaries.length === 0 ? (
+              <p className="text-gray-400">部署がまだありません。</p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {dashboard.department_summaries.map((dept) => (
+                  <div key={dept.department_id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-5">
+                    <h3 className="font-semibold text-gray-900 text-lg mb-3">{dept.department_name}</h3>
+                    <div className="flex justify-between text-sm text-gray-600 mb-2">
+                      <span>タスク</span>
+                      <span>
+                        {dept.completed_tasks} / {dept.total_tasks} 完了
+                      </span>
                     </div>
-                    <div className="flex-1 bg-gray-100 rounded-full h-5">
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 mb-3">
                       <div
-                        className="bg-indigo-400 h-5 rounded-full transition-all flex items-center justify-end pr-2"
-                        style={{ width: `${Math.max(widthPct, 5)}%` }}
-                      >
-                        <span className="text-xs text-white font-medium">{m.active_tasks}</span>
-                      </div>
+                        className="bg-indigo-500 h-2.5 rounded-full transition-all"
+                        style={{ width: `${dept.completion_rate}%` }}
+                      />
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">メンバー: {dept.member_count}名</span>
+                      <span className="font-medium text-indigo-700">{dept.completion_rate}%</span>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-            <p className="mt-4 text-xs text-gray-400">※ 数値は進行中・未着手のタスク数</p>
-          </div>
-        )}
-      </section>
+                ))}
+              </div>
+            )}
+          </section>
+
+          <section>
+            <h2 className="text-xl font-semibold text-gray-800 mb-4">メンバー別タスク負荷</h2>
+            {memberLoadBarData.length === 0 ? (
+              <p className="text-gray-400">メンバーがいません。</p>
+            ) : (
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                <MemberLoadBar members={memberLoadBarData} />
+                <p className="mt-4 text-xs text-gray-400">※ 数値は進行中・未着手のタスク数</p>
+              </div>
+            )}
+          </section>
+        </>
+      )}
+
+      {activeTab === "matrix" && (
+        <section>
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">優先度マトリクス（アイゼンハワー）</h2>
+          <PriorityMatrix
+            tasks={allTasks}
+            onTaskClick={(id) => navigate(`/tasks/${id}`)}
+          />
+        </section>
+      )}
+
+      {activeTab === "inbox" && (
+        <section>
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">受信タスク</h2>
+          <DelegatedTaskInbox
+            tasks={receivedTasks}
+            role="manager"
+            onAssign={(taskId, userId) => {
+              console.log("assign", taskId, userId);
+            }}
+            onAccept={(taskId) => {
+              console.log("accept", taskId);
+            }}
+          />
+        </section>
+      )}
     </div>
   );
 }

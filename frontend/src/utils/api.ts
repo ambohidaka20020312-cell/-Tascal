@@ -62,4 +62,19 @@ export const billingApi = {
   getSubscription: () => api.get("/billing/subscription"),
 };
 
+export const skillApi = {
+  getSkills: (orgId: number, userId: number) =>
+    api.get(`/org/${orgId}/members/${userId}/skills`),
+  addSkill: (orgId: number, userId: number, data: { skill_tag: string; level: number }) =>
+    api.post(`/org/${orgId}/members/${userId}/skills`, data),
+  updateSkill: (orgId: number, userId: number, skillId: number, level: number) =>
+    api.put(`/org/${orgId}/members/${userId}/skills/${skillId}`, { level }),
+  deleteSkill: (orgId: number, userId: number, skillId: number) =>
+    api.delete(`/org/${orgId}/members/${userId}/skills/${skillId}`),
+  delegateTask: (orgId: number, taskId: number, targetType: string, targetId: number) =>
+    api.post(`/org/${orgId}/tasks/${taskId}/delegate`, { target_type: targetType, target_id: targetId }),
+  getReceivedTasks: (orgId: number) =>
+    api.get(`/org/${orgId}/tasks/received`),
+};
+
 export default api;
