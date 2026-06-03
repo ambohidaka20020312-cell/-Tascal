@@ -13,6 +13,7 @@ class User(db.Model):
     plan = db.Column(db.String(20), nullable=False, default="free")
     stripe_customer_id = db.Column(db.String(100), unique=True, nullable=True)
     analytics_opt_out = db.Column(db.Boolean, nullable=False, default=False)
+    digest_unsubscribed = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     tasks = db.relationship("Task", backref="user", lazy="dynamic")
