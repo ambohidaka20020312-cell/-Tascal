@@ -23,4 +23,9 @@ i18n
     detection: { order: ['localStorage', 'navigator'], caches: ['localStorage'], lookupLocalStorage: 'tascal_language' },
   })
 
+// 言語切り替え時に <html lang> を同期してスクリーンリーダーに正しい言語を伝える
+i18n.on('languageChanged', (lng) => {
+  document.documentElement.lang = lng
+})
+
 export default i18n

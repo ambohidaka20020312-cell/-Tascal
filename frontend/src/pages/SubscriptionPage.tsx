@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { useSubscription, useCheckout, usePortal } from "../hooks/useBilling";
-import Button from "../components/common/Button";
 import PlanBadge from "../components/subscription/PlanBadge";
 
 interface PlanFeature {

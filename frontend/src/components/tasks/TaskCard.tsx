@@ -69,7 +69,8 @@ export default function TaskCard({ task }: TaskCardProps) {
 
   return (
     <>
-      <div
+      <article
+        aria-label={task.title}
         className={[
           "group border-b border-[var(--border)] -mx-4 px-4 transition-colors hover:bg-[var(--bg-secondary)]",
           task.status === "completed" ? "opacity-40" : "",
@@ -80,8 +81,9 @@ export default function TaskCard({ task }: TaskCardProps) {
             <div className="flex-1 min-w-0">
               {/* Priority dot + label row */}
               <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-                <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${priority.dotClass}`} />
-                <span className={`${priority.labelClass} ${isPhoneSmall ? "text-[10px]" : "text-xs"} tracking-wide`}>
+                <span aria-hidden="true" className={`inline-block w-2 h-2 rounded-full shrink-0 ${priority.dotClass}`} />
+                <span className="sr-only">{t(priority.labelKey)}優先度</span>
+                <span aria-hidden="true" className={`${priority.labelClass} ${isPhoneSmall ? "text-[10px]" : "text-xs"} tracking-wide`}>
                   {t(priority.labelKey)}
                 </span>
                 <span className={`${status.className} ${isPhoneSmall ? "text-[10px]" : "text-xs"} tracking-wide`}>
@@ -153,6 +155,7 @@ export default function TaskCard({ task }: TaskCardProps) {
                     variant="primary"
                     onClick={() => setShowCompleteModal(true)}
                     loading={completeTask.isPending}
+                    aria-label={`${t('task.complete')} ${task.title}`}
                   >
                     {t('task.complete')}
                   </Button>
@@ -179,6 +182,8 @@ export default function TaskCard({ task }: TaskCardProps) {
                 variant="danger"
                 onClick={handleDelete}
                 loading={deleteTask.isPending}
+                aria-label={`${t('task.delete')} ${task.title}`}
+                aria-keyshortcuts="Delete"
               >
                 {t('task.delete')}
               </Button>
@@ -191,12 +196,17 @@ export default function TaskCard({ task }: TaskCardProps) {
             </div>
           )}
         </div>
-      </div>
+      </article>
 
       {showCompleteModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <div className="bg-[var(--bg-primary)] rounded-xl p-6 w-full max-w-sm border border-[var(--border)]">
-            <h3 className="font-semibold text-[var(--text-primary)] mb-4 tracking-wide">{t('task.complete')}</h3>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="complete-modal-title"
+            className="bg-[var(--bg-primary)] rounded-xl p-6 w-full max-w-sm border border-[var(--border)]"
+          >
+            <h3 id="complete-modal-title" className="font-semibold text-[var(--text-primary)] mb-4 tracking-wide">{t('task.complete')}</h3>
             <p className="text-sm text-[var(--text-muted)] mb-4">
               {t('task.actual_time')}（{t('common.minutes')}）
             </p>
