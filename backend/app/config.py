@@ -11,6 +11,9 @@ class BaseConfig:
     CORS_ORIGINS = ["http://localhost:5173"]
 
     ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+    AI_PROVIDER = os.getenv("AI_PROVIDER", "claude")  # claude | ollama
+    OLLAMA_BASE_URL = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+    OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
     STRIPE_SECRET_KEY = os.getenv("STRIPE_SECRET_KEY")
     STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET")
     STRIPE_PRICE_ID_PRO = os.getenv("STRIPE_PRICE_ID_PRO")

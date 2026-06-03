@@ -47,6 +47,7 @@ export const aiApi = {
   replan: (overrun_task_id: number, actual_minutes_so_far: number) =>
     api.post("/ai/replan", { overrun_task_id, actual_minutes_so_far }),
   insights: () => api.get("/ai/insights"),
+  getProvider: () => api.get<{ data: { provider: string; model: string; is_local: boolean } }>("/ai/provider"),
 };
 
 export const calendarApi = {

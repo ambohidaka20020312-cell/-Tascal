@@ -1,6 +1,9 @@
+import os
+
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..services.ai_optimizer import AIOptimizer
+from ..services.llm_client import get_llm_client
 from ..models.task import Task
 import datetime
 
@@ -50,3 +53,17 @@ def insights():
     optimizer = AIOptimizer()
     result = optimizer.generate_weekly_insights(user_id)
     return jsonify({"data": result})
+
+
+@bp.get("/provider")
+@jwt_required()
+def get_provider():
+    provider = os.getenv("AI_PROVIDER", "claude")
+    client = get_llm_client()
+    return jsonify({
+        "data": {
+            "provider": provider,
+            "model": client.model,
+            "is_local": provider == "ollama",
+        }
+    })

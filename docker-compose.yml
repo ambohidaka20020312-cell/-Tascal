@@ -45,5 +45,21 @@ services:
     environment:
       VITE_API_BASE_URL: http://localhost:5000/api/v1
 
+  # ollama:
+  #   image: ollama/ollama:latest
+  #   ports:
+  #     - "11434:11434"
+  #   volumes:
+  #     - ollama_data:/root/.ollama
+  #   # GPU使用する場合は以下のコメントを解除
+  #   # deploy:
+  #   #   resources:
+  #   #     reservations:
+  #   #       devices:
+  #   #         - driver: nvidia
+  #   #           count: all
+  #   #           capabilities: [gpu]
+
 volumes:
   pgdata:
+  # ollama_data:

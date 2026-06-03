@@ -1,4 +1,5 @@
 import { useOptimize, OptimizeResult } from "../../hooks/useAI";
+import AiProviderBadge from "./AiProviderBadge";
 
 const PRIORITY_BADGE: Record<string, string> = {
   urgent: "bg-red-100 text-red-700",
@@ -30,6 +31,7 @@ export default function AiAdvicePanel({ date }: AiAdvicePanelProps) {
         <div className="flex items-center gap-2">
           <span className="text-2xl">🤖</span>
           <h2 className="text-base font-semibold text-gray-800">AIアドバイス</h2>
+          <AiProviderBadge />
         </div>
         <button
           onClick={() => optimize.mutate()}
