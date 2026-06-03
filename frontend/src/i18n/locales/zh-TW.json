@@ -97,6 +97,16 @@
     "banner": "已離線 — 顯示快取資料",
     "back_online": "已恢復連線"
   },
+  "dashboard": {
+    "pending": "未完成",
+    "done_count": "已完成",
+    "no_tasks": "暫無任務",
+    "add": "+ 新增",
+    "ai_optimize": "AI 最佳化任務",
+    "ai_advice": "AI 建議",
+    "tasks_label": "任務",
+    "no_tasks_hint": "新增任務，規劃今天的行程"
+  },
   "common": {
     "loading": "載入中...",
     "error": "發生錯誤",

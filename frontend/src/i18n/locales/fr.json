@@ -97,6 +97,16 @@
     "banner": "Hors ligne — affichage des données en cache",
     "back_online": "Connexion rétablie"
   },
+  "dashboard": {
+    "pending": "En attente",
+    "done_count": "Terminé",
+    "no_tasks": "Aucune tâche",
+    "add": "+ AJOUTER",
+    "ai_optimize": "Optimiser avec l'IA",
+    "ai_advice": "CONSEIL IA",
+    "tasks_label": "TÂCHES",
+    "no_tasks_hint": "Ajoutez des tâches pour planifier votre journée"
+  },
   "common": {
     "loading": "Chargement...",
     "error": "Une erreur s'est produite",

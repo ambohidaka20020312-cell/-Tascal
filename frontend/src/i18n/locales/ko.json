@@ -97,6 +97,16 @@
     "banner": "오프라인 — 캐시된 데이터를 표시합니다",
     "back_online": "온라인으로 복귀했습니다"
   },
+  "dashboard": {
+    "pending": "미완료",
+    "done_count": "완료",
+    "no_tasks": "할 일이 없습니다",
+    "add": "+ 추가",
+    "ai_optimize": "AI로 최적화",
+    "ai_advice": "AI 조언",
+    "tasks_label": "TASKS",
+    "no_tasks_hint": "할 일을 추가하여 오늘을 계획하세요"
+  },
   "common": {
     "loading": "로딩 중...",
     "error": "오류가 발생했습니다",
