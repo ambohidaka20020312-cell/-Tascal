@@ -4,6 +4,7 @@ from ..models.task import Task
 from ..models.user import User
 from .. import db
 from ..utils.validators import validate_task_fields
+from ..utils.cache import cached, invalidate_user_cache
 from sqlalchemy import func
 import datetime
 
@@ -14,6 +15,7 @@ bp = Blueprint("tasks", __name__)
 
 @bp.get("")
 @jwt_required()
+@cached("tasks", ttl=60)
 def list_tasks():
     user_id = get_jwt_identity()
     date_str = request.args.get("date")
@@ -70,6 +72,7 @@ def create_task():
     )
     db.session.add(task)
     db.session.commit()
+    invalidate_user_cache(user_id)
     return jsonify({"data": task.to_dict(), "message": "タスクを作成しました"}), 201
 
 
@@ -90,6 +93,7 @@ def update_task(task_id):
             setattr(task, field, data[field])
 
     db.session.commit()
+    invalidate_user_cache(user_id)
     return jsonify({"data": task.to_dict()})
 
 
@@ -100,6 +104,7 @@ def delete_task(task_id):
     task = Task.query.filter_by(id=task_id, user_id=user_id, is_deleted=False).first_or_404()
     task.is_deleted = True
     db.session.commit()
+    invalidate_user_cache(user_id)
     return jsonify({"message": "タスクを削除しました"})
 
 
@@ -136,6 +141,7 @@ def complete_task(task_id):
             db.session.add(next_task)
 
     db.session.commit()
+    invalidate_user_cache(user_id)
     response_data = {"data": task.to_dict(), "message": "タスクを完了しました"}
     if next_task:
         response_data["next_task"] = next_task.to_dict()

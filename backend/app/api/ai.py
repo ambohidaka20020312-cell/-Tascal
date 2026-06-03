@@ -1,9 +1,9 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..services.ai_optimizer import AIOptimizer
 from ..models.task import Task
+from ..utils.cache import cached
 import anthropic
-from flask import current_app
 import datetime
 
 bp = Blueprint("ai", __name__)
@@ -15,6 +15,7 @@ def get_llm_client():
 
 @bp.get("/optimize")
 @jwt_required()
+@cached("ai_optimize", ttl=300)
 def optimize():
     user_id = get_jwt_identity()
     date_str = request.args.get("date", datetime.date.today().isoformat())
@@ -51,6 +52,7 @@ def replan():
 
 @bp.get("/insights")
 @jwt_required()
+@cached("insights", ttl=3600)
 def insights():
     user_id = get_jwt_identity()
     optimizer = AIOptimizer()
