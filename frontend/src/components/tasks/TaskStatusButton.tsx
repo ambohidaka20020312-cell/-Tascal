@@ -11,13 +11,13 @@ interface TaskStatusButtonProps {
 }
 
 export default function TaskStatusButton({ task }: TaskStatusButtonProps) {
-  const { startTask, stopTask, activeTaskId } = useTimerStore();
+  const { startTask, stopTask } = useTimerStore();
   const { updateTask } = useTaskStore();
   const [loading, setLoading] = useState(false);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [actualMinutes, setActualMinutes] = useState<string>("");
 
-  const isThisActive = activeTaskId === task.id;
+  
 
   const handleStart = async () => {
     setLoading(true);

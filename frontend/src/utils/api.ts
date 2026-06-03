@@ -79,6 +79,15 @@ export const calendarApi = {
     api.get("/calendar/tasks", { params: { start, end } }),
 };
 
+export const templateApi = {
+  list: () => api.get("/templates"),
+  create: (data: object) => api.post("/templates", data),
+  update: (id: number, data: object) => api.put(`/templates/${id}`, data),
+  delete: (id: number) => api.delete(`/templates/${id}`),
+  use: (id: number, scheduled_date?: string) =>
+    api.post(`/templates/${id}/use`, { scheduled_date }),
+};
+
 export const billingApi = {
   createCheckout: (plan: string, success_url: string, cancel_url: string) =>
     api.post("/billing/checkout", { plan, success_url, cancel_url }),

@@ -1,0 +1,109 @@
+{
+  "nav": {
+    "today": "今天",
+    "calendar": "日历",
+    "insights": "洞察",
+    "settings": "设置",
+    "org": "组织"
+  },
+  "task": {
+    "add": "添加任务",
+    "edit": "编辑任务",
+    "delete": "删除",
+    "complete": "完成",
+    "start": "开始",
+    "pause": "暂停",
+    "title": "标题",
+    "description": "描述",
+    "priority": "优先级",
+    "priority_low": "低",
+    "priority_medium": "中",
+    "priority_high": "高",
+    "priority_urgent": "紧急",
+    "estimated_time": "预计时间",
+    "actual_time": "实际时间",
+    "due_date": "截止日期",
+    "save": "保存",
+    "cancel": "取消",
+    "no_tasks": "暂无任务",
+    "focus": "专注",
+    "template_save": "保存为模板"
+  },
+  "ai": {
+    "optimize": "AI 优化",
+    "optimizing": "优化中...",
+    "replan": "重新计划",
+    "insights": "洞察",
+    "provider_cloud": "Claude AI",
+    "provider_local": "本地 AI",
+    "overrun_message": "任务已超时",
+    "briefing_dismiss": "关闭"
+  },
+  "auth": {
+    "login": "登录",
+    "logout": "退出登录",
+    "register": "创建账户",
+    "email": "电子邮件",
+    "password": "密码",
+    "name": "姓名",
+    "login_error": "邮箱或密码不正确"
+  },
+  "subscription": {
+    "title": "计划",
+    "free": "免费",
+    "personal_pro": "个人 Pro",
+    "business": "商业版",
+    "enterprise": "企业版",
+    "upgrade": "升级",
+    "current_plan": "当前计划",
+    "personal_tab": "个人",
+    "corporate_tab": "企业"
+  },
+  "settings": {
+    "title": "设置",
+    "theme": "主题",
+    "theme_light": "浅色",
+    "theme_dark": "深色",
+    "theme_system": "跟随系统",
+    "accent_color": "强调色",
+    "language": "语言",
+    "pomodoro": "番茄钟",
+    "pomodoro_work": "工作时长（分钟）",
+    "pomodoro_break": "休息时长（分钟）",
+    "pomodoro_long_break": "长休息时长（分钟）",
+    "pomodoro_sound": "提示音",
+    "notifications": "通知",
+    "daily_briefing": "每日简报",
+    "briefing_time": "通知时间",
+    "display": "显示",
+    "task_density": "任务显示密度",
+    "density_compact": "紧凑",
+    "density_normal": "标准",
+    "density_comfortable": "宽松",
+    "default_view": "默认视图"
+  },
+  "stats": {
+    "streak": "连续完成",
+    "streak_days": "{{count}} 天",
+    "streak_start": "从今天开始吧",
+    "weekly": "本周",
+    "monthly": "本月",
+    "completion_rate": "{{rate}}% 完成",
+    "time_accuracy": "时间准确度",
+    "total_completed": "累计完成",
+    "total_tasks": "{{count}} 项"
+  },
+  "offline": {
+    "banner": "已离线 — 显示缓存数据",
+    "back_online": "已恢复在线"
+  },
+  "common": {
+    "loading": "加载中...",
+    "error": "发生错误",
+    "retry": "重试",
+    "close": "关闭",
+    "confirm": "确认",
+    "minutes": "分钟",
+    "hours": "小时"
+  }
+}

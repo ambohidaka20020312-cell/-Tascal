@@ -1,0 +1,109 @@
+{
+  "nav": {
+    "today": "Hoy",
+    "calendar": "Calendario",
+    "insights": "Estadísticas",
+    "settings": "Configuración",
+    "org": "Organización"
+  },
+  "task": {
+    "add": "Agregar tarea",
+    "edit": "Editar tarea",
+    "delete": "Eliminar",
+    "complete": "Completar",
+    "start": "Iniciar",
+    "pause": "Pausar",
+    "title": "Título",
+    "description": "Descripción",
+    "priority": "Prioridad",
+    "priority_low": "Baja",
+    "priority_medium": "Media",
+    "priority_high": "Alta",
+    "priority_urgent": "Urgente",
+    "estimated_time": "Tiempo estimado",
+    "actual_time": "Tiempo real",
+    "due_date": "Fecha límite",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "no_tasks": "No hay tareas",
+    "focus": "Concentrarse",
+    "template_save": "Guardar como plantilla"
+  },
+  "ai": {
+    "optimize": "Optimizar con IA",
+    "optimizing": "Optimizando...",
+    "replan": "Replanificar",
+    "insights": "Estadísticas",
+    "provider_cloud": "Claude AI",
+    "provider_local": "IA local",
+    "overrun_message": "La tarea ha superado el tiempo",
+    "briefing_dismiss": "Cerrar"
+  },
+  "auth": {
+    "login": "Iniciar sesión",
+    "logout": "Cerrar sesión",
+    "register": "Crear cuenta",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "name": "Nombre",
+    "login_error": "Correo o contraseña incorrectos"
+  },
+  "subscription": {
+    "title": "Planes",
+    "free": "Gratis",
+    "personal_pro": "Personal Pro",
+    "business": "Business",
+    "enterprise": "Enterprise",
+    "upgrade": "Mejorar",
+    "current_plan": "Plan actual",
+    "personal_tab": "Personal",
+    "corporate_tab": "Corporativo"
+  },
+  "settings": {
+    "title": "Configuración",
+    "theme": "Tema",
+    "theme_light": "Claro",
+    "theme_dark": "Oscuro",
+    "theme_system": "Sistema",
+    "accent_color": "Color de acento",
+    "language": "Idioma",
+    "pomodoro": "Pomodoro",
+    "pomodoro_work": "Duración de trabajo (min)",
+    "pomodoro_break": "Duración de descanso (min)",
+    "pomodoro_long_break": "Descanso largo (min)",
+    "pomodoro_sound": "Sonido de alarma",
+    "notifications": "Notificaciones",
+    "daily_briefing": "Resumen diario",
+    "briefing_time": "Hora de notificación",
+    "display": "Visualización",
+    "task_density": "Densidad de tareas",
+    "density_compact": "Compacto",
+    "density_normal": "Normal",
+    "density_comfortable": "Cómodo",
+    "default_view": "Vista predeterminada"
+  },
+  "stats": {
+    "streak": "Racha",
+    "streak_days": "{{count}} días",
+    "streak_start": "Empieza hoy",
+    "weekly": "Esta semana",
+    "monthly": "Este mes",
+    "completion_rate": "{{rate}}% completado",
+    "time_accuracy": "Precisión de tiempo",
+    "total_completed": "Total completado",
+    "total_tasks": "{{count}} tareas"
+  },
+  "offline": {
+    "banner": "Sin conexión — mostrando datos en caché",
+    "back_online": "Conexión restaurada"
+  },
+  "common": {
+    "loading": "Cargando...",
+    "error": "Ocurrió un error",
+    "retry": "Reintentar",
+    "close": "Cerrar",
+    "confirm": "Confirmar",
+    "minutes": "min",
+    "hours": "h"
+  }
+}

@@ -2,36 +2,36 @@ import React from "react";
 import { usePlan } from "../../hooks/usePlan";
 import Button from "./Button";
 
-type RequiredPlan = "pro" | "team";
+type RequiredPlan = "pro" | "team" | "personal_pro" | "business" | "enterprise";
 
 interface ProFeatureGateProps {
   children: React.ReactNode;
-  /** Minimum plan required to access the wrapped feature */
   requiredPlan: RequiredPlan;
-  /** Optional custom fallback UI. Defaults to an upgrade-prompt card. */
   fallback?: React.ReactNode;
 }
 
 const PLAN_LABEL: Record<RequiredPlan, string> = {
   pro: "Pro",
   team: "Team",
+  personal_pro: "Personal Pro",
+  business: "Business",
+  enterprise: "Enterprise",
 };
 
 const PLAN_PRICE: Record<RequiredPlan, string> = {
   pro: "¥980/月",
   team: "¥2,980/月",
+  personal_pro: "¥980/月",
+  business: "¥4,980/月",
+  enterprise: "¥19,800/月",
 };
 
-/**
- * Checks whether the user's current plan satisfies the requirement.
- * team > pro > free
- */
 function hasSufficientPlan(
-  currentPlan: "free" | "pro" | "team",
+  currentPlan: string,
   required: RequiredPlan
 ): boolean {
-  const rank: Record<string, number> = { free: 0, pro: 1, team: 2 };
-  return rank[currentPlan] >= rank[required];
+  const rank: Record<string, number> = { free: 0, pro: 1, personal_pro: 1, team: 2, business: 2, enterprise: 3 };
+  return (rank[currentPlan] ?? 0) >= (rank[required] ?? 99);
 }
 
 /**

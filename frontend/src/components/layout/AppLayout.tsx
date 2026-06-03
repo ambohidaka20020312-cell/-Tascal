@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../../store/authStore";
 import { usePlan } from "../../hooks/usePlan";
 import { useViewport } from "../../hooks/useViewport";
@@ -8,7 +9,7 @@ import AdScript from "../ads/AdScript";
 import TaskForm from "../tasks/TaskForm";
 import FocusOverlay from "../focus/FocusOverlay";
 import { useFocusStore } from "../../store/focusStore";
-import QuickToggleBar from "../common/QuickToggleBar";
+import LanguageSwitcher from "../common/LanguageSwitcher";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -61,15 +62,6 @@ function PlansIcon({ active }: { active: boolean }) {
   );
 }
 
-function SettingsIcon({ active }: { active: boolean }) {
-  return (
-    <svg className={`w-6 h-6 ${active ? "text-primary-600" : "text-gray-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-  );
-}
-
 function ProfileIcon({ active }: { active: boolean }) {
   return (
     <svg className={`w-6 h-6 ${active ? "text-primary-600" : "text-gray-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -86,14 +78,8 @@ function LogoIcon() {
   );
 }
 
-const SIDEBAR_NAV = [
-  { label: "ダッシュボード", to: "/", Icon: HomeIcon },
-  { label: "カレンダー", to: "/calendar", Icon: CalendarIcon },
-  { label: "プラン", to: "/plans", Icon: PlansIcon },
-  { label: "設定", to: "/settings", Icon: SettingsIcon },
-];
-
 export default function AppLayout({ children }: AppLayoutProps) {
+  const { t } = useTranslation();
   const focusActive = useFocusStore((s) => s.isActive);
   const { user, logout } = useAuthStore();
   const { plan, isFree } = usePlan();
@@ -116,6 +102,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const isActive = (to: string) =>
     to === "/" ? pathname === "/" : pathname.startsWith(to);
+
+  const SIDEBAR_NAV = [
+    { label: t('nav.today'), to: "/", Icon: HomeIcon },
+    { label: t('nav.calendar'), to: "/calendar", Icon: CalendarIcon },
+    { label: t('subscription.title'), to: "/plans", Icon: PlansIcon },
+  ];
 
   return (
     <>
@@ -186,13 +178,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     "w-full rounded-lg border border-gray-200 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100",
                     !(isDesktop || isUltrawide) ? "px-1" : "px-3",
                   ].join(" ")}
-                  title={!(isDesktop || isUltrawide) ? "ログアウト" : undefined}
+                  title={!(isDesktop || isUltrawide) ? t('auth.logout') : undefined}
                 >
                   {!(isDesktop || isUltrawide) ? (
                     <svg className="w-4 h-4 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                     </svg>
-                  ) : "ログアウト"}
+                  ) : t('auth.logout')}
                 </button>
               </div>
             )}
@@ -219,6 +211,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   </Link>
                   {user && (
                     <div className="flex items-center gap-2">
+                      <LanguageSwitcher />
                       <PlanBadge plan={plan} />
                     </div>
                   )}
@@ -290,7 +283,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               ].join(" ")}
             >
               <HomeIcon active={isActive("/")} />
-              <span className={`font-medium ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>ホーム</span>
+              <span className={`font-medium ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>{t('nav.today')}</span>
             </Link>
 
             {/* Calendar */}
@@ -302,21 +295,21 @@ export default function AppLayout({ children }: AppLayoutProps) {
               ].join(" ")}
             >
               <CalendarIcon active={isActive("/calendar")} />
-              <span className={`font-medium ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>カレンダー</span>
+              <span className={`font-medium ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>{t('nav.calendar')}</span>
             </Link>
 
             {/* Add task FAB */}
             <button
               onClick={() => setShowAddTask(true)}
               className="flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5"
-              aria-label="タスク追加"
+              aria-label={t('task.add')}
             >
               <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center shadow-md -mt-4">
                 <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
                 </svg>
               </div>
-              <span className={`font-medium text-gray-400 mt-1 ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>追加</span>
+              <span className={`font-medium text-gray-400 mt-1 ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>{t('task.add')}</span>
             </button>
 
             {/* Plans */}
@@ -328,20 +321,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
               ].join(" ")}
             >
               <PlansIcon active={isActive("/plans")} />
-              <span className={`font-medium ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>プラン</span>
+              <span className={`font-medium ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>{t('subscription.title')}</span>
             </Link>
 
-            {/* Settings */}
-            <Link
-              to="/settings"
-              className={[
-                "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
-                isActive("/settings") ? "text-primary-600" : "text-gray-400",
-              ].join(" ")}
+            {/* Profile / Logout */}
+            <button
+              onClick={logout}
+              className="flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 text-gray-400"
             >
-              <SettingsIcon active={isActive("/settings")} />
-              <span className={`font-medium ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>設定</span>
-            </Link>
+              <ProfileIcon active={false} />
+              <span className={`font-medium ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>{t('auth.logout')}</span>
+            </button>
           </div>
         </nav>
       )}
@@ -355,8 +345,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
       )}
 
       {focusActive && <FocusOverlay />}
-
-      <QuickToggleBar />
     </>
   );
 }

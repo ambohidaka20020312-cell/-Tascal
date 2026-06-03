@@ -2,7 +2,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { billingApi } from "../utils/api";
 
 export interface Subscription {
-  plan: "free" | "pro" | "team";
+  plan: "free" | "pro" | "team" | "personal_pro" | "business" | "enterprise";
   status: string;
   current_period_end?: string;
   cancel_at_period_end?: boolean;
@@ -21,7 +21,7 @@ export function useSubscription() {
 
 export function useCheckout() {
   return useMutation({
-    mutationFn: async (plan: "pro" | "team") => {
+    mutationFn: async (plan: "pro" | "team" | "personal_pro" | "business" | "enterprise") => {
       const successUrl = `${window.location.origin}/subscription?success=true`;
       const cancelUrl = `${window.location.origin}/subscription?canceled=true`;
       const res = await billingApi.createCheckout(plan, successUrl, cancelUrl);

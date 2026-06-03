@@ -4,7 +4,7 @@ interface User {
   id: number;
   email: string;
   name: string;
-  plan: "free" | "pro" | "team";
+  plan: "free" | "pro" | "team" | "personal_pro" | "business" | "enterprise";
 }
 
 interface AuthState {

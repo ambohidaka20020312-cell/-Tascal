@@ -1,14 +1,27 @@
 import { useRef, useState } from 'react'
 
+type SpeechRecognitionType = {
+  new(): SpeechRecognitionInstance
+}
+type SpeechRecognitionInstance = {
+  lang: string
+  interimResults: boolean
+  continuous: boolean
+  onresult: ((event: { results: { [k: number]: { [k: number]: { transcript: string } } } }) => void) | null
+  onerror: (() => void) | null
+  onend: (() => void) | null
+  start(): void
+  stop(): void
+}
 declare global {
   interface Window {
-    SpeechRecognition: typeof SpeechRecognition
-    webkitSpeechRecognition: typeof SpeechRecognition
+    SpeechRecognition: SpeechRecognitionType
+    webkitSpeechRecognition: SpeechRecognitionType
   }
 }
 
 export function useSpeechInput(onResult: (text: string) => void) {
-  const recognitionRef = useRef<SpeechRecognition | null>(null)
+  const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const [isListening, setIsListening] = useState(false)
 
   const SpeechRecognitionAPI =
@@ -25,7 +38,7 @@ export function useSpeechInput(onResult: (text: string) => void) {
     recognition.interimResults = false
     recognition.continuous = false
 
-    recognition.onresult = (event: SpeechRecognitionEvent) => {
+    recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript
       onResult(transcript)
       setIsListening(false)
