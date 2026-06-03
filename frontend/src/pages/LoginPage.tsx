@@ -130,6 +130,12 @@ export default function LoginPage() {
                 {t("auth.register")}
               </Link>
             </p>
+
+            <div className="flex flex-wrap gap-4 mt-8 pt-6 border-t border-[var(--border)] text-xs text-[var(--text-subtle)]">
+              <Link to="/privacy" className="hover:text-[var(--text-muted)]">プライバシーポリシー</Link>
+              <Link to="/terms" className="hover:text-[var(--text-muted)]">利用規約</Link>
+              <Link to="/cookies" className="hover:text-[var(--text-muted)]">Cookie設定</Link>
+            </div>
           </div>
         </div>
       </div>

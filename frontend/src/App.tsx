@@ -9,6 +9,9 @@ import CalendarPage from "./pages/CalendarPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import InsightsPage from "./pages/InsightsPage";
 import SettingsPage from "./pages/SettingsPage";
+import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/legal/TermsOfServicePage";
+import CookiePolicyPage from "./pages/legal/CookiePolicyPage";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -21,6 +24,9 @@ export default function App() {
       {/* 認証不要ページ — AppLayoutなし */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsOfServicePage />} />
+      <Route path="/cookies" element={<CookiePolicyPage />} />
 
       {/* 認証必要ページ — AppLayoutでラップ */}
       <Route

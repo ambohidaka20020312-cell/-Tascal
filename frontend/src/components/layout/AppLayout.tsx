@@ -245,6 +245,11 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     <p className="text-xs text-[var(--text-subtle)] tracking-wide">
                       &copy; {new Date().getFullYear()} Tascal. All rights reserved.
                     </p>
+                    <div className="flex flex-wrap gap-4 text-xs text-[var(--text-subtle)]">
+                      <Link to="/privacy" className="hover:text-[var(--text-muted)]">プライバシーポリシー</Link>
+                      <Link to="/terms" className="hover:text-[var(--text-muted)]">利用規約</Link>
+                      <Link to="/cookies" className="hover:text-[var(--text-muted)]">Cookie設定</Link>
+                    </div>
                     {isFree && (
                       <p className="text-xs text-[var(--text-subtle)]">
                         広告を非表示にするには{" "}

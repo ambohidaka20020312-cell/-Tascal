@@ -138,6 +138,12 @@ export default function RegisterPage() {
             ログイン
           </Link>
         </p>
+
+        <div className="flex flex-wrap justify-center gap-4 mt-6 pt-6 border-t border-gray-100 text-xs text-gray-400">
+          <Link to="/privacy" className="hover:text-gray-600">プライバシーポリシー</Link>
+          <Link to="/terms" className="hover:text-gray-600">利用規約</Link>
+          <Link to="/cookies" className="hover:text-gray-600">Cookie設定</Link>
+        </div>
       </div>
     </div>
   );
