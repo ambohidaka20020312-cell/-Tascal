@@ -3,13 +3,12 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 import { usePlan } from "../../hooks/usePlan";
 import { useViewport } from "../../hooks/useViewport";
-import { useOfflineSync } from "../../hooks/useOfflineSync";
 import AdBanner from "../ads/AdBanner";
 import AdScript from "../ads/AdScript";
 import TaskForm from "../tasks/TaskForm";
 import FocusOverlay from "../focus/FocusOverlay";
-import OfflineBanner from "../common/OfflineBanner";
 import { useFocusStore } from "../../store/focusStore";
+import QuickToggleBar from "../common/QuickToggleBar";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -62,6 +61,15 @@ function PlansIcon({ active }: { active: boolean }) {
   );
 }
 
+function SettingsIcon({ active }: { active: boolean }) {
+  return (
+    <svg className={`w-6 h-6 ${active ? "text-primary-600" : "text-gray-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
+}
+
 function ProfileIcon({ active }: { active: boolean }) {
   return (
     <svg className={`w-6 h-6 ${active ? "text-primary-600" : "text-gray-400"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -82,10 +90,10 @@ const SIDEBAR_NAV = [
   { label: "ダッシュボード", to: "/", Icon: HomeIcon },
   { label: "カレンダー", to: "/calendar", Icon: CalendarIcon },
   { label: "プラン", to: "/plans", Icon: PlansIcon },
+  { label: "設定", to: "/settings", Icon: SettingsIcon },
 ];
 
 export default function AppLayout({ children }: AppLayoutProps) {
-  useOfflineSync();
   const focusActive = useFocusStore((s) => s.isActive);
   const { user, logout } = useAuthStore();
   const { plan, isFree } = usePlan();
@@ -111,7 +119,6 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <>
-      <OfflineBanner />
       <AdScript />
 
       <div
@@ -324,14 +331,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <span className={`font-medium ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>プラン</span>
             </Link>
 
-            {/* Profile / Logout */}
-            <button
-              onClick={logout}
-              className="flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 text-gray-400"
+            {/* Settings */}
+            <Link
+              to="/settings"
+              className={[
+                "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
+                isActive("/settings") ? "text-primary-600" : "text-gray-400",
+              ].join(" ")}
             >
-              <ProfileIcon active={false} />
-              <span className={`font-medium ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>ログアウト</span>
-            </button>
+              <SettingsIcon active={isActive("/settings")} />
+              <span className={`font-medium ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>設定</span>
+            </Link>
           </div>
         </nav>
       )}
@@ -345,6 +355,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
       )}
 
       {focusActive && <FocusOverlay />}
+
+      <QuickToggleBar />
     </>
   );
 }
