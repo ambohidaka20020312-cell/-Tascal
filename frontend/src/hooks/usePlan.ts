@@ -8,19 +8,31 @@ export function usePlan() {
   const user = useAuthStore((state) => state.user);
   const plan = user?.plan ?? "free";
 
+  const isPersonalPro = plan === "personal_pro";
+  const isBusiness = plan === "business";
+  const isEnterprise = plan === "enterprise";
+  const isOrgPlan = isBusiness || isEnterprise;
+  const isPaid = plan !== "free";
+
   return {
     plan,
     isFree: plan === "free",
-    isPro: plan === "pro",
-    isTeam: plan === "team",
-    isPaid: plan === "pro" || plan === "team",
+    // Legacy aliases kept for backwards compatibility
+    isPro: isPersonalPro,
+    isTeam: isBusiness,
+    // New plan flags
+    isPersonalPro,
+    isBusiness,
+    isEnterprise,
+    isOrgPlan,
+    isPaid,
   };
 }
 
 /**
  * Returns whether the user can use AI optimization.
  * Free plan: limited to FREE_AI_LIMIT_PER_DAY uses per day.
- * Pro/Team: unlimited.
+ * Paid plans: unlimited.
  *
  * Usage count tracking is stored in localStorage keyed by today's date.
  */
@@ -60,7 +72,7 @@ export function useCanUseAI(): {
 /**
  * Returns whether the user can create more tasks.
  * Free plan: limited to FREE_TASK_LIMIT_PER_MONTH tasks per month.
- * Pro/Team: unlimited.
+ * Paid plans: unlimited.
  *
  * taskCount should be provided from the task store / API response.
  */

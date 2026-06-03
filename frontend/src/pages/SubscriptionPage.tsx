@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { useSubscription, useCheckout, usePortal } from "../hooks/useBilling";
@@ -11,16 +11,17 @@ interface PlanFeature {
 }
 
 interface PlanConfig {
-  id: "free" | "pro" | "team";
+  id: "free" | "personal_pro" | "business" | "enterprise";
   name: string;
   price: string;
   priceNote: string;
   features: PlanFeature[];
   highlighted: boolean;
   badgeText?: string;
+  enterpriseContact?: boolean;
 }
 
-const plans: PlanConfig[] = [
+const personalPlans: PlanConfig[] = [
   {
     id: "free",
     name: "Free",
@@ -32,15 +33,14 @@ const plans: PlanConfig[] = [
       { text: "AI最適化 3回/日", included: true },
       { text: "カレンダービュー", included: true },
       { text: "広告表示あり", included: true },
-      { text: "無制限タスク", included: false },
+      { text: "タスク 無制限", included: false },
       { text: "AI最適化 無制限", included: false },
-      { text: "高度な分析", included: false },
-      { text: "チーム共有", included: false },
+      { text: "週次インサイト", included: false },
     ],
   },
   {
-    id: "pro",
-    name: "Pro",
+    id: "personal_pro",
+    name: "Personal Pro",
     price: "¥980",
     priceNote: "/ 月",
     highlighted: true,
@@ -50,28 +50,46 @@ const plans: PlanConfig[] = [
       { text: "AI最適化 無制限", included: true },
       { text: "カレンダービュー", included: true },
       { text: "広告非表示", included: true },
-      { text: "高度な分析", included: true },
+      { text: "週次インサイト", included: true },
       { text: "優先サポート", included: true },
-      { text: "チーム共有", included: false },
-      { text: "メンバー管理", included: false },
+    ],
+  },
+];
+
+const businessPlans: PlanConfig[] = [
+  {
+    id: "business",
+    name: "Business",
+    price: "¥4,980",
+    priceNote: "/ 月",
+    highlighted: true,
+    badgeText: "法人向け",
+    features: [
+      { text: "最大10名まで利用可能", included: true },
+      { text: "部署管理", included: true },
+      { text: "AIタスク振り分け", included: true },
+      { text: "ローカルLLM対応", included: true },
+      { text: "タスク 無制限", included: true },
+      { text: "AI最適化 無制限", included: true },
+      { text: "広告非表示", included: true },
     ],
   },
   {
-    id: "team",
-    name: "Team",
-    price: "¥2,980",
+    id: "enterprise",
+    name: "Enterprise",
+    price: "¥19,800〜",
     priceNote: "/ 月",
     highlighted: false,
-    badgeText: "チーム向け",
+    badgeText: "大規模向け",
+    enterpriseContact: true,
     features: [
-      { text: "タスク 無制限", included: true },
-      { text: "AI最適化 無制限", included: true },
-      { text: "カレンダービュー", included: true },
-      { text: "広告非表示", included: true },
-      { text: "高度な分析", included: true },
-      { text: "優先サポート", included: true },
-      { text: "チーム共有（最大5名）", included: true },
-      { text: "メンバー管理", included: true },
+      { text: "メンバー数 無制限", included: true },
+      { text: "SSO対応", included: true },
+      { text: "専用サポート", included: true },
+      { text: "カスタムAIモデル", included: true },
+      { text: "部署管理", included: true },
+      { text: "AIタスク振り分け", included: true },
+      { text: "ローカルLLM対応", included: true },
     ],
   },
 ];
@@ -106,8 +124,11 @@ function XIcon({ className }: { className?: string }) {
   );
 }
 
+type TabKey = "personal" | "business";
+
 export default function SubscriptionPage() {
   const [searchParams] = useSearchParams();
+  const [activeTab, setActiveTab] = useState<TabKey>("personal");
   const user = useAuthStore((s) => s.user);
   const { data: subscription, isLoading } = useSubscription();
   const checkout = useCheckout();
@@ -121,7 +142,6 @@ export default function SubscriptionPage() {
 
   useEffect(() => {
     if (successParam === "true") {
-      // Optionally show a success toast — for now a simple alert
       alert("プランのアップグレードが完了しました！");
     }
     if (canceledParam === "true") {
@@ -129,13 +149,22 @@ export default function SubscriptionPage() {
     }
   }, [successParam, canceledParam]);
 
-  function handleUpgrade(planId: "pro" | "team") {
+  // Auto-select tab based on current plan
+  useEffect(() => {
+    if (currentPlan === "business" || currentPlan === "enterprise") {
+      setActiveTab("business");
+    }
+  }, [currentPlan]);
+
+  function handleUpgrade(planId: "personal_pro" | "business" | "enterprise") {
     checkout.mutate(planId);
   }
 
   function handlePortal() {
     portal.mutate();
   }
+
+  const plans = activeTab === "personal" ? personalPlans : businessPlans;
 
   const cardBorderClass = (plan: PlanConfig) => {
     if (plan.id === currentPlan)
@@ -146,7 +175,7 @@ export default function SubscriptionPage() {
 
   return (
     <div className="bg-gray-50 py-8 sm:py-12 px-4 mb-16 md:mb-0">
-      <div className="mx-auto max-w-5xl">
+      <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="mb-8 sm:mb-10 text-center">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">料金プラン</h1>
@@ -159,7 +188,7 @@ export default function SubscriptionPage() {
           {!isLoading && (
             <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-sm border border-gray-200 text-sm text-gray-600">
               現在のプラン:
-              <PlanBadge plan={currentPlan} />
+              <PlanBadge plan={currentPlan as "free" | "personal_pro" | "business" | "enterprise"} />
               {currentPlan !== "free" && (
                 <span className="ml-1 text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
                   ご利用中
@@ -169,13 +198,38 @@ export default function SubscriptionPage() {
           )}
         </div>
 
-        {/* Plan cards — 1 column mobile, 3 columns md+ */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-3 md:gap-8">
+        {/* Tab switcher */}
+        <div className="mb-8 flex justify-center">
+          <div className="inline-flex rounded-xl bg-white border border-gray-200 shadow-sm p-1 gap-1">
+            <button
+              onClick={() => setActiveTab("personal")}
+              className={[
+                "px-5 py-2 rounded-lg text-sm font-semibold transition-colors",
+                activeTab === "personal"
+                  ? "bg-indigo-600 text-white shadow"
+                  : "text-gray-600 hover:text-gray-900",
+              ].join(" ")}
+            >
+              個人向け
+            </button>
+            <button
+              onClick={() => setActiveTab("business")}
+              className={[
+                "px-5 py-2 rounded-lg text-sm font-semibold transition-colors",
+                activeTab === "business"
+                  ? "bg-indigo-600 text-white shadow"
+                  : "text-gray-600 hover:text-gray-900",
+              ].join(" ")}
+            >
+              法人向け
+            </button>
+          </div>
+        </div>
+
+        {/* Plan cards — 1 column mobile, 2 columns md+ */}
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8">
           {plans.map((plan) => {
             const isCurrent = plan.id === currentPlan;
-            const isDowngrade =
-              (currentPlan === "team" && plan.id !== "team") ||
-              (currentPlan === "pro" && plan.id === "free");
 
             return (
               <div
@@ -206,7 +260,9 @@ export default function SubscriptionPage() {
                     <h2 className="text-xl font-bold text-gray-900">
                       {plan.name}
                     </h2>
-                    {isCurrent && <PlanBadge plan={plan.id} />}
+                    {isCurrent && (
+                      <PlanBadge plan={plan.id as "free" | "personal_pro" | "business" | "enterprise"} />
+                    )}
                   </div>
                   <div className="mt-3 flex items-end gap-1">
                     <span className="text-4xl font-extrabold text-gray-900">
@@ -247,29 +303,35 @@ export default function SubscriptionPage() {
                     現在のプラン
                   </Button>
                 ) : plan.id === "free" ? (
-                  <Button
-                    variant="secondary"
-                    size="lg"
-                    disabled={isDowngrade}
-                    className="w-full"
-                  >
-                    {isDowngrade ? "ダウングレード不可" : "選択中"}
+                  <Button variant="secondary" size="lg" disabled className="w-full">
+                    選択中
                   </Button>
+                ) : plan.enterpriseContact ? (
+                  <a
+                    href="mailto:enterprise@tascal.app"
+                    className="block w-full text-center rounded-lg px-4 py-3 text-sm font-semibold bg-purple-600 hover:bg-purple-700 text-white transition-colors"
+                  >
+                    お問い合わせ
+                  </a>
                 ) : (
                   <Button
                     variant="primary"
                     size="lg"
                     loading={checkout.isPending}
-                    disabled={isDowngrade || checkout.isPending}
+                    disabled={checkout.isPending}
                     className={[
                       "w-full",
                       plan.highlighted
                         ? "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500"
-                        : "bg-yellow-500 hover:bg-yellow-600 focus:ring-yellow-500",
+                        : "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500",
                     ].join(" ")}
-                    onClick={() => handleUpgrade(plan.id as "pro" | "team")}
+                    onClick={() =>
+                      handleUpgrade(
+                        plan.id as "personal_pro" | "business" | "enterprise"
+                      )
+                    }
                   >
-                    {isDowngrade ? "ダウングレード不可" : "アップグレード"}
+                    今すぐ始める
                   </Button>
                 )}
               </div>
