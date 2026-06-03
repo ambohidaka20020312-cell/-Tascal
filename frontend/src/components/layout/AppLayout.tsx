@@ -96,6 +96,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { label: t('nav.today'), to: "/", Icon: HomeIcon },
     { label: t('nav.calendar'), to: "/calendar", Icon: CalendarIcon },
     { label: t('subscription.title'), to: "/plans", Icon: PlansIcon },
+    { label: "アカウント", to: "/account", Icon: ProfileIcon },
   ];
 
   return (
@@ -318,14 +319,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>{t('subscription.title')}</span>
             </Link>
 
-            {/* Profile / Logout */}
-            <button
-              onClick={logout}
-              className="flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 text-[var(--text-subtle)]"
+            {/* Account */}
+            <Link
+              to="/account"
+              className={[
+                "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
+                isActive("/account") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
+              ].join(" ")}
             >
-              <ProfileIcon active={false} />
-              <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>{t('auth.logout')}</span>
-            </button>
+              <ProfileIcon active={isActive("/account")} />
+              <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>アカウント</span>
+            </Link>
           </div>
         </nav>
       )}

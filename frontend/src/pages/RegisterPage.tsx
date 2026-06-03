@@ -2,12 +2,15 @@ import { useState, FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import api from "../utils/api";
 import { useAuthStore } from "../store/authStore";
+import Button from "../components/common/Button";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
+  const [ageConfirmed, setAgeConfirmed] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -26,9 +29,18 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!ageConfirmed) {
+      setError("13歳以上（EU/EEAは16歳以上）であることを確認してください");
+      return;
+    }
+    if (!termsAccepted) {
+      setError("利用規約とプライバシーポリシーへの同意が必要です");
+      return;
+    }
+
     setLoading(true);
     try {
-      const res = await api.post("/auth/register", { name, email, password });
+      const res = await api.post("/auth/register", { name, email, password, age_confirmed: true });
       const { access_token, refresh_token, user } = res.data.data ?? res.data;
       localStorage.setItem("access_token", access_token);
       localStorage.setItem("refresh_token", refresh_token);
@@ -45,127 +57,132 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex bg-[var(--bg-primary)]">
-      {/* Left brand panel — hidden on mobile */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12 bg-[var(--bg-secondary)] border-r border-[var(--border)]">
-        <span className="text-xs tracking-[0.3em] uppercase text-[var(--text-subtle)]">TASCAL</span>
-        <div>
-          <h1 className="text-5xl font-extralight tracking-[0.15em] text-[var(--text-primary)] leading-tight mb-4">
-            はじめましょう。<br />新しい1日を。
-          </h1>
-          <p className="text-sm text-[var(--text-muted)] tracking-wide leading-relaxed max-w-xs">
-            AIがあなたの1日を最適化し、<br />本当に大切なことに集中できる環境を作ります。
-          </p>
-        </div>
-        <ul className="space-y-3">
-          {[
-            "無料でAIタスク最適化を体験",
-            "毎朝AIが今日の最適プランを提案",
-            "タスク超過をリアルタイムで検知・再計画",
-          ].map((item) => (
-            <li key={item} className="flex items-center gap-2 text-xs text-[var(--text-subtle)] tracking-wide">
-              <span className="w-1 h-1 rounded-full bg-[var(--text-subtle)] shrink-0" />
-              {item}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Right form panel */}
-      <div className="flex-1 flex flex-col">
-        <div className="flex items-center px-8 pt-8">
-          <span className="lg:hidden text-sm font-semibold tracking-[0.2em] uppercase text-[var(--text-primary)]">TASCAL</span>
-        </div>
-
-        <div className="flex-1 flex items-center justify-center px-8 py-12">
-          <div className="w-full max-w-sm">
-            <h2 className="text-2xl font-light tracking-wide text-[var(--text-primary)] mb-1">
-              アカウント作成
-            </h2>
-            <p className="text-xs text-[var(--text-muted)] tracking-wider mb-10">
-              無料で始めるAIタスク管理
-            </p>
-
-            {error && (
-              <p className="text-xs text-[var(--text-muted)] border-l-2 border-[var(--border)] pl-3 mb-6 tracking-wide">
-                {error}
-              </p>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-8">
-              <div>
-                <label className="block text-[10px] tracking-[0.2em] uppercase text-[var(--text-subtle)] mb-3">
-                  お名前
-                </label>
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="山田 太郎"
-                  required
-                  className="w-full border-0 border-b border-[var(--border)] bg-transparent pb-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] focus:outline-none focus:border-[var(--text-primary)] transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] tracking-[0.2em] uppercase text-[var(--text-subtle)] mb-3">
-                  メールアドレス
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  required
-                  className="w-full border-0 border-b border-[var(--border)] bg-transparent pb-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] focus:outline-none focus:border-[var(--text-primary)] transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] tracking-[0.2em] uppercase text-[var(--text-subtle)] mb-3">
-                  パスワード
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="8文字以上"
-                  required
-                  className="w-full border-0 border-b border-[var(--border)] bg-transparent pb-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] focus:outline-none focus:border-[var(--text-primary)] transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[10px] tracking-[0.2em] uppercase text-[var(--text-subtle)] mb-3">
-                  パスワード（確認）
-                </label>
-                <input
-                  type="password"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  className="w-full border-0 border-b border-[var(--border)] bg-transparent pb-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] focus:outline-none focus:border-[var(--text-primary)] transition-colors"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full h-11 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.2em] uppercase rounded-lg hover:opacity-80 transition-opacity disabled:opacity-40"
-              >
-                {loading ? "..." : "アカウント作成"}
-              </button>
-            </form>
-
-            <p className="text-xs text-[var(--text-subtle)] mt-8 tracking-wide">
-              すでにアカウントをお持ちの方は{" "}
-              <Link to="/login" className="text-[var(--text-primary)] hover:underline">
-                ログイン
-              </Link>
-            </p>
+    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-primary-500 rounded-2xl mb-3">
+            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
           </div>
+          <h1 className="text-2xl font-bold text-gray-800">Tascalに登録</h1>
+          <p className="text-gray-500 text-sm mt-1">無料で始めるAIタスク管理</p>
         </div>
+
+        {error && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              お名前
+            </label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="山田 太郎"
+              required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              メールアドレス
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@example.com"
+              required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              パスワード
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="8文字以上"
+              required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              パスワード（確認）
+            </label>
+            <input
+              type="password"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              placeholder="••••••••"
+              required
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            />
+          </div>
+
+          {/* Age confirmation */}
+          <label className="flex items-start gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={ageConfirmed}
+              onChange={(e) => setAgeConfirmed(e.target.checked)}
+              className="mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <span className="text-sm text-gray-600">
+              私は13歳以上です（EU/EEA在住の方は16歳以上）
+            </span>
+          </label>
+
+          {/* Terms & Privacy */}
+          <label className="flex items-start gap-2 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              checked={termsAccepted}
+              onChange={(e) => setTermsAccepted(e.target.checked)}
+              className="mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <span className="text-sm text-gray-600">
+              <Link to="/terms" className="text-primary-600 hover:underline">
+                利用規約
+              </Link>
+              {" "}と{" "}
+              <Link to="/privacy" className="text-primary-600 hover:underline">
+                プライバシーポリシー
+              </Link>
+              に同意します（必須）
+            </span>
+          </label>
+
+          <Button
+            type="submit"
+            variant="primary"
+            size="lg"
+            className="w-full mt-2"
+            loading={loading}
+            disabled={!ageConfirmed || !termsAccepted}
+          >
+            アカウント作成
+          </Button>
+        </form>
+
+        <p className="text-center text-sm text-gray-500 mt-6">
+          すでにアカウントをお持ちの方は{" "}
+          <Link to="/login" className="text-primary-600 hover:underline font-medium">
+            ログイン
+          </Link>
+        </p>
       </div>
     </div>
   );

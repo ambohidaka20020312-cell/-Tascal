@@ -12,9 +12,10 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     plan = db.Column(db.String(20), nullable=False, default="free")
     stripe_customer_id = db.Column(db.String(100), unique=True, nullable=True)
+    analytics_opt_out = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
-    tasks = db.relationship("Task", foreign_keys="Task.user_id", backref="user", lazy="dynamic")
+    tasks = db.relationship("Task", backref="user", lazy="dynamic")
 
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)

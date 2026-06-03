@@ -20,6 +20,14 @@ class BaseConfig:
     STRIPE_PRICE_ID_ENTERPRISE = os.getenv("STRIPE_PRICE_ID_ENTERPRISE")
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
+    # Mail settings (Flask-Mail)
+    MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.sendgrid.net")
+    MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
+    MAIL_USE_TLS = True
+    MAIL_USERNAME = os.getenv("MAIL_USERNAME", "apikey")
+    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD", "")
+    MAIL_DEFAULT_SENDER = os.getenv("MAIL_DEFAULT_SENDER", "noreply@tascal.app")
+
 
 class DevelopmentConfig(BaseConfig):
     DEBUG = True
