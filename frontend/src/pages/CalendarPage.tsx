@@ -115,20 +115,18 @@ export default function CalendarPage() {
   };
 
   return (
-    <div className="bg-gray-50 p-4 md:p-8 mb-16 md:mb-0">
+    <div className="bg-[var(--bg-primary)] p-4 md:p-8 mb-16 md:mb-0">
       <div className="max-w-6xl mx-auto space-y-4">
         {/* Page header */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">カレンダー</h1>
-          <p className="text-sm text-gray-500 mt-0.5 hidden sm:block">日付をクリックしてタスクを追加、タスクをクリックして詳細を確認</p>
-          <p className="text-sm text-gray-500 mt-0.5 sm:hidden">日付をタップしてタスクを追加</p>
+          <p className="text-[10px] tracking-[0.25em] uppercase text-[var(--text-subtle)] mb-1">CALENDAR</p>
+          <h1 className="text-2xl font-light tracking-wide text-[var(--text-primary)]">カレンダー</h1>
+          <p className="text-xs text-[var(--text-subtle)] mt-0.5 tracking-wide hidden sm:block">日付をクリックしてタスクを追加、タスクをクリックして詳細を確認</p>
+          <p className="text-xs text-[var(--text-subtle)] mt-0.5 tracking-wide sm:hidden">日付をタップしてタスクを追加</p>
         </div>
 
-        {/* Calendar
-            Mobile: listWeek (list view is more touch-friendly)
-            Tablet+: dayGridMonth
-        */}
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-2 sm:p-4 overflow-hidden">
+        {/* Calendar */}
+        <div className="border border-[var(--border)] rounded-xl p-2 sm:p-4 overflow-hidden bg-[var(--bg-primary)]">
           <FullCalendar
             plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
             initialView="timeGridWeek"

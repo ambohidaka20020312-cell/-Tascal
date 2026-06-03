@@ -9,6 +9,10 @@ import CalendarPage from "./pages/CalendarPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import InsightsPage from "./pages/InsightsPage";
 import SettingsPage from "./pages/SettingsPage";
+import ErrorBoundary from "./components/common/ErrorBoundary";
+import ErrorPage from "./pages/ErrorPage";
+import OnboardingWizard from "./components/onboarding/OnboardingWizard";
+import { useOnboarding } from "./hooks/useOnboarding";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -16,8 +20,15 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 }
 
 export default function App() {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const { isOnboardingOpen, complete, skip } = useOnboarding(isAuthenticated());
+
   return (
-    <Routes>
+    <ErrorBoundary>
+      {isOnboardingOpen && (
+        <OnboardingWizard onComplete={complete} onSkip={skip} />
+      )}
+      <Routes>
       {/* 認証不要ページ — AppLayoutなし */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
@@ -83,7 +94,8 @@ export default function App() {
           </PrivateRoute>
         }
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<ErrorPage code={404} message="Page not found" />} />
     </Routes>
+    </ErrorBoundary>
   );
 }

@@ -166,48 +166,37 @@ export default function SubscriptionPage() {
 
   const plans = activeTab === "personal" ? personalPlans : businessPlans;
 
-  const cardBorderClass = (plan: PlanConfig) => {
-    if (plan.id === currentPlan)
-      return "border-2 border-indigo-500 ring-2 ring-indigo-200";
-    if (plan.highlighted) return "border-2 border-indigo-300";
-    return "border border-gray-200";
-  };
-
   return (
-    <div className="bg-gray-50 py-8 sm:py-12 px-4 mb-16 md:mb-0">
+    <div className="bg-[var(--bg-primary)] py-8 sm:py-12 px-4 mb-16 md:mb-0">
       <div className="mx-auto max-w-4xl">
         {/* Header */}
         <div className="mb-8 sm:mb-10 text-center">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">料金プラン</h1>
-          <p className="mt-2 text-gray-500 text-sm sm:text-base">
+          <p className="text-[10px] tracking-[0.25em] uppercase text-[var(--text-subtle)] mb-2">PRICING</p>
+          <h1 className="text-2xl sm:text-3xl font-light tracking-wide text-[var(--text-primary)]">料金プラン</h1>
+          <p className="mt-2 text-[var(--text-muted)] text-sm">
             あなたのワークフローに合ったプランを選びましょう
           </p>
           {isLoading && (
-            <p className="mt-1 text-sm text-gray-400">サブスク情報を取得中…</p>
+            <div className="mt-3 h-4 w-32 mx-auto animate-pulse bg-[var(--bg-secondary)] rounded" />
           )}
           {!isLoading && (
-            <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 shadow-sm border border-gray-200 text-sm text-gray-600">
+            <div className="mt-3 inline-flex items-center gap-2 border border-[var(--border)] rounded-full px-4 py-2 text-sm text-[var(--text-muted)]">
               現在のプラン:
               <PlanBadge plan={currentPlan as "free" | "personal_pro" | "business" | "enterprise"} />
-              {currentPlan !== "free" && (
-                <span className="ml-1 text-xs font-semibold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-200">
-                  ご利用中
-                </span>
-              )}
             </div>
           )}
         </div>
 
-        {/* Tab switcher */}
+        {/* Tab switcher — underline style */}
         <div className="mb-8 flex justify-center">
-          <div className="inline-flex rounded-xl bg-white border border-gray-200 shadow-sm p-1 gap-1">
+          <div className="inline-flex border-b border-[var(--border)]">
             <button
               onClick={() => setActiveTab("personal")}
               className={[
-                "px-5 py-2 rounded-lg text-sm font-semibold transition-colors",
+                "px-6 py-2 text-sm tracking-wide transition-colors -mb-px",
                 activeTab === "personal"
-                  ? "bg-indigo-600 text-white shadow"
-                  : "text-gray-600 hover:text-gray-900",
+                  ? "border-b-2 border-[var(--text-primary)] text-[var(--text-primary)] font-medium"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]",
               ].join(" ")}
             >
               個人向け
@@ -215,10 +204,10 @@ export default function SubscriptionPage() {
             <button
               onClick={() => setActiveTab("business")}
               className={[
-                "px-5 py-2 rounded-lg text-sm font-semibold transition-colors",
+                "px-6 py-2 text-sm tracking-wide transition-colors -mb-px",
                 activeTab === "business"
-                  ? "bg-indigo-600 text-white shadow"
-                  : "text-gray-600 hover:text-gray-900",
+                  ? "border-b-2 border-[var(--text-primary)] text-[var(--text-primary)] font-medium"
+                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]",
               ].join(" ")}
             >
               法人向け
@@ -228,143 +217,129 @@ export default function SubscriptionPage() {
 
         {/* Plan cards — 1 column mobile, 2 columns md+ */}
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8">
-          {plans.map((plan) => {
-            const isCurrent = plan.id === currentPlan;
+          {plans
+            .filter((plan) => plan.id !== "enterprise")
+            .map((plan) => {
+              const isCurrent = plan.id === currentPlan;
 
-            return (
-              <div
-                key={plan.id}
-                className={[
-                  "relative flex flex-col rounded-2xl bg-white shadow-sm p-6 sm:p-8 transition-transform hover:shadow-md",
-                  isCurrent ? "scale-[1.02]" : "hover:-translate-y-1",
-                  cardBorderClass(plan),
-                ].join(" ")}
-              >
-                {/* Badge */}
-                {plan.badgeText && (
-                  <span
-                    className={[
-                      "absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-0.5 text-xs font-semibold shadow",
-                      plan.highlighted
-                        ? "bg-indigo-600 text-white"
-                        : "bg-yellow-400 text-yellow-900",
-                    ].join(" ")}
-                  >
-                    {plan.badgeText}
-                  </span>
-                )}
-
-                {/* Plan name & price */}
-                <div className="mb-6">
-                  <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-gray-900">
-                      {plan.name}
-                    </h2>
-                    {isCurrent && (
-                      <PlanBadge plan={plan.id as "free" | "personal_pro" | "business" | "enterprise"} />
-                    )}
-                  </div>
-                  <div className="mt-3 flex items-end gap-1">
-                    <span className="text-4xl font-extrabold text-gray-900">
-                      {plan.price}
+              return (
+                <div
+                  key={plan.id}
+                  className={[
+                    "relative flex flex-col rounded-xl border border-[var(--border)] p-6 bg-[var(--bg-primary)]",
+                    isCurrent ? "ring-1 ring-[var(--text-primary)]" : "",
+                  ].join(" ")}
+                >
+                  {/* Badge */}
+                  {plan.badgeText && (
+                    <span className="absolute -top-3 left-6 text-[10px] tracking-[0.15em] uppercase text-[var(--text-subtle)] border border-[var(--border)] bg-[var(--bg-primary)] px-2 py-0.5 rounded-full">
+                      {plan.badgeText}
                     </span>
-                    <span className="mb-1 text-sm text-gray-500">
-                      {plan.priceNote}
-                    </span>
-                  </div>
-                </div>
+                  )}
 
-                {/* Features */}
-                <ul className="mb-8 flex-1 space-y-3">
-                  {plan.features.map((feature) => (
-                    <li
-                      key={feature.text}
-                      className="flex items-center gap-2 text-sm"
-                    >
-                      {feature.included ? (
-                        <CheckIcon className="h-4 w-4 flex-shrink-0 text-indigo-500" />
-                      ) : (
-                        <XIcon className="h-4 w-4 flex-shrink-0 text-gray-300" />
+                  {/* Plan name & price */}
+                  <div className="mb-6">
+                    <div className="flex items-center gap-2 mb-3">
+                      <h2 className="text-base font-medium text-[var(--text-primary)]">
+                        {plan.name}
+                      </h2>
+                      {isCurrent && (
+                        <PlanBadge plan={plan.id as "free" | "personal_pro" | "business" | "enterprise"} />
                       )}
-                      <span
-                        className={
-                          feature.included ? "text-gray-700" : "text-gray-400"
-                        }
-                      >
-                        {feature.text}
+                    </div>
+                    <div className="flex items-end gap-1">
+                      <span className="text-3xl font-light text-[var(--text-primary)]">
+                        {plan.price}
                       </span>
-                    </li>
-                  ))}
-                </ul>
+                      <span className="mb-1 text-sm text-[var(--text-muted)]">
+                        {plan.priceNote}
+                      </span>
+                    </div>
+                  </div>
 
-                {/* CTA */}
-                {isCurrent ? (
-                  <Button variant="secondary" size="lg" disabled className="w-full">
-                    現在のプラン
-                  </Button>
-                ) : plan.id === "free" ? (
-                  <Button variant="secondary" size="lg" disabled className="w-full">
-                    選択中
-                  </Button>
-                ) : plan.enterpriseContact ? (
-                  <a
-                    href="mailto:enterprise@tascal.app"
-                    className="block w-full text-center rounded-lg px-4 py-3 text-sm font-semibold bg-purple-600 hover:bg-purple-700 text-white transition-colors"
-                  >
-                    お問い合わせ
-                  </a>
-                ) : (
-                  <Button
-                    variant="primary"
-                    size="lg"
-                    loading={checkout.isPending}
-                    disabled={checkout.isPending}
-                    className={[
-                      "w-full",
-                      plan.highlighted
-                        ? "bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500"
-                        : "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500",
-                    ].join(" ")}
-                    onClick={() =>
-                      handleUpgrade(
-                        plan.id as "personal_pro" | "business" | "enterprise"
-                      )
-                    }
-                  >
-                    今すぐ始める
-                  </Button>
-                )}
-              </div>
-            );
-          })}
+                  {/* Features */}
+                  <ul className="mb-8 flex-1 space-y-3">
+                    {plan.features.map((feature) => (
+                      <li
+                        key={feature.text}
+                        className="flex items-center gap-2 text-sm"
+                      >
+                        {feature.included ? (
+                          <CheckIcon className="h-4 w-4 flex-shrink-0 text-[var(--text-primary)]" />
+                        ) : (
+                          <XIcon className="h-4 w-4 flex-shrink-0 text-[var(--text-subtle)]" />
+                        )}
+                        <span className={feature.included ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]"}>
+                          {feature.text}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* CTA */}
+                  {isCurrent ? (
+                    <button disabled className="w-full h-11 border border-[var(--border)] text-[var(--text-subtle)] text-xs tracking-[0.15em] uppercase rounded-lg opacity-60 cursor-not-allowed">
+                      現在のプラン
+                    </button>
+                  ) : plan.id === "free" ? (
+                    <button disabled className="w-full h-11 border border-[var(--border)] text-[var(--text-subtle)] text-xs tracking-[0.15em] uppercase rounded-lg opacity-60 cursor-not-allowed">
+                      選択中
+                    </button>
+                  ) : (
+                    <button
+                      disabled={checkout.isPending}
+                      className="w-full h-11 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.15em] uppercase rounded-lg hover:opacity-80 transition-opacity disabled:opacity-40"
+                      onClick={() =>
+                        handleUpgrade(plan.id as "personal_pro" | "business" | "enterprise")
+                      }
+                    >
+                      {checkout.isPending ? "..." : "今すぐ始める"}
+                    </button>
+                  )}
+                </div>
+              );
+            })}
         </div>
+
+        {/* Enterprise banner */}
+        {plans.some((p) => p.id === "enterprise") && (
+          <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl px-6 py-5">
+            <div>
+              <p className="text-[10px] tracking-[0.2em] uppercase text-[var(--text-subtle)] mb-1">ENTERPRISE</p>
+              <p className="text-sm font-medium text-[var(--text-primary)]">大規模チーム向けカスタムプラン</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">SSO・専用サポート・カスタムAIモデル対応。¥19,800〜/月</p>
+            </div>
+            <a
+              href="mailto:enterprise@tascal.app"
+              className="shrink-0 px-5 h-9 inline-flex items-center bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.15em] uppercase rounded-lg hover:opacity-80 transition-opacity"
+            >
+              お問い合わせ
+            </a>
+          </div>
+        )}
 
         {/* Manage subscription (paid users only) */}
         {isPaid && (
-          <div className="mt-10 flex flex-col items-center gap-3">
-            <p className="text-sm text-gray-500">
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <p className="text-xs text-[var(--text-subtle)] tracking-wide">
               支払い方法・キャンセルはStripeポータルから管理できます。
             </p>
-            <Button
-              variant="secondary"
-              size="md"
-              loading={portal.isPending}
+            <button
+              disabled={portal.isPending}
               onClick={handlePortal}
+              className="px-5 h-9 border border-[var(--border)] text-[var(--text-primary)] text-xs tracking-[0.15em] uppercase rounded-lg hover:bg-[var(--bg-secondary)] transition-colors disabled:opacity-40"
             >
-              プランを管理する
-            </Button>
+              {portal.isPending ? "..." : "プランを管理する"}
+            </button>
           </div>
         )}
 
         {/* Subscription status detail */}
         {subscription && subscription.current_period_end && (
-          <p className="mt-4 text-center text-xs text-gray-400">
+          <p className="mt-4 text-center text-xs text-[var(--text-subtle)]">
             次回更新日:{" "}
-            {new Date(subscription.current_period_end).toLocaleDateString(
-              "ja-JP"
-            )}
-            {subscription.cancel_at_period_end &&
-              " （期間終了後にキャンセル予定）"}
+            {new Date(subscription.current_period_end).toLocaleDateString("ja-JP")}
+            {subscription.cancel_at_period_end && " （期間終了後にキャンセル予定）"}
           </p>
         )}
       </div>
