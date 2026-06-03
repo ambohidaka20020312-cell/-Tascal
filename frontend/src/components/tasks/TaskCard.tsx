@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Task } from "../../store/taskStore";
 import Button from "../common/Button";
-import { useCompleteTask, useDeleteTask } from "../../hooks/useTasks";
+import { useCompleteTask, useDeleteTask, useUpdateTask } from "../../hooks/useTasks";
 import { useViewport } from "../../hooks/useViewport";
 import OverrunAlert from "../ai/OverrunAlert";
 import { useFocusStore } from "../../store/focusStore";
@@ -29,13 +29,43 @@ const statusConfig: Record<Task["status"], { labelKey: string; className: string
   overrun: { labelKey: "ai.overrun_message", className: "text-[var(--text-primary)]" },
 };
 
+/** Returns due date state relative to today */
+function getDueDateState(dueDatetime: string | null): "overdue" | "today" | "soon" | "none" {
+  if (!dueDatetime) return "none";
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(dueDatetime);
+  due.setHours(0, 0, 0, 0);
+  const diffMs = due.getTime() - today.getTime();
+  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays < 0) return "overdue";
+  if (diffDays === 0) return "today";
+  if (diffDays <= 3) return "soon";
+  return "none";
+}
+
+function getDaysUntilDue(dueDatetime: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const due = new Date(dueDatetime);
+  due.setHours(0, 0, 0, 0);
+  return Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
+
 export default function TaskCard({ task }: TaskCardProps) {
   const { t } = useTranslation();
   const [actualMinutes, setActualMinutes] = useState<string>("");
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(task.title);
+  const [editEstimatedMinutes, setEditEstimatedMinutes] = useState(
+    task.estimated_minutes != null ? String(task.estimated_minutes) : ""
+  );
+
   const completeTask = useCompleteTask();
   const deleteTask = useDeleteTask();
+  const updateTask = useUpdateTask();
   const startFocus = useFocusStore((s) => s.startFocus);
 
   const { deviceType } = useViewport();
@@ -52,6 +82,8 @@ export default function TaskCard({ task }: TaskCardProps) {
     task.actual_minutes != null &&
     task.actual_minutes > task.estimated_minutes;
 
+  const dueDateState = getDueDateState(task.due_datetime);
+
   const handleComplete = () => {
     const mins = parseInt(actualMinutes, 10);
     if (!isNaN(mins) && mins > 0) {
@@ -65,6 +97,22 @@ export default function TaskCard({ task }: TaskCardProps) {
     if (confirm(t('task.delete') + "?")) {
       deleteTask.mutate(task.id);
     }
+  };
+
+  const handleEditSave = () => {
+    if (!editTitle.trim()) return;
+    updateTask.mutate({
+      id: task.id,
+      title: editTitle.trim(),
+      estimated_minutes: editEstimatedMinutes ? parseInt(editEstimatedMinutes, 10) : null,
+    });
+    setIsEditing(false);
+  };
+
+  const handleEditCancel = () => {
+    setEditTitle(task.title);
+    setEditEstimatedMinutes(task.estimated_minutes != null ? String(task.estimated_minutes) : "");
+    setIsEditing(false);
   };
 
   return (
@@ -89,59 +137,147 @@ export default function TaskCard({ task }: TaskCardProps) {
                 <span className={`${status.className} ${isPhoneSmall ? "text-[10px]" : "text-xs"} tracking-wide`}>
                   · {t(status.labelKey)}
                 </span>
+
+                {/* Due date badges — monochrome, opacity-only emphasis */}
+                {dueDateState === "overdue" && (
+                  <span
+                    className={`${isPhoneSmall ? "text-[10px]" : "text-xs"} tracking-wide font-semibold`}
+                    style={{ color: "var(--text-primary)", opacity: 0.9 }}
+                    aria-label="期限超過"
+                  >
+                    · 期限超過
+                  </span>
+                )}
+                {dueDateState === "today" && (
+                  <span
+                    className={`${isPhoneSmall ? "text-[10px]" : "text-xs"} tracking-wide font-medium`}
+                    style={{ color: "var(--text-primary)", opacity: 0.75 }}
+                    aria-label="今日締切"
+                  >
+                    · 今日締切
+                  </span>
+                )}
+                {dueDateState === "soon" && task.due_datetime && (
+                  <span
+                    className={`${isPhoneSmall ? "text-[10px]" : "text-xs"} tracking-wide`}
+                    style={{ color: "var(--text-muted)", opacity: 0.85 }}
+                    aria-label={`あと${getDaysUntilDue(task.due_datetime)}日`}
+                  >
+                    · あと{getDaysUntilDue(task.due_datetime)}日
+                  </span>
+                )}
               </div>
 
-              <h3
-                className={[
-                  "font-medium text-[var(--text-primary)] truncate tracking-wide",
-                  isPhoneSmall ? "text-sm" : "",
-                  task.status === "completed" ? "line-through text-[var(--text-subtle)]" : "",
-                ].join(" ")}
-              >
-                {task.title}
-              </h3>
-
-              {isPhoneSmall ? (
-                <>
-                  {(task.description || task.estimated_minutes != null) && (
+              {/* Inline edit mode */}
+              {isEditing ? (
+                <div className="mt-1 space-y-2">
+                  <input
+                    type="text"
+                    value={editTitle}
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleEditSave();
+                      if (e.key === "Escape") handleEditCancel();
+                    }}
+                    autoFocus
+                    className="w-full border-0 border-b border-[var(--border)] bg-transparent px-0 py-1 text-sm text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] tracking-wide"
+                    style={{ fontSize: "14px" }}
+                    aria-label={t('task.title')}
+                  />
+                  <input
+                    type="number"
+                    min={1}
+                    value={editEstimatedMinutes}
+                    onChange={(e) => setEditEstimatedMinutes(e.target.value)}
+                    placeholder={`${t('task.estimated_time')}（${t('common.minutes')}）`}
+                    className="w-full border-0 border-b border-[var(--border)] bg-transparent px-0 py-1 text-xs text-[var(--text-muted)] focus:outline-none focus:border-[var(--accent)]"
+                    style={{ fontSize: "12px" }}
+                    aria-label={`${t('task.estimated_time')}（${t('common.minutes')}）`}
+                  />
+                  <div className="flex items-center gap-3 pt-0.5">
                     <button
-                      onClick={() => setExpanded((e) => !e)}
-                      className="text-[10px] text-[var(--text-muted)] mt-0.5 tracking-wide"
+                      onClick={handleEditSave}
+                      disabled={updateTask.isPending || !editTitle.trim()}
+                      className="text-xs text-[var(--text-primary)] hover:opacity-70 disabled:opacity-30 transition-opacity tracking-wide"
                     >
-                      {expanded ? t('common.close') : t('task.description')}
+                      {updateTask.isPending ? "…" : "✓ 保存"}
                     </button>
-                  )}
-                  {expanded && (
+                    <button
+                      onClick={handleEditCancel}
+                      className="text-xs text-[var(--text-subtle)] hover:opacity-70 transition-opacity tracking-wide"
+                    >
+                      ✗ キャンセル
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-1.5">
+                    <h3
+                      className={[
+                        "font-medium text-[var(--text-primary)] truncate tracking-wide cursor-pointer",
+                        isPhoneSmall ? "text-sm" : "",
+                        task.status === "completed" ? "line-through text-[var(--text-subtle)]" : "",
+                      ].join(" ")}
+                      onClick={() => task.status !== "completed" && setIsEditing(true)}
+                    >
+                      {task.title}
+                    </h3>
+                    {task.status !== "completed" && (
+                      <button
+                        onClick={() => setIsEditing(true)}
+                        aria-label={`${task.title}を編集`}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-[var(--text-subtle)] hover:text-[var(--text-muted)]"
+                        style={{ fontSize: "14px", lineHeight: 1 }}
+                      >
+                        ✎
+                      </button>
+                    )}
+                  </div>
+
+                  {isPhoneSmall ? (
+                    <>
+                      {(task.description || task.estimated_minutes != null) && (
+                        <button
+                          onClick={() => setExpanded((e) => !e)}
+                          className="text-[10px] text-[var(--text-muted)] mt-0.5 tracking-wide"
+                        >
+                          {expanded ? t('common.close') : t('task.description')}
+                        </button>
+                      )}
+                      {expanded && (
+                        <>
+                          {task.description && (
+                            <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-2">{task.description}</p>
+                          )}
+                          {task.estimated_minutes != null && (
+                            <p className="text-[10px] text-[var(--text-subtle)] mt-1">
+                              {t('task.estimated_time')}: {task.estimated_minutes}{t('common.minutes')}
+                              {task.actual_minutes != null && ` / ${t('task.actual_time')}: ${task.actual_minutes}${t('common.minutes')}`}
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </>
+                  ) : (
                     <>
                       {task.description && (
-                        <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-2">{task.description}</p>
+                        <p className={`text-[var(--text-muted)] mt-1 ${isTabletOrAbove ? "line-clamp-2" : "truncate"} text-sm`}>
+                          {task.description}
+                        </p>
                       )}
                       {task.estimated_minutes != null && (
-                        <p className="text-[10px] text-[var(--text-subtle)] mt-1">
+                        <p className="text-xs text-[var(--text-subtle)] mt-1">
                           {t('task.estimated_time')}: {task.estimated_minutes}{t('common.minutes')}
                           {task.actual_minutes != null && ` / ${t('task.actual_time')}: ${task.actual_minutes}${t('common.minutes')}`}
                         </p>
                       )}
+                      {isTabletOrAbove && task.due_datetime && (
+                        <p className="text-xs text-[var(--text-subtle)] mt-0.5">
+                          {t('task.due_date')}: {task.due_datetime.split("T")[0]}
+                        </p>
+                      )}
                     </>
-                  )}
-                </>
-              ) : (
-                <>
-                  {task.description && (
-                    <p className={`text-[var(--text-muted)] mt-1 ${isTabletOrAbove ? "line-clamp-2" : "truncate"} text-sm`}>
-                      {task.description}
-                    </p>
-                  )}
-                  {task.estimated_minutes != null && (
-                    <p className="text-xs text-[var(--text-subtle)] mt-1">
-                      {t('task.estimated_time')}: {task.estimated_minutes}{t('common.minutes')}
-                      {task.actual_minutes != null && ` / ${t('task.actual_time')}: ${task.actual_minutes}${t('common.minutes')}`}
-                    </p>
-                  )}
-                  {isTabletOrAbove && task.due_datetime && (
-                    <p className="text-xs text-[var(--text-subtle)] mt-0.5">
-                      {t('task.due_date')}: {task.due_datetime.split("T")[0]}
-                    </p>
                   )}
                 </>
               )}

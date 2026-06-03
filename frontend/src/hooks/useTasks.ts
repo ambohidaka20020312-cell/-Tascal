@@ -62,3 +62,19 @@ export function useDeleteTask() {
     },
   });
 }
+
+export function useUpdateTask() {
+  const queryClient = useQueryClient();
+  const updateTask = useTaskStore((s) => s.updateTask);
+  const selectedDate = useTaskStore((s) => s.selectedDate);
+
+  return useMutation({
+    mutationFn: ({ id, ...data }: Partial<Task> & { id: number }) =>
+      taskApi.update(id, data),
+    onSuccess: (res, variables) => {
+      const updated: Task = res.data.data ?? res.data;
+      updateTask(variables.id, updated);
+      queryClient.invalidateQueries({ queryKey: ["tasks", selectedDate] });
+    },
+  });
+}
