@@ -7,6 +7,7 @@ import { aiApi } from "../utils/api";
 import { useViewport } from "../hooks/useViewport";
 import TaskCard from "../components/tasks/TaskCard";
 import TaskForm from "../components/tasks/TaskForm";
+import QuickAddBar from "../components/tasks/QuickAddBar";
 import Button from "../components/common/Button";
 
 interface AiOptimizeResult {
@@ -131,6 +132,8 @@ export default function DashboardPage() {
           })}
         </div>
       </div>
+
+      <QuickAddBar />
 
       {/* Two-column layout on tablet+ or landscape mobile */}
       <div className={`grid gap-5 items-start ${isTabletOrAbove || isLandscape ? "grid-cols-2" : "grid-cols-1"}`}>
