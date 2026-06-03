@@ -25,8 +25,28 @@ def list_tasks():
         date = datetime.date.fromisoformat(date_str)
         query = query.filter_by(scheduled_date=date)
 
-    tasks = query.order_by(Task.sort_order).all()
+    tasks = query.order_by(Task.sort_order.asc().nullslast(), Task.created_at.desc()).all()
     return jsonify({"data": [t.to_dict() for t in tasks]})
+
+
+@bp.patch("/reorder")
+@jwt_required()
+def reorder_tasks():
+    user_id = get_jwt_identity()
+    data = request.get_json() or {}
+    order = data.get("order", [])
+
+    if not isinstance(order, list):
+        return jsonify({"error": {"code": "INVALID_INPUT", "message": "order must be a list of task IDs"}}), 400
+
+    for position, task_id in enumerate(order):
+        task = Task.query.filter_by(id=task_id, user_id=user_id, is_deleted=False).first()
+        if task:
+            task.sort_order = position
+
+    db.session.commit()
+    invalidate_user_cache(user_id)
+    return jsonify({"message": "タスクの並び順を更新しました"})
 
 
 @bp.post("")

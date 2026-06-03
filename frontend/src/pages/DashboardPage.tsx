@@ -4,9 +4,10 @@ import { ja } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 import { useTaskStore } from "../store/taskStore";
 import { useTasksQuery } from "../hooks/useTasks";
-import { aiApi } from "../utils/api";
+import { aiApi, taskApi } from "../utils/api";
 import { useViewport } from "../hooks/useViewport";
 import { useDailyBriefing } from "../hooks/useDailyBriefing";
+import { useDragSort } from "../hooks/useDragSort";
 import TaskCard from "../components/tasks/TaskCard";
 import TaskForm from "../components/tasks/TaskForm";
 import Button from "../components/common/Button";
@@ -27,7 +28,7 @@ function getDateChips(center: string, count = 7): string[] {
 
 export default function DashboardPage() {
   const { t } = useTranslation();
-  const { tasks, selectedDate, setSelectedDate } = useTaskStore();
+  const { tasks, selectedDate, setSelectedDate, reorderTasks } = useTaskStore();
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [aiAdvice, setAiAdvice] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -40,6 +41,13 @@ export default function DashboardPage() {
     deviceType === "tablet" || deviceType === "desktop" || deviceType === "ultrawide";
 
   const { isLoading, isError } = useTasksQuery(selectedDate);
+
+  const { handlers: dragHandlers, dragIndex, overIndex } = useDragSort(tasks, (reordered) => {
+    reorderTasks(reordered);
+    taskApi.reorder(reordered.map((t) => t.id)).catch(() => {
+      // silently ignore reorder persistence errors
+    });
+  });
 
   const handleAiOptimize = async () => {
     setAiLoading(true);
@@ -212,8 +220,28 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {tasks.map((task) => (
-                <TaskCard key={task.id} task={task} />
+              {tasks.map((task, index) => (
+                <div
+                  key={task.id}
+                  {...dragHandlers(index)}
+                  className={[
+                    "group/drag relative transition-opacity",
+                    dragIndex === index ? "opacity-50 cursor-grabbing" : "cursor-grab",
+                    overIndex === index && dragIndex !== index
+                      ? "border-t-2 border-[var(--accent)]"
+                      : "",
+                  ].join(" ")}
+                >
+                  {/* Drag handle — visible on hover */}
+                  <span
+                    aria-hidden="true"
+                    className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/drag:opacity-100 text-[var(--text-subtle)] text-xs select-none pointer-events-none transition-opacity z-10"
+                    style={{ lineHeight: 1 }}
+                  >
+                    ⠿
+                  </span>
+                  <TaskCard task={task} />
+                </div>
               ))}
             </div>
           )}

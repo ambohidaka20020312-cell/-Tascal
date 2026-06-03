@@ -64,6 +64,7 @@ export const taskApi = {
   complete: (id: number, actual_minutes: number) =>
     api.post(`/tasks/${id}/complete`, { actual_minutes }),
   stats: () => api.get("/tasks/stats"),
+  reorder: (order: number[]) => api.patch("/tasks/reorder", { order }),
 };
 
 export const aiApi = {

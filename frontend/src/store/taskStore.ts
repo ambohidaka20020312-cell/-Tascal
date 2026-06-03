@@ -22,6 +22,7 @@ interface TaskState {
   addTask: (task: Task) => void;
   updateTask: (id: number, updates: Partial<Task>) => void;
   removeTask: (id: number) => void;
+  reorderTasks: (tasks: Task[]) => void;
   setSelectedDate: (date: string) => void;
 }
 
@@ -36,5 +37,6 @@ export const useTaskStore = create<TaskState>((set) => ({
     })),
   removeTask: (id) =>
     set((s) => ({ tasks: s.tasks.filter((t) => t.id !== id) })),
+  reorderTasks: (tasks) => set({ tasks }),
   setSelectedDate: (date) => set({ selectedDate: date }),
 }));
