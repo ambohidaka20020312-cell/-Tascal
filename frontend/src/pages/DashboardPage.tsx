@@ -93,21 +93,19 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Tablet+: stats summary header */}
+      {/* Tablet+: stats row */}
       {isTabletOrAbove && (
-        <div className="flex gap-4">
-          <div className="flex-1 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border)] p-4 text-center">
-            <p className="text-2xl font-bold text-[var(--text-primary)]">{completedCount}</p>
-            <p className="text-xs text-[var(--text-subtle)] mt-0.5 tracking-wider uppercase">完了</p>
-          </div>
-          <div className="flex-1 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border)] p-4 text-center">
-            <p className="text-2xl font-bold text-[var(--text-primary)]">{totalCount}</p>
-            <p className="text-xs text-[var(--text-subtle)] mt-0.5 tracking-wider uppercase">合計</p>
-          </div>
-          <div className="flex-1 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border)] p-4 text-center">
-            <p className="text-2xl font-bold text-[var(--text-primary)]">{achievementRate}%</p>
-            <p className="text-xs text-[var(--text-subtle)] mt-0.5 tracking-wider uppercase">達成率</p>
-          </div>
+        <div className="flex gap-8 border-b border-[var(--border)] pb-6">
+          {[
+            { value: completedCount, label: "DONE" },
+            { value: totalCount, label: "TOTAL" },
+            { value: `${achievementRate}%`, label: "RATE" },
+          ].map(({ value, label }) => (
+            <div key={label}>
+              <p className="text-3xl font-light tracking-tight text-[var(--text-primary)]">{value}</p>
+              <p className="text-[10px] tracking-[0.2em] text-[var(--text-subtle)] mt-0.5">{label}</p>
+            </div>
+          ))}
         </div>
       )}
 
@@ -162,15 +160,16 @@ export default function DashboardPage() {
       <div className={`grid gap-5 items-start ${isTabletOrAbove || isLandscape ? "grid-cols-2" : "grid-cols-1"}`}>
         {/* Left: Task list */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xs font-semibold tracking-widest uppercase text-[var(--text-subtle)]">タスク一覧</h3>
-            <Button
-              size="sm"
-              variant="primary"
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-[10px] tracking-[0.2em] uppercase text-[var(--text-subtle)]">
+              {tasks.length > 0 ? `${tasks.length} TASKS` : "NO TASKS"}
+            </span>
+            <button
               onClick={() => setShowTaskForm(true)}
+              className="text-[10px] tracking-[0.15em] uppercase text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             >
-              + 追加
-            </Button>
+              + ADD
+            </button>
           </div>
 
           {isLoading ? (

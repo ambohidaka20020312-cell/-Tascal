@@ -71,11 +71,11 @@ export default function TaskCard({ task }: TaskCardProps) {
     <>
       <div
         className={[
-          "bg-[var(--bg-primary)] rounded-lg border border-[var(--border)] overflow-hidden flex min-h-touch transition-colors hover:border-[var(--text-subtle)]",
-          task.status === "completed" ? "opacity-50" : "",
+          "group border-b border-[var(--border)] -mx-4 px-4 transition-colors hover:bg-[var(--bg-secondary)]",
+          task.status === "completed" ? "opacity-40" : "",
         ].join(" ")}
       >
-        <div className={`flex-1 ${isPhoneSmall ? "p-2.5" : "p-4"}`}>
+        <div className={`flex-1 ${isPhoneSmall ? "py-3" : "py-4"}`}>
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               {/* Priority dot + label row */}

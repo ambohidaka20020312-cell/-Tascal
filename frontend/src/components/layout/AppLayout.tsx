@@ -116,13 +116,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
             }}
           >
             {/* Sidebar logo */}
-            <div className="flex items-center gap-2 px-4 py-4 border-b border-[var(--border)]">
-              <Link to="/" className="flex items-center gap-2 text-[var(--text-primary)] font-bold hover:opacity-70 shrink-0">
-                {(isDesktop || isUltrawide) && (
-                  <span className="text-xl font-bold tracking-widest uppercase">TASCAL</span>
-                )}
-                {!(isDesktop || isUltrawide) && (
-                  <span className="text-lg font-bold tracking-widest uppercase">T</span>
+            <div className="flex items-center gap-2 px-5 py-7">
+              <Link to="/" className="flex items-center gap-2 text-[var(--text-primary)] hover:opacity-70 shrink-0">
+                {(isDesktop || isUltrawide) ? (
+                  <span className="text-sm font-semibold tracking-[0.25em] uppercase">TASCAL</span>
+                ) : (
+                  <span className="text-sm font-semibold tracking-[0.2em] uppercase">T</span>
                 )}
               </Link>
             </div>
@@ -137,14 +136,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     key={to}
                     to={to}
                     className={[
-                      "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors min-h-touch",
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors min-h-touch relative",
                       active
-                        ? "bg-[var(--bg-tertiary)] text-[var(--text-primary)] font-medium"
+                        ? "text-[var(--text-primary)] font-medium"
                         : "text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]",
                       !showLabel ? "justify-center" : "",
                     ].join(" ")}
                     title={!showLabel ? label : undefined}
                   >
+                    {active && (
+                      <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[var(--text-primary)] rounded-r-full" />
+                    )}
                     <Icon active={active} />
                     {showLabel && (
                       <span className="text-sm font-medium tracking-wide">{label}</span>
