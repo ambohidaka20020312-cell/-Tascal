@@ -37,30 +37,25 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-purple-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md">
+    <div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-4">
+      <div className="bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl p-8 w-full max-w-md">
         <div className="flex justify-end mb-2">
           <LanguageSwitcher />
         </div>
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-primary-500 rounded-2xl mb-3">
-            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-gray-800">Tascal</h1>
-          <p className="text-gray-500 text-sm mt-1">AIがあなたの1日を最適化</p>
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold text-[var(--text-primary)] tracking-widest uppercase">TASCAL</h1>
+          <p className="text-[var(--text-subtle)] text-sm mt-2 tracking-wide">AIがあなたの1日を最適化</p>
         </div>
 
         {error && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+          <div className="mb-6 p-3 border border-[var(--border)] rounded-lg text-sm text-[var(--text-muted)]">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-semibold tracking-widest uppercase text-[var(--text-subtle)] mb-2">
               {t('auth.email')}
             </label>
             <input
@@ -69,12 +64,12 @@ export default function LoginPage() {
               onChange={(e) => setEmail(e.target.value)}
               placeholder="you@example.com"
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full border-0 border-b border-[var(--border)] rounded-none bg-transparent px-0 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] focus:outline-none focus:border-[var(--accent)]"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-xs font-semibold tracking-widest uppercase text-[var(--text-subtle)] mb-2">
               {t('auth.password')}
             </label>
             <input
@@ -83,7 +78,7 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+              className="w-full border-0 border-b border-[var(--border)] rounded-none bg-transparent px-0 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] focus:outline-none focus:border-[var(--accent)]"
             />
           </div>
 
@@ -98,9 +93,9 @@ export default function LoginPage() {
           </Button>
         </form>
 
-        <p className="text-center text-sm text-gray-500 mt-6">
+        <p className="text-center text-sm text-[var(--text-subtle)] mt-8 tracking-wide">
           アカウントをお持ちでない方は{" "}
-          <Link to="/register" className="text-primary-600 hover:underline font-medium">
+          <Link to="/register" className="text-[var(--text-primary)] hover:underline font-medium">
             {t('auth.register')}
           </Link>
         </p>

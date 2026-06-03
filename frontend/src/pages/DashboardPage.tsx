@@ -73,7 +73,7 @@ export default function DashboardPage() {
         const m = briefing.total_estimated_minutes % 60;
         const timeStr = h > 0 ? `${h}時間${m}分` : `${m}分`;
         const topHint = briefing.top_task ? `「${briefing.top_task.title}」から始めましょう。` : "";
-        return `🌅 今日は${briefing.task_count}件・${timeStr}。${topHint}`;
+        return `今日は${briefing.task_count}件・${timeStr}。${topHint}`;
       })()
     : null;
 
@@ -81,11 +81,11 @@ export default function DashboardPage() {
     <div className="max-w-2xl mx-auto space-y-5 mb-16 md:mb-0">
       {/* Daily briefing banner */}
       {briefing && !briefingDismissed && briefingText && (
-        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-          <p className="flex-1 text-sm text-amber-900">{briefingText}</p>
+        <div className="flex items-start gap-3 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-4 py-3">
+          <p className="flex-1 text-sm text-[var(--text-muted)] tracking-wide">{briefingText}</p>
           <button
             onClick={() => setBriefingDismissed(true)}
-            className="shrink-0 text-amber-400 hover:text-amber-600 text-lg leading-none mt-0.5"
+            className="shrink-0 text-[var(--text-subtle)] hover:text-[var(--text-primary)] text-lg leading-none mt-0.5"
             aria-label="閉じる"
           >
             ×
@@ -96,42 +96,41 @@ export default function DashboardPage() {
       {/* Tablet+: stats summary header */}
       {isTabletOrAbove && (
         <div className="flex gap-4">
-          <div className="flex-1 bg-white rounded-xl border border-gray-200 p-4 text-center">
-            <p className="text-2xl font-bold text-gray-800">{completedCount}</p>
-            <p className="text-xs text-gray-500 mt-0.5">完了</p>
+          <div className="flex-1 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border)] p-4 text-center">
+            <p className="text-2xl font-bold text-[var(--text-primary)]">{completedCount}</p>
+            <p className="text-xs text-[var(--text-subtle)] mt-0.5 tracking-wider uppercase">完了</p>
           </div>
-          <div className="flex-1 bg-white rounded-xl border border-gray-200 p-4 text-center">
-            <p className="text-2xl font-bold text-gray-800">{totalCount}</p>
-            <p className="text-xs text-gray-500 mt-0.5">合計</p>
+          <div className="flex-1 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border)] p-4 text-center">
+            <p className="text-2xl font-bold text-[var(--text-primary)]">{totalCount}</p>
+            <p className="text-xs text-[var(--text-subtle)] mt-0.5 tracking-wider uppercase">合計</p>
           </div>
-          <div className="flex-1 bg-white rounded-xl border border-gray-200 p-4 text-center">
-            <p className="text-2xl font-bold text-primary-600">{achievementRate}%</p>
-            <p className="text-xs text-gray-500 mt-0.5">達成率</p>
+          <div className="flex-1 bg-[var(--bg-secondary)] rounded-xl border border-[var(--border)] p-4 text-center">
+            <p className="text-2xl font-bold text-[var(--text-primary)]">{achievementRate}%</p>
+            <p className="text-xs text-[var(--text-subtle)] mt-0.5 tracking-wider uppercase">達成率</p>
           </div>
         </div>
       )}
 
-      {/* Date selector — horizontal chip strip on mobile, date input on tablet+ */}
+      {/* Date selector */}
       <div>
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-3">
           <div>
-            <h2 className={`font-bold text-gray-800 ${isPhoneSmall ? "text-lg" : "text-xl"}`}>{todayLabel}</h2>
+            <h2 className={`font-bold text-[var(--text-primary)] tracking-wider ${isPhoneSmall ? "text-xl" : "text-2xl"}`}>{todayLabel}</h2>
             {!isTabletOrAbove && (
-              <p className={`text-gray-500 ${isPhoneSmall ? "text-xs" : "text-sm"}`}>
+              <p className={`text-[var(--text-subtle)] tracking-wide ${isPhoneSmall ? "text-xs" : "text-sm"}`}>
                 未完了: {pendingCount}件 / 完了: {completedCount}件
               </p>
             )}
           </div>
-          {/* Date input visible on sm+ */}
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="hidden sm:block border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+            className="hidden sm:block border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
           />
         </div>
 
-        {/* Mobile date chips — horizontal scroll */}
+        {/* Mobile date chips */}
         <div className="flex gap-2 overflow-x-auto pb-1 sm:hidden scrollbar-none -mx-4 px-4">
           {dateChips.map((d) => {
             const isSelected = d === selectedDate;
@@ -145,13 +144,13 @@ export default function DashboardPage() {
                 className={[
                   "flex flex-col items-center shrink-0 rounded-xl px-3 py-2 min-w-touch transition-colors",
                   isSelected
-                    ? "bg-primary-600 text-white"
+                    ? "bg-[var(--accent)] text-white dark:text-[#0f0f0f] border-transparent"
                     : isToday
-                    ? "bg-primary-50 text-primary-700 border border-primary-200"
-                    : "bg-white text-gray-600 border border-gray-200",
+                    ? "bg-[var(--bg-secondary)] text-[var(--text-primary)] border border-[var(--text-subtle)]"
+                    : "bg-[var(--bg-primary)] text-[var(--text-muted)] border border-[var(--border)]",
                 ].join(" ")}
               >
-                <span className="text-[10px] font-medium">{dayLabel}</span>
+                <span className="text-[10px] font-medium tracking-wider uppercase">{dayLabel}</span>
                 <span className="text-base font-bold leading-tight">{label}</span>
               </button>
             );
@@ -164,37 +163,41 @@ export default function DashboardPage() {
         {/* Left: Task list */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-gray-700">タスク一覧</h3>
+            <h3 className="text-xs font-semibold tracking-widest uppercase text-[var(--text-subtle)]">タスク一覧</h3>
             <Button
               size="sm"
               variant="primary"
               onClick={() => setShowTaskForm(true)}
             >
-              + タスク追加
+              + 追加
             </Button>
           </div>
 
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white rounded-xl border p-4 animate-pulse">
-                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2" />
-                  <div className="h-3 bg-gray-100 rounded w-1/2" />
+                <div key={i} className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] p-4 animate-pulse">
+                  <div className="h-4 bg-[var(--bg-tertiary)] rounded w-3/4 mb-2" />
+                  <div className="h-3 bg-[var(--bg-tertiary)] rounded w-1/2" />
                 </div>
               ))}
             </div>
           ) : isError ? (
-            <div className="text-center py-10 text-red-500 text-sm">
+            <div className="text-center py-10 text-[var(--text-muted)] text-sm">
               タスクの取得に失敗しました
             </div>
           ) : tasks.length === 0 ? (
             <div className="text-center py-14">
-              <div className="text-5xl mb-3">📋</div>
-              <p className="text-gray-500 text-sm">タスクがありません</p>
-              <p className="text-gray-400 text-xs mt-1">「+ タスク追加」からタスクを作成しましょう</p>
+              <div className="w-12 h-12 border border-[var(--border)] rounded-xl flex items-center justify-center mx-auto mb-3">
+                <svg className="w-6 h-6 text-[var(--text-subtle)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </div>
+              <p className="text-[var(--text-muted)] text-sm tracking-wide">タスクがありません</p>
+              <p className="text-[var(--text-subtle)] text-xs mt-1">「+ 追加」からタスクを作成しましょう</p>
             </div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-2">
               {tasks.map((task) => (
                 <TaskCard key={task.id} task={task} />
               ))}
@@ -206,27 +209,27 @@ export default function DashboardPage() {
         <div className="space-y-3">
           <Button
             variant="secondary"
-            className="w-full border-dashed border-primary-500 text-primary-600 hover:bg-indigo-50"
+            className="w-full"
             onClick={handleAiOptimize}
             loading={aiLoading}
           >
             <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
             AIでタスクを最適化
           </Button>
 
           {aiAdvice && (
-            <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-4">
+            <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-4">
               <div className="flex items-start gap-3">
-                <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center shrink-0">
-                  <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                <div className="w-7 h-7 border border-[var(--border)] rounded-lg flex items-center justify-center shrink-0">
+                  <svg className="w-3.5 h-3.5 text-[var(--text-muted)]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                   </svg>
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-indigo-700 mb-1">AIアドバイス</p>
-                  <p className="text-sm text-indigo-900 whitespace-pre-wrap">{aiAdvice}</p>
+                  <p className="text-xs font-semibold tracking-widest uppercase text-[var(--text-subtle)] mb-1">AIアドバイス</p>
+                  <p className="text-sm text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed">{aiAdvice}</p>
                 </div>
               </div>
             </div>
