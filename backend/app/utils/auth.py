@@ -3,8 +3,22 @@ from flask import jsonify
 from flask_jwt_extended import get_jwt_identity
 import datetime
 
-PLAN_ORDER = {"free": 0, "pro": 1, "team": 2}
+PLAN_HIERARCHY = {
+    "free": 0,
+    "personal_pro": 1,
+    "business": 2,
+    "enterprise": 3,
+}
+
+# Legacy aliases kept for backwards compatibility
+PLAN_ORDER = PLAN_HIERARCHY
+
 FREE_AI_DAILY_LIMIT = 3
+
+
+def is_org_plan(user) -> bool:
+    """Return True if the user is on a business or enterprise plan."""
+    return user.plan in ("business", "enterprise")
 
 
 def require_plan(min_plan: str):
@@ -15,7 +29,7 @@ def require_plan(min_plan: str):
             from ..models.user import User
             user_id = get_jwt_identity()
             user = User.query.get(user_id)
-            if not user or PLAN_ORDER.get(user.plan, 0) < PLAN_ORDER.get(min_plan, 0):
+            if not user or PLAN_HIERARCHY.get(user.plan, 0) < PLAN_HIERARCHY.get(min_plan, 0):
                 return jsonify({
                     "error": {
                         "code": "PLAN_REQUIRED",

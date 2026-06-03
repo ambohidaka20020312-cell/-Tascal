@@ -10,6 +10,7 @@ class User(db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     name = db.Column(db.String(100), nullable=False, default="")
     password_hash = db.Column(db.String(255), nullable=False)
+    # plan: free / personal_pro / business / enterprise
     plan = db.Column(db.String(20), nullable=False, default="free")
     stripe_customer_id = db.Column(db.String(100), unique=True, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
