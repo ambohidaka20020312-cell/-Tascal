@@ -61,13 +61,27 @@ def webhook():
     payload = request.data
     sig_header = request.headers.get("Stripe-Signature")
 
+    if not sig_header:
+        current_app.logger.warning("Stripe webhook received without Stripe-Signature header")
+        return jsonify({"error": {"code": "MISSING_SIGNATURE", "message": "署名ヘッダーがありません"}}), 400
+
+    webhook_secret = current_app.config.get("STRIPE_WEBHOOK_SECRET")
+    if not webhook_secret:
+        current_app.logger.error("STRIPE_WEBHOOK_SECRET is not configured")
+        return jsonify({"error": {"code": "SERVER_ERROR", "message": "サーバー設定エラー"}}), 500
+
     try:
         s = get_stripe()
-        event = s.Webhook.construct_event(
-            payload, sig_header, current_app.config["STRIPE_WEBHOOK_SECRET"]
-        )
-    except Exception:
-        return jsonify({"error": "Invalid signature"}), 400
+        event = s.Webhook.construct_event(payload, sig_header, webhook_secret)
+    except stripe.error.SignatureVerificationError as e:
+        current_app.logger.warning("Stripe webhook signature verification failed: %s", str(e))
+        return jsonify({"error": {"code": "INVALID_SIGNATURE", "message": "署名の検証に失敗しました"}}), 400
+    except ValueError as e:
+        current_app.logger.warning("Stripe webhook payload parsing failed: %s", str(e))
+        return jsonify({"error": {"code": "INVALID_PAYLOAD", "message": "ペイロードが不正です"}}), 400
+    except Exception as e:
+        current_app.logger.error("Unexpected error during Stripe webhook processing: %s", str(e))
+        return jsonify({"error": {"code": "SERVER_ERROR", "message": "処理中にエラーが発生しました"}}), 500
 
     if event["type"] == "checkout.session.completed":
         _handle_checkout_completed(event["data"]["object"])

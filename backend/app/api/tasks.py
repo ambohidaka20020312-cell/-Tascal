@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..models.task import Task
 from ..models.user import User
 from .. import db
+from ..utils.validators import validate_task_fields
 import datetime
 
 FREE_MONTHLY_TASK_LIMIT = 20
@@ -46,7 +47,14 @@ def create_task():
                 }
             }), 403
 
-    data = request.get_json()
+    data = request.get_json() or {}
+
+    if not data.get("title"):
+        return jsonify({"error": {"code": "MISSING_FIELDS", "message": "タイトルは必須です"}}), 400
+
+    ok, msg = validate_task_fields(data)
+    if not ok:
+        return jsonify({"error": {"code": "VALIDATION_ERROR", "message": msg}}), 400
 
     task = Task(
         user_id=user_id,
@@ -70,7 +78,12 @@ def update_task(task_id):
     user_id = get_jwt_identity()
     task = Task.query.filter_by(id=task_id, user_id=user_id, is_deleted=False).first_or_404()
 
-    data = request.get_json()
+    data = request.get_json() or {}
+
+    ok, msg = validate_task_fields(data)
+    if not ok:
+        return jsonify({"error": {"code": "VALIDATION_ERROR", "message": msg}}), 400
+
     for field in ["title", "description", "priority", "estimated_minutes", "scheduled_date", "due_datetime", "sort_order", "status", "recurrence", "recurrence_end_date"]:
         if field in data:
             setattr(task, field, data[field])
