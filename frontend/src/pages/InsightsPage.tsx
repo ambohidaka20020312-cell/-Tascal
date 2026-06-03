@@ -1,5 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { aiApi } from "../utils/api";
+import StatsCard from "../components/stats/StatsCard";
+import { useStats } from "../hooks/useStats";
 
 interface InsightsData {
   message: string;
@@ -22,6 +24,8 @@ function ProductiveHourLabel(hour: number | null): string {
 }
 
 export default function InsightsPage() {
+  const { data: statsData } = useStats();
+
   const { data, isLoading, isError } = useQuery<InsightsData>({
     queryKey: ["ai-insights"],
     queryFn: async () => {
@@ -58,6 +62,16 @@ export default function InsightsPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      {statsData && (
+        <StatsCard
+          weeklyRate={statsData.weekly_completion_rate}
+          monthlyRate={statsData.monthly_completion_rate}
+          streak={statsData.current_streak}
+          timeAccuracy={statsData.time_accuracy}
+          totalCompleted={statsData.total_completed}
+        />
+      )}
+
       <div>
         <h1 className="text-2xl font-bold text-gray-800">週次インサイト</h1>
         {data.week_start && data.week_end && (

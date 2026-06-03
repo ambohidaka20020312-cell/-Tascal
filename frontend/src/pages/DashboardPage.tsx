@@ -5,9 +5,9 @@ import { useTaskStore } from "../store/taskStore";
 import { useTasksQuery } from "../hooks/useTasks";
 import { aiApi } from "../utils/api";
 import { useViewport } from "../hooks/useViewport";
+import { useDailyBriefing } from "../hooks/useDailyBriefing";
 import TaskCard from "../components/tasks/TaskCard";
 import TaskForm from "../components/tasks/TaskForm";
-import QuickAddBar from "../components/tasks/QuickAddBar";
 import Button from "../components/common/Button";
 
 interface AiOptimizeResult {
@@ -29,6 +29,8 @@ export default function DashboardPage() {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [aiAdvice, setAiAdvice] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+  const [briefingDismissed, setBriefingDismissed] = useState(false);
+  const { briefing } = useDailyBriefing();
 
   const { deviceType, isLandscape } = useViewport();
   const isPhoneSmall = deviceType === "phone-small";
@@ -65,8 +67,32 @@ export default function DashboardPage() {
   const today = new Date().toISOString().split("T")[0];
   const dateChips = getDateChips(selectedDate);
 
+  const briefingText = briefing
+    ? (() => {
+        const h = Math.floor(briefing.total_estimated_minutes / 60);
+        const m = briefing.total_estimated_minutes % 60;
+        const timeStr = h > 0 ? `${h}時間${m}分` : `${m}分`;
+        const topHint = briefing.top_task ? `「${briefing.top_task.title}」から始めましょう。` : "";
+        return `🌅 今日は${briefing.task_count}件・${timeStr}。${topHint}`;
+      })()
+    : null;
+
   return (
     <div className="max-w-2xl mx-auto space-y-5 mb-16 md:mb-0">
+      {/* Daily briefing banner */}
+      {briefing && !briefingDismissed && briefingText && (
+        <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+          <p className="flex-1 text-sm text-amber-900">{briefingText}</p>
+          <button
+            onClick={() => setBriefingDismissed(true)}
+            className="shrink-0 text-amber-400 hover:text-amber-600 text-lg leading-none mt-0.5"
+            aria-label="閉じる"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Tablet+: stats summary header */}
       {isTabletOrAbove && (
         <div className="flex gap-4">
@@ -132,8 +158,6 @@ export default function DashboardPage() {
           })}
         </div>
       </div>
-
-      <QuickAddBar />
 
       {/* Two-column layout on tablet+ or landscape mobile */}
       <div className={`grid gap-5 items-start ${isTabletOrAbove || isLandscape ? "grid-cols-2" : "grid-cols-1"}`}>

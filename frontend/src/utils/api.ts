@@ -40,6 +40,7 @@ export const taskApi = {
   delete: (id: number) => api.delete(`/tasks/${id}`),
   complete: (id: number, actual_minutes: number) =>
     api.post(`/tasks/${id}/complete`, { actual_minutes }),
+  stats: () => api.get("/tasks/stats"),
 };
 
 export const aiApi = {
@@ -47,6 +48,7 @@ export const aiApi = {
   replan: (overrun_task_id: number, actual_minutes_so_far: number) =>
     api.post("/ai/replan", { overrun_task_id, actual_minutes_so_far }),
   insights: () => api.get("/ai/insights"),
+  dailyBriefing: () => api.get("/ai/daily-briefing"),
 };
 
 export const calendarApi = {
