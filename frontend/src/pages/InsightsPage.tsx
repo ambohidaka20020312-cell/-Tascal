@@ -37,15 +37,22 @@ export default function InsightsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-64">
-        <div className="animate-spin rounded-full h-10 w-10 border-4 border-primary-500 border-t-transparent" />
+      <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+        <div className="h-3 w-24 animate-pulse bg-[var(--bg-secondary)] rounded" />
+        <div className="h-6 w-40 animate-pulse bg-[var(--bg-secondary)] rounded" />
+        <div className="grid grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-20 animate-pulse bg-[var(--bg-secondary)] rounded-xl" />
+          ))}
+        </div>
+        <div className="h-40 animate-pulse bg-[var(--bg-secondary)] rounded-xl" />
       </div>
     );
   }
 
   if (isError || !data) {
     return (
-      <div className="p-6 text-center text-gray-500">
+      <div className="p-6 text-center text-[var(--text-muted)] text-sm">
         インサイトの取得に失敗しました。しばらくしてから再試行してください。
       </div>
     );
@@ -73,9 +80,10 @@ export default function InsightsPage() {
       )}
 
       <div>
-        <h1 className="text-2xl font-bold text-gray-800">週次インサイト</h1>
+        <p className="text-[10px] tracking-[0.25em] uppercase text-[var(--text-subtle)] mb-1">INSIGHTS</p>
+        <h1 className="text-2xl font-light tracking-wide text-[var(--text-primary)]">週次インサイト</h1>
         {data.week_start && data.week_end && (
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-xs text-[var(--text-subtle)] mt-1 tracking-wide">
             {data.week_start} 〜 {data.week_end}
           </p>
         )}
@@ -83,52 +91,35 @@ export default function InsightsPage() {
 
       {/* Stats summary */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
-          <p className="text-3xl font-bold text-primary-600">
+        <div className="border border-[var(--border)] rounded-xl p-4 text-center">
+          <p className="text-3xl font-light text-[var(--text-primary)]">
             {data.stats.completed_tasks}
           </p>
-          <p className="text-xs text-gray-500 mt-1">完了タスク数</p>
+          <p className="text-[10px] tracking-[0.15em] uppercase text-[var(--text-subtle)] mt-1">完了タスク</p>
         </div>
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
-          <p className="text-3xl font-bold text-green-600">
+        <div className="border border-[var(--border)] rounded-xl p-4 text-center">
+          <p className="text-3xl font-light text-[var(--text-primary)]">
             {achievementPercent != null ? `${achievementPercent}%` : "—"}
           </p>
-          <p className="text-xs text-gray-500 mt-1">平均達成率</p>
+          <p className="text-[10px] tracking-[0.15em] uppercase text-[var(--text-subtle)] mt-1">平均達成率</p>
         </div>
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 text-center">
-          <p className="text-2xl font-bold text-indigo-600">
+        <div className="border border-[var(--border)] rounded-xl p-4 text-center">
+          <p className="text-xl font-light text-[var(--text-primary)]">
             {ProductiveHourLabel(data.stats.most_productive_hour)}
           </p>
-          <p className="text-xs text-gray-500 mt-1">最も生産的な時間帯</p>
+          <p className="text-[10px] tracking-[0.15em] uppercase text-[var(--text-subtle)] mt-1">最も生産的</p>
         </div>
       </div>
 
       {/* AI message */}
       {messageLines.length > 0 && (
-        <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-5 border border-indigo-100">
-          <div className="flex items-center gap-2 mb-3">
-            <svg
-              className="w-5 h-5 text-indigo-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
-            <h2 className="text-sm font-semibold text-indigo-700">
-              AIからのアドバイス
-            </h2>
-          </div>
-          <ul className="space-y-2">
+        <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-6">
+          <p className="text-[10px] tracking-[0.2em] uppercase text-[var(--text-subtle)] mb-4">AI ADVICE</p>
+          <ul className="space-y-3">
             {messageLines.map((line, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm text-gray-700">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-400 flex-shrink-0" />
-                <span>{line.replace(/^[-•]\s*/, "")}</span>
+              <li key={i} className="flex items-start gap-3 text-sm text-[var(--text-primary)]">
+                <span className="mt-2 w-1 h-1 rounded-full bg-[var(--text-subtle)] flex-shrink-0" />
+                <span className="leading-relaxed">{line.replace(/^[-•]\s*/, "")}</span>
               </li>
             ))}
           </ul>
@@ -136,7 +127,7 @@ export default function InsightsPage() {
       )}
 
       {/* Total tasks context */}
-      <p className="text-sm text-gray-400 text-center">
+      <p className="text-xs text-[var(--text-subtle)] text-center tracking-wide">
         今週の総タスク数: {data.stats.total_tasks} 件
       </p>
     </div>
