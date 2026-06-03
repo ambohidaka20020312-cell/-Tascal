@@ -6,6 +6,8 @@ import { useViewport } from "../../hooks/useViewport";
 import AdBanner from "../ads/AdBanner";
 import AdScript from "../ads/AdScript";
 import TaskForm from "../tasks/TaskForm";
+import FocusOverlay from "../focus/FocusOverlay";
+import { useFocusStore } from "../../store/focusStore";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -81,6 +83,7 @@ const SIDEBAR_NAV = [
 ];
 
 export default function AppLayout({ children }: AppLayoutProps) {
+  const focusActive = useFocusStore((s) => s.isActive);
   const { user, logout } = useAuthStore();
   const { plan, isFree } = usePlan();
   const { pathname } = useLocation();
@@ -336,6 +339,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
           defaultDate={new Date().toISOString().split("T")[0]}
         />
       )}
+
+      {focusActive && <FocusOverlay />}
     </>
   );
 }

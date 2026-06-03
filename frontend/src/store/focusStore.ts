@@ -1,0 +1,35 @@
+import { create } from "zustand";
+import { useTimerStore } from "./timerStore";
+
+interface FocusStore {
+  isActive: boolean;
+  mode: "normal" | "pomodoro";
+  pomodoroPhase: "work" | "break";
+  pomodoroCount: number;
+  startFocus: (taskId: number, mode: "normal" | "pomodoro") => void;
+  endFocus: () => void;
+  nextPomodoro: () => void;
+}
+
+export const useFocusStore = create<FocusStore>((set, get) => ({
+  isActive: false,
+  mode: "normal",
+  pomodoroPhase: "work",
+  pomodoroCount: 0,
+  startFocus: (taskId, mode) => {
+    useTimerStore.getState().startTask(taskId);
+    set({ isActive: true, mode, pomodoroPhase: "work", pomodoroCount: 0 });
+  },
+  endFocus: () => {
+    useTimerStore.getState().stopTask();
+    set({ isActive: false, pomodoroPhase: "work", pomodoroCount: 0 });
+  },
+  nextPomodoro: () => {
+    const { pomodoroPhase, pomodoroCount } = get();
+    if (pomodoroPhase === "work") {
+      set({ pomodoroPhase: "break" });
+    } else {
+      set({ pomodoroPhase: "work", pomodoroCount: pomodoroCount + 1 });
+    }
+  },
+}));

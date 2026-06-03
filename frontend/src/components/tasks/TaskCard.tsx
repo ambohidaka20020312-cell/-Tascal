@@ -4,6 +4,7 @@ import Button from "../common/Button";
 import { useCompleteTask, useDeleteTask } from "../../hooks/useTasks";
 import { useViewport } from "../../hooks/useViewport";
 import OverrunAlert from "../ai/OverrunAlert";
+import { useFocusStore } from "../../store/focusStore";
 
 interface TaskCardProps {
   task: Task;
@@ -32,6 +33,7 @@ export default function TaskCard({ task }: TaskCardProps) {
   const [expanded, setExpanded] = useState(false);
   const completeTask = useCompleteTask();
   const deleteTask = useDeleteTask();
+  const startFocus = useFocusStore((s) => s.startFocus);
 
   const { deviceType } = useViewport();
   const isPhoneSmall = deviceType === "phone-small";
@@ -152,14 +154,32 @@ export default function TaskCard({ task }: TaskCardProps) {
 
             <div className="flex flex-col gap-1 shrink-0">
               {task.status !== "completed" && (
-                <Button
-                  size="sm"
-                  variant="primary"
-                  onClick={() => setShowCompleteModal(true)}
-                  loading={completeTask.isPending}
-                >
-                  完了
-                </Button>
+                <>
+                  <Button
+                    size="sm"
+                    variant="primary"
+                    onClick={() => setShowCompleteModal(true)}
+                    loading={completeTask.isPending}
+                  >
+                    完了
+                  </Button>
+                  <div className="flex gap-1">
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => startFocus(task.id, "normal")}
+                    >
+                      🎯 フォーカス
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => startFocus(task.id, "pomodoro")}
+                    >
+                      🍅
+                    </Button>
+                  </div>
+                </>
               )}
               <Button
                 size="sm"
