@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Task } from "../../store/taskStore";
 import Button from "../common/Button";
 import { useCompleteTask, useDeleteTask } from "../../hooks/useTasks";
+import { useViewport } from "../../hooks/useViewport";
 import OverrunAlert from "../ai/OverrunAlert";
 
 interface TaskCardProps {
@@ -28,8 +29,14 @@ const statusConfig: Record<Task["status"], { label: string; className: string }>
 export default function TaskCard({ task }: TaskCardProps) {
   const [actualMinutes, setActualMinutes] = useState<string>("");
   const [showCompleteModal, setShowCompleteModal] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const completeTask = useCompleteTask();
   const deleteTask = useDeleteTask();
+
+  const { deviceType } = useViewport();
+  const isPhoneSmall = deviceType === "phone-small";
+  const isTabletOrAbove =
+    deviceType === "tablet" || deviceType === "desktop" || deviceType === "ultrawide";
 
   const priority = priorityConfig[task.priority];
   const status = statusConfig[task.status];
@@ -68,39 +75,78 @@ export default function TaskCard({ task }: TaskCardProps) {
         {/* Priority color bar — left vertical stripe */}
         <div className={`w-1 shrink-0 ${priority.barColor}`} />
 
-        <div className="flex-1 p-4">
+        <div className={`flex-1 ${isPhoneSmall ? "p-2.5" : "p-4"}`}>
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 flex-wrap mb-1">
+              {/* phone-small: compact badges */}
+              <div className="flex items-center gap-1.5 flex-wrap mb-1">
                 <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${priority.className}`}
+                  className={`inline-flex items-center px-2 py-0.5 rounded-full font-medium ${priority.className} ${isPhoneSmall ? "text-[10px]" : "text-xs"}`}
                 >
                   {priority.label}
                 </span>
-                <span className={`text-xs font-medium ${status.className}`}>
+                <span className={`font-medium ${status.className} ${isPhoneSmall ? "text-[10px]" : "text-xs"}`}>
                   {status.label}
                 </span>
               </div>
+
+              {/* Title — always shown */}
               <h3
                 className={[
                   "font-semibold text-gray-800 truncate",
+                  isPhoneSmall ? "text-sm" : "",
                   task.status === "completed" ? "line-through text-gray-400" : "",
                 ].join(" ")}
               >
                 {task.title}
               </h3>
-              {/* Description truncated on mobile */}
-              {task.description && (
-                <p className="text-sm text-gray-500 mt-1 truncate sm:line-clamp-2 sm:whitespace-normal">
-                  {task.description}
-                </p>
-              )}
-              {task.estimated_minutes != null && (
-                <p className="text-xs text-gray-400 mt-1">
-                  目標: {task.estimated_minutes}分
-                  {task.actual_minutes != null &&
-                    ` / 実績: ${task.actual_minutes}分`}
-                </p>
+
+              {/* phone-small: description/time collapsed behind toggle */}
+              {isPhoneSmall ? (
+                <>
+                  {(task.description || task.estimated_minutes != null) && (
+                    <button
+                      onClick={() => setExpanded((e) => !e)}
+                      className="text-[10px] text-primary-500 mt-0.5"
+                    >
+                      {expanded ? "閉じる" : "詳細"}
+                    </button>
+                  )}
+                  {expanded && (
+                    <>
+                      {task.description && (
+                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">{task.description}</p>
+                      )}
+                      {task.estimated_minutes != null && (
+                        <p className="text-[10px] text-gray-400 mt-1">
+                          目標: {task.estimated_minutes}分
+                          {task.actual_minutes != null && ` / 実績: ${task.actual_minutes}分`}
+                        </p>
+                      )}
+                    </>
+                  )}
+                </>
+              ) : (
+                <>
+                  {/* tablet+: show description inline, always visible */}
+                  {task.description && (
+                    <p className={`text-gray-500 mt-1 ${isTabletOrAbove ? "line-clamp-2" : "truncate"} text-sm`}>
+                      {task.description}
+                    </p>
+                  )}
+                  {task.estimated_minutes != null && (
+                    <p className="text-xs text-gray-400 mt-1">
+                      目標: {task.estimated_minutes}分
+                      {task.actual_minutes != null && ` / 実績: ${task.actual_minutes}分`}
+                    </p>
+                  )}
+                  {/* tablet+: additional detail row */}
+                  {isTabletOrAbove && task.due_datetime && (
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      期限: {task.due_datetime.split("T")[0]}
+                    </p>
+                  )}
+                </>
               )}
             </div>
 
@@ -126,7 +172,7 @@ export default function TaskCard({ task }: TaskCardProps) {
             </div>
           </div>
 
-          {/* OverrunAlert: in_progress かつ actual_minutes が estimated_minutes を超過した場合 */}
+          {/* OverrunAlert */}
           {isOverrunning && task.actual_minutes != null && (
             <div className="mt-3">
               <OverrunAlert task={task} actualMinutes={task.actual_minutes} />
