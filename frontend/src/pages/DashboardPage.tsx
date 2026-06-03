@@ -4,6 +4,7 @@ import { ja } from "date-fns/locale";
 import { useTaskStore } from "../store/taskStore";
 import { useTasksQuery } from "../hooks/useTasks";
 import { aiApi } from "../utils/api";
+import { useViewport } from "../hooks/useViewport";
 import TaskCard from "../components/tasks/TaskCard";
 import TaskForm from "../components/tasks/TaskForm";
 import Button from "../components/common/Button";
@@ -27,6 +28,11 @@ export default function DashboardPage() {
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [aiAdvice, setAiAdvice] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
+
+  const { deviceType, isLandscape } = useViewport();
+  const isPhoneSmall = deviceType === "phone-small";
+  const isTabletOrAbove =
+    deviceType === "tablet" || deviceType === "desktop" || deviceType === "ultrawide";
 
   const { isLoading, isError } = useTasksQuery(selectedDate);
 
@@ -52,20 +58,42 @@ export default function DashboardPage() {
     (t) => t.status === "pending" || t.status === "in_progress"
   ).length;
   const completedCount = tasks.filter((t) => t.status === "completed").length;
+  const totalCount = tasks.length;
+  const achievementRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   const today = new Date().toISOString().split("T")[0];
   const dateChips = getDateChips(selectedDate);
 
   return (
     <div className="max-w-2xl mx-auto space-y-5 mb-16 md:mb-0">
+      {/* Tablet+: stats summary header */}
+      {isTabletOrAbove && (
+        <div className="flex gap-4">
+          <div className="flex-1 bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p className="text-2xl font-bold text-gray-800">{completedCount}</p>
+            <p className="text-xs text-gray-500 mt-0.5">完了</p>
+          </div>
+          <div className="flex-1 bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p className="text-2xl font-bold text-gray-800">{totalCount}</p>
+            <p className="text-xs text-gray-500 mt-0.5">合計</p>
+          </div>
+          <div className="flex-1 bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p className="text-2xl font-bold text-primary-600">{achievementRate}%</p>
+            <p className="text-xs text-gray-500 mt-0.5">達成率</p>
+          </div>
+        </div>
+      )}
+
       {/* Date selector — horizontal chip strip on mobile, date input on tablet+ */}
       <div>
         <div className="flex items-center justify-between mb-2">
           <div>
-            <h2 className="text-xl font-bold text-gray-800">{todayLabel}</h2>
-            <p className="text-sm text-gray-500">
-              未完了: {pendingCount}件 / 完了: {completedCount}件
-            </p>
+            <h2 className={`font-bold text-gray-800 ${isPhoneSmall ? "text-lg" : "text-xl"}`}>{todayLabel}</h2>
+            {!isTabletOrAbove && (
+              <p className={`text-gray-500 ${isPhoneSmall ? "text-xs" : "text-sm"}`}>
+                未完了: {pendingCount}件 / 完了: {completedCount}件
+              </p>
+            )}
           </div>
           {/* Date input visible on sm+ */}
           <input
@@ -104,8 +132,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Two-column layout on md+ */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+      {/* Two-column layout on tablet+ or landscape mobile */}
+      <div className={`grid gap-5 items-start ${isTabletOrAbove || isLandscape ? "grid-cols-2" : "grid-cols-1"}`}>
         {/* Left: Task list */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">

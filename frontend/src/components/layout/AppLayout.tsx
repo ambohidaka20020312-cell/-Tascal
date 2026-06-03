@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 import { usePlan } from "../../hooks/usePlan";
+import { useViewport } from "../../hooks/useViewport";
 import AdBanner from "../ads/AdBanner";
 import AdScript from "../ads/AdScript";
 import TaskForm from "../tasks/TaskForm";
@@ -83,8 +84,21 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const { user, logout } = useAuthStore();
   const { plan, isFree } = usePlan();
   const { pathname } = useLocation();
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showAddTask, setShowAddTask] = useState(false);
+
+  const { deviceType, hasDynamicIsland, safeArea } = useViewport();
+
+  const isPhone = deviceType === "phone-small" || deviceType === "phone" || deviceType === "phone-large";
+  const isTablet = deviceType === "tablet";
+  const isDesktop = deviceType === "desktop";
+  const isUltrawide = deviceType === "ultrawide";
+  const showSidebar = isTablet || isDesktop || isUltrawide;
+
+  // sidebar width: tablet uses narrower fixed side nav, desktop 240px
+  const sidebarWidth = isTablet ? 220 : 240;
+
+  // Dynamic Island: force top safe area to 54px
+  const topSafeArea = hasDynamicIsland ? 54 : safeArea.top;
 
   const isActive = (to: string) =>
     to === "/" ? pathname === "/" : pathname.startsWith(to);
@@ -93,203 +107,227 @@ export default function AppLayout({ children }: AppLayoutProps) {
     <>
       <AdScript />
 
-      <div className="flex min-h-screen bg-gray-50">
-        {/* ── Tablet/PC Sidebar (md+) ── */}
-        <aside
-          className={[
-            "hidden md:flex flex-col fixed left-0 top-0 h-full z-40 bg-white border-r border-gray-200 shadow-sm transition-all duration-200",
-            sidebarCollapsed ? "w-16" : "w-56",
-          ].join(" ")}
-        >
-          {/* Sidebar logo */}
-          <div className={`flex items-center gap-2 px-4 py-4 border-b border-gray-100 ${sidebarCollapsed ? "justify-center" : ""}`}>
-            <Link to="/" className="flex items-center gap-2 text-primary-600 font-bold text-xl hover:text-primary-700 shrink-0">
-              <LogoIcon />
-              {!sidebarCollapsed && <span>Tascal</span>}
-            </Link>
-          </div>
-
-          {/* Collapse toggle */}
-          <button
-            onClick={() => setSidebarCollapsed((c) => !c)}
-            className="absolute -right-3 top-[4.5rem] w-6 h-6 bg-white border border-gray-200 rounded-full flex items-center justify-center shadow-sm hover:bg-gray-50"
-            aria-label={sidebarCollapsed ? "展開" : "折りたたむ"}
+      <div
+        className={`flex min-h-screen bg-gray-50${hasDynamicIsland ? " has-dynamic-island" : ""}`}
+        style={{ paddingTop: topSafeArea > 0 ? `${topSafeArea}px` : undefined }}
+      >
+        {/* ── Sidebar (tablet+) ── */}
+        {showSidebar && (
+          <aside
+            className="flex flex-col fixed left-0 top-0 h-full z-40 bg-white border-r border-gray-200 shadow-sm"
+            style={{
+              width: sidebarWidth,
+              paddingTop: topSafeArea > 0 ? `${topSafeArea}px` : undefined,
+            }}
           >
-            <svg className={`w-3 h-3 text-gray-500 transition-transform ${sidebarCollapsed ? "rotate-180" : ""}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-
-          {/* Nav items */}
-          <nav className="flex-1 py-4 space-y-1 px-2">
-            {SIDEBAR_NAV.map(({ label, to, Icon }) => {
-              const active = isActive(to);
-              return (
-                <Link
-                  key={to}
-                  to={to}
-                  className={[
-                    "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors min-h-touch",
-                    active
-                      ? "bg-primary-50 text-primary-700"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
-                    sidebarCollapsed ? "justify-center" : "",
-                  ].join(" ")}
-                  title={sidebarCollapsed ? label : undefined}
-                >
-                  <Icon active={active} />
-                  {!sidebarCollapsed && (
-                    <span className="text-sm font-medium">{label}</span>
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-
-          {/* User + logout */}
-          {user && (
-            <div className={`border-t border-gray-100 p-3 ${sidebarCollapsed ? "flex flex-col items-center gap-2" : ""}`}>
-              {!sidebarCollapsed && (
-                <div className="flex items-center gap-2 mb-2 px-1">
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-800 truncate">{user.name}</p>
-                    <PlanBadge plan={plan} />
-                  </div>
-                </div>
-              )}
-              <button
-                onClick={logout}
-                className={[
-                  "w-full rounded-lg border border-gray-200 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100",
-                  sidebarCollapsed ? "px-1" : "px-3",
-                ].join(" ")}
-                title={sidebarCollapsed ? "ログアウト" : undefined}
-              >
-                {sidebarCollapsed ? (
-                  <svg className="w-4 h-4 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                  </svg>
-                ) : "ログアウト"}
-              </button>
-            </div>
-          )}
-        </aside>
-
-        {/* ── Main area ── */}
-        <div className={`flex flex-col flex-1 min-h-screen transition-all duration-200 ${sidebarCollapsed ? "md:ml-16" : "md:ml-56"}`}>
-          {/* Mobile header (hidden on md+) */}
-          <header className="md:hidden sticky top-0 z-30 border-b border-gray-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between px-4 py-3">
-              <Link to="/" className="flex items-center gap-2 text-xl font-bold text-primary-600">
+            {/* Sidebar logo */}
+            <div className="flex items-center gap-2 px-4 py-4 border-b border-gray-100">
+              <Link to="/" className="flex items-center gap-2 text-primary-600 font-bold text-xl hover:text-primary-700 shrink-0">
                 <LogoIcon />
-                Tascal
+                {(isDesktop || isUltrawide) && <span>Tascal</span>}
               </Link>
-              {user && (
-                <div className="flex items-center gap-2">
-                  <PlanBadge plan={plan} />
-                </div>
-              )}
             </div>
-          </header>
 
-          {/* Page content — pb-24 on mobile to clear bottom tab bar */}
-          <main className="flex-1 px-4 py-6 sm:px-6 lg:px-8 pb-24 md:pb-6">
-            {children}
-          </main>
+            {/* Nav items */}
+            <nav className="flex-1 py-4 space-y-1 px-2">
+              {SIDEBAR_NAV.map(({ label, to, Icon }) => {
+                const active = isActive(to);
+                const showLabel = isDesktop || isUltrawide;
+                return (
+                  <Link
+                    key={to}
+                    to={to}
+                    className={[
+                      "flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors min-h-touch",
+                      active
+                        ? "bg-primary-50 text-primary-700"
+                        : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                      !showLabel ? "justify-center" : "",
+                    ].join(" ")}
+                    title={!showLabel ? label : undefined}
+                  >
+                    <Icon active={active} />
+                    {showLabel && (
+                      <span className="text-sm font-medium">{label}</span>
+                    )}
+                  </Link>
+                );
+              })}
+            </nav>
 
-          {/* Footer (md+) */}
-          <footer className="hidden md:block border-t border-gray-200 bg-white">
-            {isFree && (
-              <div className="flex justify-center px-4 pt-4">
-                <AdBanner
-                  slot={import.meta.env.VITE_ADSENSE_FOOTER_SLOT ?? "0000000000"}
-                  format="leaderboard"
-                  className="w-full max-w-[728px]"
-                />
+            {/* User + logout */}
+            {user && (
+              <div className={`border-t border-gray-100 p-3 ${!(isDesktop || isUltrawide) ? "flex flex-col items-center gap-2" : ""}`}>
+                {(isDesktop || isUltrawide) && (
+                  <div className="flex items-center gap-2 mb-2 px-1">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 truncate">{user.name}</p>
+                      <PlanBadge plan={plan} />
+                    </div>
+                  </div>
+                )}
+                <button
+                  onClick={logout}
+                  className={[
+                    "w-full rounded-lg border border-gray-200 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100",
+                    !(isDesktop || isUltrawide) ? "px-1" : "px-3",
+                  ].join(" ")}
+                  title={!(isDesktop || isUltrawide) ? "ログアウト" : undefined}
+                >
+                  {!(isDesktop || isUltrawide) ? (
+                    <svg className="w-4 h-4 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                  ) : "ログアウト"}
+                </button>
               </div>
             )}
-            <div className="px-4 py-4 sm:px-6 lg:px-8">
-              <div className="flex flex-col items-center justify-between gap-2 sm:flex-row">
-                <p className="text-xs text-gray-400">
-                  &copy; {new Date().getFullYear()} Tascal. All rights reserved.
-                </p>
+          </aside>
+        )}
+
+        {/* ── Main area ── */}
+        <div
+          className="flex flex-col flex-1 min-h-screen"
+          style={{ marginLeft: showSidebar ? sidebarWidth : 0 }}
+        >
+          {/* Ultrawide: center content */}
+          <div className={isUltrawide ? "max-w-7xl mx-auto w-full flex flex-col flex-1" : "flex flex-col flex-1"}>
+            {/* Mobile header (phone only) */}
+            {isPhone && (
+              <header className="sticky top-0 z-30 border-b border-gray-200 bg-white shadow-sm">
+                <div
+                  className="flex items-center justify-between px-4 py-3"
+                  style={{ fontSize: deviceType === "phone-small" ? "14px" : undefined }}
+                >
+                  <Link to="/" className="flex items-center gap-2 text-xl font-bold text-primary-600">
+                    <LogoIcon />
+                    Tascal
+                  </Link>
+                  {user && (
+                    <div className="flex items-center gap-2">
+                      <PlanBadge plan={plan} />
+                    </div>
+                  )}
+                </div>
+              </header>
+            )}
+
+            {/* Page content */}
+            <main
+              className="flex-1"
+              style={{
+                paddingLeft: "var(--content-padding-x)",
+                paddingRight: "var(--content-padding-x)",
+                paddingTop: "var(--content-padding-y)",
+                paddingBottom: isPhone
+                  ? `calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 1rem)`
+                  : "var(--content-padding-y)",
+              }}
+            >
+              {children}
+            </main>
+
+            {/* Footer (tablet+) */}
+            {showSidebar && (
+              <footer className="border-t border-gray-200 bg-white">
                 {isFree && (
-                  <p className="text-xs text-gray-400">
-                    広告を非表示にするには{" "}
-                    <Link to="/plans" className="text-primary-600 underline hover:text-primary-700">
-                      Proプランにアップグレード
-                    </Link>
-                  </p>
+                  <div className="flex justify-center px-4 pt-4">
+                    <AdBanner
+                      slot={import.meta.env.VITE_ADSENSE_FOOTER_SLOT ?? "0000000000"}
+                      format="leaderboard"
+                      className="w-full max-w-[728px]"
+                    />
+                  </div>
                 )}
-              </div>
-            </div>
-          </footer>
+                <div className="px-4 py-4 sm:px-6 lg:px-8">
+                  <div className="flex flex-col items-center justify-between gap-2 sm:flex-row">
+                    <p className="text-xs text-gray-400">
+                      &copy; {new Date().getFullYear()} Tascal. All rights reserved.
+                    </p>
+                    {isFree && (
+                      <p className="text-xs text-gray-400">
+                        広告を非表示にするには{" "}
+                        <Link to="/plans" className="text-primary-600 underline hover:text-primary-700">
+                          Proプランにアップグレード
+                        </Link>
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </footer>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* ── Mobile Bottom Tab Bar (hidden on md+) ── */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 pb-safe">
-        <div className="flex items-center">
-          {/* Home */}
-          <Link
-            to="/"
-            className={[
-              "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
-              isActive("/") ? "text-primary-600" : "text-gray-400",
-            ].join(" ")}
-          >
-            <HomeIcon active={isActive("/")} />
-            <span className="text-[10px] font-medium">ホーム</span>
-          </Link>
+      {/* ── Mobile Bottom Tab Bar (phone only) ── */}
+      {isPhone && (
+        <nav
+          className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-200 pb-safe"
+          style={{ height: `calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px))` }}
+        >
+          <div className="flex items-center h-[var(--bottom-nav-height)]">
+            {/* Home */}
+            <Link
+              to="/"
+              className={[
+                "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
+                isActive("/") ? "text-primary-600" : "text-gray-400",
+              ].join(" ")}
+            >
+              <HomeIcon active={isActive("/")} />
+              <span className={`font-medium ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>ホーム</span>
+            </Link>
 
-          {/* Calendar */}
-          <Link
-            to="/calendar"
-            className={[
-              "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
-              isActive("/calendar") ? "text-primary-600" : "text-gray-400",
-            ].join(" ")}
-          >
-            <CalendarIcon active={isActive("/calendar")} />
-            <span className="text-[10px] font-medium">カレンダー</span>
-          </Link>
+            {/* Calendar */}
+            <Link
+              to="/calendar"
+              className={[
+                "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
+                isActive("/calendar") ? "text-primary-600" : "text-gray-400",
+              ].join(" ")}
+            >
+              <CalendarIcon active={isActive("/calendar")} />
+              <span className={`font-medium ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>カレンダー</span>
+            </Link>
 
-          {/* Add task FAB */}
-          <button
-            onClick={() => setShowAddTask(true)}
-            className="flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5"
-            aria-label="タスク追加"
-          >
-            <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center shadow-md -mt-4">
-              <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-              </svg>
-            </div>
-            <span className="text-[10px] font-medium text-gray-400 mt-1">追加</span>
-          </button>
+            {/* Add task FAB */}
+            <button
+              onClick={() => setShowAddTask(true)}
+              className="flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5"
+              aria-label="タスク追加"
+            >
+              <div className="w-10 h-10 bg-primary-600 rounded-full flex items-center justify-center shadow-md -mt-4">
+                <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                </svg>
+              </div>
+              <span className={`font-medium text-gray-400 mt-1 ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>追加</span>
+            </button>
 
-          {/* Plans */}
-          <Link
-            to="/plans"
-            className={[
-              "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
-              isActive("/plans") ? "text-primary-600" : "text-gray-400",
-            ].join(" ")}
-          >
-            <PlansIcon active={isActive("/plans")} />
-            <span className="text-[10px] font-medium">プラン</span>
-          </Link>
+            {/* Plans */}
+            <Link
+              to="/plans"
+              className={[
+                "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
+                isActive("/plans") ? "text-primary-600" : "text-gray-400",
+              ].join(" ")}
+            >
+              <PlansIcon active={isActive("/plans")} />
+              <span className={`font-medium ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>プラン</span>
+            </Link>
 
-          {/* Profile / Logout */}
-          <button
-            onClick={logout}
-            className="flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 text-gray-400"
-          >
-            <ProfileIcon active={false} />
-            <span className="text-[10px] font-medium">ログアウト</span>
-          </button>
-        </div>
-      </nav>
+            {/* Profile / Logout */}
+            <button
+              onClick={logout}
+              className="flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 text-gray-400"
+            >
+              <ProfileIcon active={false} />
+              <span className={`font-medium ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>ログアウト</span>
+            </button>
+          </div>
+        </nav>
+      )}
 
       {/* Add task modal (triggered by "+" tab) */}
       {showAddTask && (
