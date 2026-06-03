@@ -81,36 +81,52 @@ export default function LoginPage() {
             </p>
 
             {error && (
-              <p className="text-xs text-[var(--text-muted)] border-l-2 border-[var(--border)] pl-3 mb-6 tracking-wide">
+              <p
+                id="login-error"
+                role="alert"
+                className="text-xs text-[var(--text-muted)] border-l-2 border-[var(--border)] pl-3 mb-6 tracking-wide"
+              >
                 {error}
               </p>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-8">
+            <form onSubmit={handleSubmit} className="space-y-8" noValidate>
               <div>
-                <label className="block text-[10px] tracking-[0.2em] uppercase text-[var(--text-subtle)] mb-3">
+                <label
+                  htmlFor="login-email"
+                  className="block text-[10px] tracking-[0.2em] uppercase text-[var(--text-subtle)] mb-3"
+                >
                   {t("auth.email")}
                 </label>
                 <input
+                  id="login-email"
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="you@example.com"
                   required
+                  aria-invalid={error ? "true" : "false"}
+                  aria-describedby={error ? "login-error" : undefined}
                   className="w-full border-0 border-b border-[var(--border)] bg-transparent pb-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] focus:outline-none focus:border-[var(--text-primary)] transition-colors"
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] tracking-[0.2em] uppercase text-[var(--text-subtle)] mb-3">
+                <label
+                  htmlFor="login-password"
+                  className="block text-[10px] tracking-[0.2em] uppercase text-[var(--text-subtle)] mb-3"
+                >
                   {t("auth.password")}
                 </label>
                 <input
+                  id="login-password"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
                   required
+                  aria-invalid={error ? "true" : "false"}
+                  aria-describedby={error ? "login-error" : undefined}
                   className="w-full border-0 border-b border-[var(--border)] bg-transparent pb-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] focus:outline-none focus:border-[var(--text-primary)] transition-colors"
                 />
               </div>
@@ -118,6 +134,7 @@ export default function LoginPage() {
               <button
                 type="submit"
                 disabled={loading}
+                aria-busy={loading}
                 className="w-full h-11 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.2em] uppercase rounded-lg hover:opacity-80 transition-opacity disabled:opacity-40"
               >
                 {loading ? "..." : t("auth.login")}

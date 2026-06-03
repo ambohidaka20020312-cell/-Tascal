@@ -117,7 +117,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           >
             {/* Sidebar logo */}
             <div className="flex items-center gap-2 px-5 py-7">
-              <Link to="/" className="flex items-center gap-2 text-[var(--text-primary)] hover:opacity-70 shrink-0">
+              <Link to="/" aria-label="Tascal ホームへ" className="flex items-center gap-2 text-[var(--text-primary)] hover:opacity-70 shrink-0">
                 {(isDesktop || isUltrawide) ? (
                   <span className="text-sm font-semibold tracking-[0.25em] uppercase">TASCAL</span>
                 ) : (
@@ -127,7 +127,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
             </div>
 
             {/* Nav items */}
-            <nav className="flex-1 py-4 space-y-0.5 px-2">
+            <nav aria-label="メインナビゲーション" className="flex-1 py-4 space-y-0.5 px-2">
               {SIDEBAR_NAV.map(({ label, to, Icon }) => {
                 const active = isActive(to);
                 const showLabel = isDesktop || isUltrawide;
@@ -135,6 +135,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   <Link
                     key={to}
                     to={to}
+                    aria-current={active ? "page" : undefined}
                     className={[
                       "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors min-h-touch relative",
                       active
@@ -169,6 +170,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 )}
                 <button
                   onClick={logout}
+                  aria-label={t('auth.logout')}
                   className={[
                     "w-full rounded-lg border border-[var(--border)] py-1.5 text-xs font-medium text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]",
                     !(isDesktop || isUltrawide) ? "px-1" : "px-3",
@@ -200,7 +202,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   className="flex items-center justify-between px-4 py-3"
                   style={{ fontSize: deviceType === "phone-small" ? "14px" : undefined }}
                 >
-                  <Link to="/" className="text-[var(--text-primary)] font-bold">
+                  <Link to="/" aria-label="Tascal ホームへ" className="text-[var(--text-primary)] font-bold">
                     <span className="text-xl font-bold tracking-widest uppercase">TASCAL</span>
                   </Link>
                   {user && (
@@ -264,13 +266,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
       {/* ── Mobile Bottom Tab Bar (phone only) ── */}
       {isPhone && (
         <nav
+          aria-label="メインナビゲーション"
           className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-primary)] border-t border-[var(--border)] pb-safe"
           style={{ height: `calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px))` }}
         >
-          <div className="flex items-center h-[var(--bottom-nav-height)]">
+          <div role="tablist" className="flex items-center h-[var(--bottom-nav-height)]">
             {/* Home */}
             <Link
               to="/"
+              role="tab"
+              aria-selected={isActive("/")}
+              aria-current={isActive("/") ? "page" : undefined}
               className={[
                 "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
                 isActive("/") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
@@ -283,6 +289,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
             {/* Calendar */}
             <Link
               to="/calendar"
+              role="tab"
+              aria-selected={isActive("/calendar")}
+              aria-current={isActive("/calendar") ? "page" : undefined}
               className={[
                 "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
                 isActive("/calendar") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
@@ -309,6 +318,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
             {/* Plans */}
             <Link
               to="/plans"
+              role="tab"
+              aria-selected={isActive("/plans")}
+              aria-current={isActive("/plans") ? "page" : undefined}
               className={[
                 "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
                 isActive("/plans") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
@@ -321,6 +333,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
             {/* Profile / Logout */}
             <button
               onClick={logout}
+              role="tab"
+              aria-selected={false}
+              aria-label={t('auth.logout')}
               className="flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 text-[var(--text-subtle)]"
             >
               <ProfileIcon active={false} />

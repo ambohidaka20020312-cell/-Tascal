@@ -58,13 +58,18 @@ export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-xl max-h-[90dvh] flex flex-col overflow-hidden">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="task-form-title"
+        className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-2xl shadow-xl max-h-[90dvh] flex flex-col overflow-hidden"
+      >
         <div className="sm:hidden flex justify-center pt-3 pb-1">
           <div className="w-10 h-1 bg-gray-300 rounded-full" />
         </div>
 
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
-          <h2 className="text-lg font-bold text-gray-800">{t('task.add')}</h2>
+          <h2 id="task-form-title" className="text-lg font-bold text-gray-800">{t('task.add')}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 transition-colors min-w-touch min-h-touch flex items-center justify-center"
@@ -78,31 +83,40 @@ export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
 
         <div className="overflow-y-auto flex-1 px-6 py-4">
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+            <div
+              id="task-form-error"
+              role="alert"
+              className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600"
+            >
               {error}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t('task.title')} <span className="text-red-500">*</span>
+              <label htmlFor="task-title" className="block text-sm font-medium text-gray-700 mb-1">
+                {t('task.title')} <span className="text-red-500" aria-hidden="true">*</span>
               </label>
               <input
+                id="task-title"
                 type="text"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={t('task.title')}
                 className={inputCls}
                 required
+                aria-required="true"
+                aria-invalid={error && !title.trim() ? "true" : "false"}
+                aria-describedby={error ? "task-form-error" : undefined}
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="task-description" className="block text-sm font-medium text-gray-700 mb-1">
                 {t('task.description')}
               </label>
               <textarea
+                id="task-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder={t('task.description')}
@@ -113,10 +127,11 @@ export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="task-priority" className="block text-sm font-medium text-gray-700 mb-1">
                   {t('task.priority')}
                 </label>
                 <select
+                  id="task-priority"
                   value={priority}
                   onChange={(e) => setPriority(e.target.value as Priority)}
                   className={`${inputCls} bg-white`}
@@ -129,10 +144,11 @@ export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label htmlFor="task-estimated-minutes" className="block text-sm font-medium text-gray-700 mb-1">
                   {t('task.estimated_time')}（{t('common.minutes')}）
                 </label>
                 <input
+                  id="task-estimated-minutes"
                   type="number"
                   min={1}
                   value={estimatedMinutes}
@@ -144,10 +160,11 @@ export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="task-scheduled-date" className="block text-sm font-medium text-gray-700 mb-1">
                 {t('task.due_date')}
               </label>
               <input
+                id="task-scheduled-date"
                 type="date"
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
