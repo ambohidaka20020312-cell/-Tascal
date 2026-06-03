@@ -14,6 +14,11 @@ interface Settings {
   taskDensity: "compact" | "normal" | "comfortable";
   showEstimatedTime: boolean;
   defaultView: "today" | "week" | "calendar";
+  workHoursPerDay: number;
+  defaultTaskDuration: number;
+  notificationsEnabled: boolean;
+  setWorkPreferences: (s: Partial<Pick<Settings, "workHoursPerDay" | "defaultTaskDuration">>) => void;
+  setNotificationsEnabled: (enabled: boolean) => void;
   setTheme: (t: Settings["theme"]) => void;
   setAccentColor: (c: Settings["accentColor"]) => void;
   setPomodoroSettings: (
@@ -53,6 +58,11 @@ export const useSettingsStore = create<Settings>()(
       taskDensity: "normal",
       showEstimatedTime: true,
       defaultView: "today",
+      workHoursPerDay: 8,
+      defaultTaskDuration: 30,
+      notificationsEnabled: false,
+      setWorkPreferences: (s) => set(s),
+      setNotificationsEnabled: (notificationsEnabled) => set({ notificationsEnabled }),
       setTheme: (theme) => set({ theme }),
       setAccentColor: (accentColor) => set({ accentColor }),
       setPomodoroSettings: (s) => set(s),

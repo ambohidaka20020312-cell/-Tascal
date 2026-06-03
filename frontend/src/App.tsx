@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/authStore";
 import AppLayout from "./components/layout/AppLayout";
@@ -11,10 +11,24 @@ import InsightsPage from "./pages/InsightsPage";
 import SettingsPage from "./pages/SettingsPage";
 import AccountPage from "./pages/AccountPage";
 import CookieConsent from "./components/legal/CookieConsent";
+import OnboardingWizard from "./components/onboarding/OnboardingWizard";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return isAuthenticated() ? <>{children}</> : <Navigate to="/login" replace />;
+}
+
+function OnboardingGate({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((s) => s.user);
+  const [dismissed, setDismissed] = useState(false);
+
+  const needsOnboarding = user && !user.onboarding_completed && !dismissed;
+
+  if (needsOnboarding) {
+    return <OnboardingWizard onComplete={() => setDismissed(true)} />;
+  }
+
+  return <>{children}</>;
 }
 
 export default function App() {
@@ -31,9 +45,11 @@ export default function App() {
         path="/"
         element={
           <PrivateRoute>
-            <AppLayout>
-              <DashboardPage />
-            </AppLayout>
+            <OnboardingGate>
+              <AppLayout>
+                <DashboardPage />
+              </AppLayout>
+            </OnboardingGate>
           </PrivateRoute>
         }
       />
@@ -41,9 +57,11 @@ export default function App() {
         path="/calendar"
         element={
           <PrivateRoute>
-            <AppLayout>
-              <CalendarPage />
-            </AppLayout>
+            <OnboardingGate>
+              <AppLayout>
+                <CalendarPage />
+              </AppLayout>
+            </OnboardingGate>
           </PrivateRoute>
         }
       />

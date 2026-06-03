@@ -14,6 +14,7 @@ class User(db.Model):
     stripe_customer_id = db.Column(db.String(100), unique=True, nullable=True)
     analytics_opt_out = db.Column(db.Boolean, nullable=False, default=False)
     digest_unsubscribed = db.Column(db.Boolean, nullable=False, default=False)
+    onboarding_completed = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     tasks = db.relationship("Task", backref="user", lazy="dynamic")
@@ -30,4 +31,5 @@ class User(db.Model):
             "email": self.email,
             "name": self.name,
             "plan": self.plan,
+            "onboarding_completed": self.onboarding_completed,
         }

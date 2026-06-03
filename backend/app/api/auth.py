@@ -89,3 +89,24 @@ def login():
 def refresh():
     user_id = get_jwt_identity()
     return jsonify({"data": {"access_token": create_access_token(identity=user_id)}})
+
+
+@bp.patch("/profile")
+@jwt_required()
+def update_profile():
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": {"code": "NOT_FOUND", "message": "ユーザーが見つかりません"}}), 404
+
+    data = request.get_json() or {}
+    if "name" in data:
+        name = str(data["name"]).strip()
+        if len(name) > 100:
+            return jsonify({"error": {"code": "INVALID_NAME", "message": "名前は100文字以内で入力してください"}}), 400
+        user.name = name
+    if "onboarding_completed" in data:
+        user.onboarding_completed = bool(data["onboarding_completed"])
+
+    db.session.commit()
+    return jsonify({"data": {"user": user.to_dict()}, "message": "プロフィールを更新しました"})

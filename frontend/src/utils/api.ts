@@ -88,6 +88,11 @@ export const templateApi = {
     api.post(`/templates/${id}/use`, { scheduled_date }),
 };
 
+export const authApi = {
+  updateProfile: (data: { name?: string; onboarding_completed?: boolean }) =>
+    api.patch("/auth/profile", data),
+};
+
 export const billingApi = {
   createCheckout: (plan: string, success_url: string, cancel_url: string) =>
     api.post("/billing/checkout", { plan, success_url, cancel_url }),

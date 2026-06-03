@@ -5,11 +5,13 @@ interface User {
   email: string;
   name: string;
   plan: "free" | "pro" | "team" | "personal_pro" | "business" | "enterprise";
+  onboarding_completed?: boolean;
 }
 
 interface AuthState {
   user: User | null;
   setUser: (user: User | null) => void;
+  updateUser: (patch: Partial<User>) => void;
   logout: () => void;
   isAuthenticated: () => boolean;
 }
@@ -17,6 +19,10 @@ interface AuthState {
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   setUser: (user) => set({ user }),
+  updateUser: (patch) => {
+    const current = get().user;
+    if (current) set({ user: { ...current, ...patch } });
+  },
   logout: () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
