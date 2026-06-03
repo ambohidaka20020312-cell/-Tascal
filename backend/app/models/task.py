@@ -21,6 +21,10 @@ class Task(db.Model):
     recurrence = db.Column(db.String(20), nullable=True)  # none/daily/weekly/monthly/weekdays
     recurrence_end_date = db.Column(db.Date, nullable=True)
 
+    org_id = db.Column(db.Integer, db.ForeignKey("organizations.id"), nullable=True)
+    department_id = db.Column(db.Integer, db.ForeignKey("departments.id"), nullable=True)
+    assigned_to = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
+
     sort_order = db.Column(db.Integer, default=0)
     is_deleted = db.Column(db.Boolean, default=False)
     completed_at = db.Column(db.DateTime, nullable=True)
@@ -43,4 +47,7 @@ class Task(db.Model):
             "sort_order": self.sort_order,
             "completed_at": self.completed_at.isoformat() if self.completed_at else None,
             "created_at": self.created_at.isoformat(),
+            "org_id": self.org_id,
+            "department_id": self.department_id,
+            "assigned_to": self.assigned_to,
         }

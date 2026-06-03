@@ -8,6 +8,8 @@ def register_blueprints(app: Flask):
     from .calendar import bp as calendar_bp
     from .billing import bp as billing_bp
     from .health import bp as health_bp
+    from .organizations import bp as org_bp
+    from .org_tasks import bp as org_tasks_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
     app.register_blueprint(tasks_bp, url_prefix="/api/v1/tasks")
@@ -15,3 +17,5 @@ def register_blueprints(app: Flask):
     app.register_blueprint(calendar_bp, url_prefix="/api/v1/calendar")
     app.register_blueprint(billing_bp, url_prefix="/api/v1/billing")
     app.register_blueprint(health_bp)
+    app.register_blueprint(org_bp, url_prefix="/api/v1/org")
+    app.register_blueprint(org_tasks_bp, url_prefix="/api/v1/org")
