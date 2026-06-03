@@ -115,5 +115,23 @@
     "confirm": "Confirmer",
     "minutes": "min",
     "hours": "h"
+  },
+  "insights": {
+    "title": "Statistiques hebdomadaires",
+    "completion_rate": "Taux de complétion",
+    "total_tasks": "Total des tâches",
+    "time_accuracy": "Précision temporelle",
+    "overrun_count": "Dépassements",
+    "daily_completion": "Complétion quotidienne",
+    "priority_breakdown": "Répartition par priorité",
+    "accuracy_trend": "Tendance de précision",
+    "perfect_line": "Parfait",
+    "ai_advice": "CONSEIL IA",
+    "no_data": "Aucune donnée",
+    "load_error": "Impossible de charger les statistiques. Veuillez réessayer plus tard.",
+    "priority_urgent": "Urgent",
+    "priority_high": "Haute",
+    "priority_medium": "Moyenne",
+    "priority_low": "Faible"
   }
 }

@@ -115,5 +115,23 @@
     "confirm": "Confirmar",
     "minutes": "min",
     "hours": "h"
+  },
+  "insights": {
+    "title": "Insights semanais",
+    "completion_rate": "Taxa de conclusão",
+    "total_tasks": "Total de tarefas",
+    "time_accuracy": "Precisão de tempo",
+    "overrun_count": "Excedentes",
+    "daily_completion": "Conclusão diária",
+    "priority_breakdown": "Distribuição por prioridade",
+    "accuracy_trend": "Tendência de precisão",
+    "perfect_line": "Perfeito",
+    "ai_advice": "CONSELHO IA",
+    "no_data": "Sem dados",
+    "load_error": "Falha ao carregar insights. Tente novamente mais tarde.",
+    "priority_urgent": "Urgente",
+    "priority_high": "Alta",
+    "priority_medium": "Média",
+    "priority_low": "Baixa"
   }
 }

@@ -115,5 +115,23 @@
     "confirm": "確認",
     "minutes": "分鐘",
     "hours": "小時"
+  },
+  "insights": {
+    "title": "每週洞察",
+    "completion_rate": "完成率",
+    "total_tasks": "總任務數",
+    "time_accuracy": "時間準確度",
+    "overrun_count": "超時次數",
+    "daily_completion": "每日完成情況",
+    "priority_breakdown": "優先度分布",
+    "accuracy_trend": "準確度趨勢",
+    "perfect_line": "完美",
+    "ai_advice": "AI 建議",
+    "no_data": "暫無資料",
+    "load_error": "載入洞察失敗，請稍後再試。",
+    "priority_urgent": "緊急",
+    "priority_high": "高",
+    "priority_medium": "中",
+    "priority_low": "低"
   }
 }

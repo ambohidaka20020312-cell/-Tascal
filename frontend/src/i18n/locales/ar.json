@@ -115,5 +115,23 @@
     "confirm": "تأكيد",
     "minutes": "دقيقة",
     "hours": "ساعة"
+  },
+  "insights": {
+    "title": "إحصاءات الأسبوع",
+    "completion_rate": "معدل الإنجاز",
+    "total_tasks": "إجمالي المهام",
+    "time_accuracy": "دقة الوقت",
+    "overrun_count": "مرات التجاوز",
+    "daily_completion": "الإنجاز اليومي",
+    "priority_breakdown": "توزيع الأولوية",
+    "accuracy_trend": "اتجاه الدقة",
+    "perfect_line": "مثالي",
+    "ai_advice": "نصيحة الذكاء الاصطناعي",
+    "no_data": "لا توجد بيانات",
+    "load_error": "فشل تحميل الإحصاءات. يرجى المحاولة مرة أخرى لاحقاً.",
+    "priority_urgent": "عاجل",
+    "priority_high": "عالية",
+    "priority_medium": "متوسطة",
+    "priority_low": "منخفضة"
   }
 }

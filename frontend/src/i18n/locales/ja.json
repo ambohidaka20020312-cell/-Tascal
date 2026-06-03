@@ -115,5 +115,23 @@
     "confirm": "確認",
     "minutes": "分",
     "hours": "時間"
+  },
+  "insights": {
+    "title": "週次インサイト",
+    "completion_rate": "完了率",
+    "total_tasks": "総タスク数",
+    "time_accuracy": "時間精度",
+    "overrun_count": "超過回数",
+    "daily_completion": "日別完了状況",
+    "priority_breakdown": "優先度内訳",
+    "accuracy_trend": "精度トレンド",
+    "perfect_line": "完璧",
+    "ai_advice": "AIアドバイス",
+    "no_data": "データなし",
+    "load_error": "インサイトの取得に失敗しました。しばらくしてから再試行してください。",
+    "priority_urgent": "緊急",
+    "priority_high": "高",
+    "priority_medium": "中",
+    "priority_low": "低"
   }
 }

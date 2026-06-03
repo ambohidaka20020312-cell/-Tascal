@@ -115,5 +115,23 @@
     "confirm": "확인",
     "minutes": "분",
     "hours": "시간"
+  },
+  "insights": {
+    "title": "주간 인사이트",
+    "completion_rate": "완료율",
+    "total_tasks": "총 할 일",
+    "time_accuracy": "시간 정확도",
+    "overrun_count": "초과 횟수",
+    "daily_completion": "일별 완료 현황",
+    "priority_breakdown": "우선순위 분포",
+    "accuracy_trend": "정확도 추이",
+    "perfect_line": "완벽",
+    "ai_advice": "AI 조언",
+    "no_data": "데이터 없음",
+    "load_error": "인사이트를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.",
+    "priority_urgent": "긴급",
+    "priority_high": "높음",
+    "priority_medium": "보통",
+    "priority_low": "낮음"
   }
 }

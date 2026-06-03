@@ -63,10 +63,94 @@ class AIOptimizer:
         return {"schedule": schedule, "overrun_minutes": overrun_by, "message": message}
 
     def generate_weekly_insights(self, user_id: str) -> dict:
+        from ..models.task import Task
+
+        today = datetime.date.today()
+        week_ago = today - datetime.timedelta(days=6)
+
+        # Fetch last 7 days of tasks for this user
+        tasks = Task.query.filter(
+            Task.user_id == user_id,
+            Task.scheduled_date >= week_ago,
+            Task.scheduled_date <= today,
+            Task.is_deleted == False,
+        ).all()
+
+        # Week-level stats
+        total_tasks = len(tasks)
+        completed_tasks_list = [t for t in tasks if t.status == "completed"]
+        completed_count = len(completed_tasks_list)
+        completion_rate = round(completed_count / total_tasks * 100) if total_tasks else 0
+
+        actual_times = [t.actual_minutes for t in completed_tasks_list if t.actual_minutes is not None]
+        estimated_times = [t.estimated_minutes for t in completed_tasks_list if t.estimated_minutes is not None]
+        avg_actual = round(sum(actual_times) / len(actual_times)) if actual_times else 0
+        avg_estimated = round(sum(estimated_times) / len(estimated_times)) if estimated_times else 0
+        overrun_count = sum(
+            1 for t in completed_tasks_list
+            if t.actual_minutes and t.estimated_minutes and t.actual_minutes > t.estimated_minutes
+        )
+
+        week_stats = {
+            "completion_rate": completion_rate,
+            "total_tasks": total_tasks,
+            "completed_tasks": completed_count,
+            "avg_actual_minutes": avg_actual,
+            "avg_estimated_minutes": avg_estimated,
+            "overrun_count": overrun_count,
+        }
+
+        # Daily completion for last 7 days
+        daily_completion = []
+        for i in range(6, -1, -1):
+            d = today - datetime.timedelta(days=i)
+            day_tasks = [t for t in tasks if t.scheduled_date == d]
+            day_completed = sum(1 for t in day_tasks if t.status == "completed")
+            daily_completion.append({
+                "date": d.isoformat(),
+                "completed": day_completed,
+                "total": len(day_tasks),
+            })
+
+        # Priority breakdown across all tasks
+        priority_breakdown = {"urgent": 0, "high": 0, "medium": 0, "low": 0}
+        for t in tasks:
+            p = t.priority if t.priority in priority_breakdown else "low"
+            priority_breakdown[p] += 1
+
+        # Accuracy trend: actual/estimated ratio per day
+        accuracy_trend = []
+        for i in range(6, -1, -1):
+            d = today - datetime.timedelta(days=i)
+            day_tasks = [
+                t for t in tasks
+                if t.scheduled_date == d
+                and t.status == "completed"
+                and t.actual_minutes
+                and t.estimated_minutes
+            ]
+            if day_tasks:
+                ratio = round(
+                    sum(t.actual_minutes for t in day_tasks) /
+                    sum(t.estimated_minutes for t in day_tasks),
+                    2,
+                )
+            else:
+                ratio = None
+            accuracy_trend.append({"date": d.isoformat(), "ratio": ratio})
+
+        # AI message
         message = self._call_claude(
             "ユーザーの週次タスク管理に対する一般的なアドバイスを3つ、箇条書きで日本語で提供してください。"
         )
-        return {"message": message}
+
+        return {
+            "message": message,
+            "week_stats": week_stats,
+            "daily_completion": daily_completion,
+            "priority_breakdown": priority_breakdown,
+            "accuracy_trend": accuracy_trend,
+        }
 
     def _call_claude(self, prompt: str) -> str:
         try:

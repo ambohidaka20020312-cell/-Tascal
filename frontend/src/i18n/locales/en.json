@@ -115,5 +115,23 @@
     "confirm": "Confirm",
     "minutes": "min",
     "hours": "hr"
+  },
+  "insights": {
+    "title": "Weekly Insights",
+    "completion_rate": "Completion Rate",
+    "total_tasks": "Total Tasks",
+    "time_accuracy": "Time Accuracy",
+    "overrun_count": "Overruns",
+    "daily_completion": "Daily Completion",
+    "priority_breakdown": "Priority Breakdown",
+    "accuracy_trend": "Accuracy Trend",
+    "perfect_line": "Perfect",
+    "ai_advice": "AI ADVICE",
+    "no_data": "No data",
+    "load_error": "Failed to load insights. Please try again later.",
+    "priority_urgent": "Urgent",
+    "priority_high": "High",
+    "priority_medium": "Medium",
+    "priority_low": "Low"
   }
 }

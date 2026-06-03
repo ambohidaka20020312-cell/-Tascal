@@ -115,5 +115,23 @@
     "confirm": "Bestätigen",
     "minutes": "Min.",
     "hours": "Std."
+  },
+  "insights": {
+    "title": "Wöchentliche Einblicke",
+    "completion_rate": "Abschlussquote",
+    "total_tasks": "Aufgaben gesamt",
+    "time_accuracy": "Zeitgenauigkeit",
+    "overrun_count": "Überschreitungen",
+    "daily_completion": "Täglicher Abschluss",
+    "priority_breakdown": "Prioritätsverteilung",
+    "accuracy_trend": "Genauigkeitstrend",
+    "perfect_line": "Perfekt",
+    "ai_advice": "KI-RATSCHLAG",
+    "no_data": "Keine Daten",
+    "load_error": "Einblicke konnten nicht geladen werden. Bitte versuchen Sie es später erneut.",
+    "priority_urgent": "Dringend",
+    "priority_high": "Hoch",
+    "priority_medium": "Mittel",
+    "priority_low": "Niedrig"
   }
 }
