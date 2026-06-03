@@ -14,14 +14,14 @@
 }
 
 .dark {
-  --bg-primary: #0f0f0f;
-  --bg-secondary: #1a1a1a;
-  --bg-tertiary: #242424;
-  --text-primary: #f0f0f0;
-  --text-muted: #aaaaaa;
-  --text-subtle: #666666;
-  --border: #2a2a2a;
-  --accent: #f0f0f0;
+  --bg-primary: #1c1c1e;
+  --bg-secondary: #242426;
+  --bg-tertiary: #2e2e30;
+  --text-primary: #ebebeb;
+  --text-muted: #a0a0a5;
+  --text-subtle: #6c6c72;
+  --border: #3a3a3c;
+  --accent: #ebebeb;
 }
 
 body {
