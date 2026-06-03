@@ -3,6 +3,8 @@ import { taskApi } from '../../utils/api'
 import { useTaskStore } from '../../store/taskStore'
 import { parseNaturalLanguageTask } from '../../utils/nlpTaskParser'
 import { useSpeechInput } from '../../hooks/useSpeechInput'
+import { useUseTemplate } from '../../hooks/useTemplates'
+import TemplatePickerModal from './TemplatePickerModal'
 import type { Task } from '../../store/taskStore'
 
 const PRIORITY_LABELS: Record<string, string> = {
@@ -22,7 +24,9 @@ const PRIORITY_COLORS: Record<string, string> = {
 export default function QuickAddBar() {
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [templateModalOpen, setTemplateModalOpen] = useState(false)
   const { addTask, selectedDate } = useTaskStore()
+  const useTemplate = useUseTemplate()
 
   const parsed = input.trim() ? parseNaturalLanguageTask(input) : null
 
@@ -58,8 +62,17 @@ export default function QuickAddBar() {
     if (e.key === 'Enter') handleSubmit()
   }
 
+  const handleTemplateSelect = (templateId: number) => {
+    useTemplate.mutate({ id: templateId, scheduled_date: selectedDate ?? undefined })
+  }
+
   return (
     <div className="space-y-1.5">
+      <TemplatePickerModal
+        isOpen={templateModalOpen}
+        onClose={() => setTemplateModalOpen(false)}
+        onSelect={handleTemplateSelect}
+      />
       <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-3 py-2 shadow-sm focus-within:ring-2 focus-within:ring-primary-500 focus-within:border-primary-500 transition">
         {isSupported && (
           <button
@@ -85,6 +98,14 @@ export default function QuickAddBar() {
           placeholder="「明日15時までに資料30分」と入力..."
           className="flex-1 text-sm outline-none bg-transparent placeholder-gray-400 text-gray-800"
         />
+        <button
+          type="button"
+          onClick={() => setTemplateModalOpen(true)}
+          className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-gray-400 hover:text-primary-600 hover:bg-primary-50 transition"
+          aria-label="テンプレートから作成"
+        >
+          📋
+        </button>
         <button
           type="button"
           onClick={handleSubmit}

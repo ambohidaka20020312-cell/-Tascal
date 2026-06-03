@@ -1,12 +1,35 @@
-import axios from "axios";
+import axios, { InternalAxiosRequestConfig } from "axios";
+import { offlineQueue } from "./offlineQueue";
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || "/api/v1",
 });
 
-api.interceptors.request.use((config) => {
+api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   const token = localStorage.getItem("access_token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
+
+  const method = (config.method ?? "").toUpperCase();
+  if (!navigator.onLine && ["POST", "PATCH", "DELETE"].includes(method)) {
+    offlineQueue.add({
+      method: method as "POST" | "PATCH" | "DELETE",
+      url: config.url ?? "",
+      data: config.data
+        ? typeof config.data === "string"
+          ? JSON.parse(config.data)
+          : config.data
+        : undefined,
+    });
+    config.adapter = () =>
+      Promise.resolve({
+        data: null,
+        status: 202,
+        statusText: "Queued",
+        headers: {},
+        config,
+      });
+  }
+
   return config;
 });
 

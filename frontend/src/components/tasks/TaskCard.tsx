@@ -5,6 +5,7 @@ import { useCompleteTask, useDeleteTask } from "../../hooks/useTasks";
 import { useViewport } from "../../hooks/useViewport";
 import OverrunAlert from "../ai/OverrunAlert";
 import { useFocusStore } from "../../store/focusStore";
+import { useCreateTemplate } from "../../hooks/useTemplates";
 
 interface TaskCardProps {
   task: Task;
@@ -31,8 +32,11 @@ export default function TaskCard({ task }: TaskCardProps) {
   const [actualMinutes, setActualMinutes] = useState<string>("");
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [showTemplateBanner, setShowTemplateBanner] = useState(false);
+  const [templateSaved, setTemplateSaved] = useState(false);
   const completeTask = useCompleteTask();
   const deleteTask = useDeleteTask();
+  const createTemplate = useCreateTemplate();
   const startFocus = useFocusStore((s) => s.startFocus);
 
   const { deviceType } = useViewport();
@@ -56,7 +60,26 @@ export default function TaskCard({ task }: TaskCardProps) {
       completeTask.mutate({ id: task.id, actual_minutes: mins });
       setShowCompleteModal(false);
       setActualMinutes("");
+      setShowTemplateBanner(true);
     }
+  };
+
+  const handleSaveAsTemplate = () => {
+    createTemplate.mutate(
+      {
+        name: task.title,
+        title: task.title,
+        description: task.description,
+        priority: task.priority,
+        estimated_minutes: task.estimated_minutes ?? undefined,
+      },
+      {
+        onSuccess: () => {
+          setTemplateSaved(true);
+          setTimeout(() => setShowTemplateBanner(false), 2000);
+        },
+      }
+    );
   };
 
   const handleDelete = () => {
@@ -196,6 +219,33 @@ export default function TaskCard({ task }: TaskCardProps) {
           {isOverrunning && task.actual_minutes != null && (
             <div className="mt-3">
               <OverrunAlert task={task} actualMinutes={task.actual_minutes} />
+            </div>
+          )}
+
+          {showTemplateBanner && (
+            <div className="mt-2 flex items-center justify-between bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 text-xs text-blue-700">
+              {templateSaved ? (
+                <span>テンプレートとして保存しました</span>
+              ) : (
+                <>
+                  <span>このタスクをテンプレートとして保存しますか？</span>
+                  <div className="flex gap-2 ml-3 shrink-0">
+                    <button
+                      onClick={handleSaveAsTemplate}
+                      disabled={createTemplate.isPending}
+                      className="font-medium text-blue-700 hover:underline disabled:opacity-50"
+                    >
+                      保存
+                    </button>
+                    <button
+                      onClick={() => setShowTemplateBanner(false)}
+                      className="text-blue-400 hover:text-blue-600"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>

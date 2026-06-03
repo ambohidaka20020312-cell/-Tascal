@@ -20,7 +20,28 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        runtimeCaching: [
+          {
+            urlPattern: /^https?:\/\/.*\/api\/v1\/tasks/,
+            handler: "NetworkFirst" as const,
+            options: {
+              cacheName: "api-tasks",
+              networkTimeoutSeconds: 3,
+              cacheableResponse: { statuses: [0, 200] },
+              expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 },
+            },
+          },
+          {
+            urlPattern: /^https?:\/\/.*\/api\/v1\/ai/,
+            handler: "NetworkFirst" as const,
+            options: {
+              cacheName: "api-ai",
+              networkTimeoutSeconds: 5,
+              cacheableResponse: { statuses: [0, 200] },
+            },
+          },
+        ],
       },
     }),
   ],

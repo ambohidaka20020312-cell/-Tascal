@@ -3,10 +3,12 @@ import { Link, useLocation } from "react-router-dom";
 import { useAuthStore } from "../../store/authStore";
 import { usePlan } from "../../hooks/usePlan";
 import { useViewport } from "../../hooks/useViewport";
+import { useOfflineSync } from "../../hooks/useOfflineSync";
 import AdBanner from "../ads/AdBanner";
 import AdScript from "../ads/AdScript";
 import TaskForm from "../tasks/TaskForm";
 import FocusOverlay from "../focus/FocusOverlay";
+import OfflineBanner from "../common/OfflineBanner";
 import { useFocusStore } from "../../store/focusStore";
 
 interface AppLayoutProps {
@@ -83,6 +85,7 @@ const SIDEBAR_NAV = [
 ];
 
 export default function AppLayout({ children }: AppLayoutProps) {
+  useOfflineSync();
   const focusActive = useFocusStore((s) => s.isActive);
   const { user, logout } = useAuthStore();
   const { plan, isFree } = usePlan();
@@ -108,6 +111,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   return (
     <>
+      <OfflineBanner />
       <AdScript />
 
       <div
