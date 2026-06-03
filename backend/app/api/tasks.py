@@ -4,6 +4,7 @@ from ..models.task import Task
 from ..models.user import User
 from .. import db
 from ..utils.validators import validate_task_fields
+from sqlalchemy import func
 import datetime
 
 FREE_MONTHLY_TASK_LIMIT = 20
@@ -139,6 +140,82 @@ def complete_task(task_id):
     if next_task:
         response_data["next_task"] = next_task.to_dict()
     return jsonify(response_data)
+
+
+@bp.get("/stats")
+@jwt_required()
+def task_stats():
+    user_id = get_jwt_identity()
+    today = datetime.date.today()
+    week_ago = today - datetime.timedelta(days=7)
+    month_ago = today - datetime.timedelta(days=30)
+
+    def completion_rate(since: datetime.date) -> float:
+        total = Task.query.filter(
+            Task.user_id == user_id,
+            Task.is_deleted == False,
+            Task.scheduled_date >= since,
+            Task.scheduled_date <= today,
+        ).count()
+        if total == 0:
+            return 0.0
+        completed = Task.query.filter(
+            Task.user_id == user_id,
+            Task.is_deleted == False,
+            Task.scheduled_date >= since,
+            Task.scheduled_date <= today,
+            Task.status == "completed",
+        ).count()
+        return round(completed / total, 4)
+
+    weekly_completion_rate = completion_rate(week_ago)
+    monthly_completion_rate = completion_rate(month_ago)
+
+    total_completed = Task.query.filter(
+        Task.user_id == user_id,
+        Task.is_deleted == False,
+        Task.status == "completed",
+    ).count()
+
+    streak = 0
+    check_date = today
+    while True:
+        count = Task.query.filter(
+            Task.user_id == user_id,
+            Task.is_deleted == False,
+            Task.status == "completed",
+            Task.scheduled_date == check_date,
+        ).count()
+        if count == 0:
+            break
+        streak += 1
+        check_date -= datetime.timedelta(days=1)
+
+    accuracy_tasks = Task.query.filter(
+        Task.user_id == user_id,
+        Task.is_deleted == False,
+        Task.status == "completed",
+        Task.actual_minutes.isnot(None),
+        Task.estimated_minutes.isnot(None),
+        Task.estimated_minutes > 0,
+    ).all()
+
+    if accuracy_tasks:
+        ratios = [t.actual_minutes / t.estimated_minutes for t in accuracy_tasks]
+        raw_accuracy = sum(ratios) / len(ratios)
+        time_accuracy = round(max(0.0, 1.0 - abs(1.0 - raw_accuracy)), 4)
+    else:
+        time_accuracy = 0.0
+
+    return jsonify({
+        "data": {
+            "weekly_completion_rate": weekly_completion_rate,
+            "monthly_completion_rate": monthly_completion_rate,
+            "current_streak": streak,
+            "time_accuracy": time_accuracy,
+            "total_completed": total_completed,
+        }
+    })
 
 
 def _next_recurrence_date(recurrence: str, base_date: datetime.date) -> datetime.date:
