@@ -11,21 +11,22 @@ interface TaskCardProps {
   task: Task;
 }
 
+// Monochrome priority dots — color by shade, not hue
 const priorityConfig: Record<
   Task["priority"],
-  { labelKey: string; className: string; barColor: string }
+  { labelKey: string; dotClass: string; labelClass: string }
 > = {
-  urgent: { labelKey: "task.priority_urgent", className: "bg-red-100 text-red-700", barColor: "bg-red-500" },
-  high: { labelKey: "task.priority_high", className: "bg-orange-100 text-orange-700", barColor: "bg-orange-400" },
-  medium: { labelKey: "task.priority_medium", className: "bg-blue-100 text-blue-700", barColor: "bg-blue-400" },
-  low: { labelKey: "task.priority_low", className: "bg-gray-100 text-gray-600", barColor: "bg-gray-300" },
+  urgent: { labelKey: "task.priority_urgent", dotClass: "bg-ink", labelClass: "text-[var(--text-primary)] font-medium" },
+  high: { labelKey: "task.priority_high", dotClass: "bg-ink-muted", labelClass: "text-[var(--text-muted)]" },
+  medium: { labelKey: "task.priority_medium", dotClass: "bg-ink-subtle", labelClass: "text-[var(--text-muted)]" },
+  low: { labelKey: "task.priority_low", dotClass: "bg-ink-faint", labelClass: "text-[var(--text-subtle)]" },
 };
 
 const statusConfig: Record<Task["status"], { labelKey: string; className: string }> = {
-  pending: { labelKey: "task.start", className: "text-gray-500" },
-  in_progress: { labelKey: "task.pause", className: "text-blue-600" },
-  completed: { labelKey: "task.complete", className: "text-green-600" },
-  overrun: { labelKey: "ai.overrun_message", className: "text-red-600" },
+  pending: { labelKey: "task.start", className: "text-[var(--text-subtle)]" },
+  in_progress: { labelKey: "task.pause", className: "text-[var(--text-muted)]" },
+  completed: { labelKey: "task.complete", className: "text-[var(--text-subtle)]" },
+  overrun: { labelKey: "ai.overrun_message", className: "text-[var(--text-primary)]" },
 };
 
 export default function TaskCard({ task }: TaskCardProps) {
@@ -70,31 +71,29 @@ export default function TaskCard({ task }: TaskCardProps) {
     <>
       <div
         className={[
-          "bg-white rounded-xl border shadow-sm hover:shadow-md transition-shadow overflow-hidden flex min-h-touch",
-          task.status === "completed" ? "opacity-60" : "",
+          "bg-[var(--bg-primary)] rounded-lg border border-[var(--border)] overflow-hidden flex min-h-touch transition-colors hover:border-[var(--text-subtle)]",
+          task.status === "completed" ? "opacity-50" : "",
         ].join(" ")}
       >
-        <div className={`w-1 shrink-0 ${priority.barColor}`} />
-
         <div className={`flex-1 ${isPhoneSmall ? "p-2.5" : "p-4"}`}>
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 flex-wrap mb-1">
-                <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-full font-medium ${priority.className} ${isPhoneSmall ? "text-[10px]" : "text-xs"}`}
-                >
+              {/* Priority dot + label row */}
+              <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+                <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${priority.dotClass}`} />
+                <span className={`${priority.labelClass} ${isPhoneSmall ? "text-[10px]" : "text-xs"} tracking-wide`}>
                   {t(priority.labelKey)}
                 </span>
-                <span className={`font-medium ${status.className} ${isPhoneSmall ? "text-[10px]" : "text-xs"}`}>
-                  {t(status.labelKey)}
+                <span className={`${status.className} ${isPhoneSmall ? "text-[10px]" : "text-xs"} tracking-wide`}>
+                  · {t(status.labelKey)}
                 </span>
               </div>
 
               <h3
                 className={[
-                  "font-semibold text-gray-800 truncate",
+                  "font-medium text-[var(--text-primary)] truncate tracking-wide",
                   isPhoneSmall ? "text-sm" : "",
-                  task.status === "completed" ? "line-through text-gray-400" : "",
+                  task.status === "completed" ? "line-through text-[var(--text-subtle)]" : "",
                 ].join(" ")}
               >
                 {task.title}
@@ -105,7 +104,7 @@ export default function TaskCard({ task }: TaskCardProps) {
                   {(task.description || task.estimated_minutes != null) && (
                     <button
                       onClick={() => setExpanded((e) => !e)}
-                      className="text-[10px] text-primary-500 mt-0.5"
+                      className="text-[10px] text-[var(--text-muted)] mt-0.5 tracking-wide"
                     >
                       {expanded ? t('common.close') : t('task.description')}
                     </button>
@@ -113,10 +112,10 @@ export default function TaskCard({ task }: TaskCardProps) {
                   {expanded && (
                     <>
                       {task.description && (
-                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">{task.description}</p>
+                        <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-2">{task.description}</p>
                       )}
                       {task.estimated_minutes != null && (
-                        <p className="text-[10px] text-gray-400 mt-1">
+                        <p className="text-[10px] text-[var(--text-subtle)] mt-1">
                           {t('task.estimated_time')}: {task.estimated_minutes}{t('common.minutes')}
                           {task.actual_minutes != null && ` / ${t('task.actual_time')}: ${task.actual_minutes}${t('common.minutes')}`}
                         </p>
@@ -127,18 +126,18 @@ export default function TaskCard({ task }: TaskCardProps) {
               ) : (
                 <>
                   {task.description && (
-                    <p className={`text-gray-500 mt-1 ${isTabletOrAbove ? "line-clamp-2" : "truncate"} text-sm`}>
+                    <p className={`text-[var(--text-muted)] mt-1 ${isTabletOrAbove ? "line-clamp-2" : "truncate"} text-sm`}>
                       {task.description}
                     </p>
                   )}
                   {task.estimated_minutes != null && (
-                    <p className="text-xs text-gray-400 mt-1">
+                    <p className="text-xs text-[var(--text-subtle)] mt-1">
                       {t('task.estimated_time')}: {task.estimated_minutes}{t('common.minutes')}
                       {task.actual_minutes != null && ` / ${t('task.actual_time')}: ${task.actual_minutes}${t('common.minutes')}`}
                     </p>
                   )}
                   {isTabletOrAbove && task.due_datetime && (
-                    <p className="text-xs text-gray-400 mt-0.5">
+                    <p className="text-xs text-[var(--text-subtle)] mt-0.5">
                       {t('task.due_date')}: {task.due_datetime.split("T")[0]}
                     </p>
                   )}
@@ -163,14 +162,14 @@ export default function TaskCard({ task }: TaskCardProps) {
                       variant="secondary"
                       onClick={() => startFocus(task.id, "normal")}
                     >
-                      🎯 {t('task.focus')}
+                      {t('task.focus')}
                     </Button>
                     <Button
                       size="sm"
                       variant="secondary"
                       onClick={() => startFocus(task.id, "pomodoro")}
                     >
-                      🍅
+                      ◎
                     </Button>
                   </div>
                 </>
@@ -195,10 +194,10 @@ export default function TaskCard({ task }: TaskCardProps) {
       </div>
 
       {showCompleteModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
-            <h3 className="font-semibold text-gray-800 mb-4">{t('task.complete')}</h3>
-            <p className="text-sm text-gray-600 mb-4">
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
+          <div className="bg-[var(--bg-primary)] rounded-xl p-6 w-full max-w-sm border border-[var(--border)]">
+            <h3 className="font-semibold text-[var(--text-primary)] mb-4 tracking-wide">{t('task.complete')}</h3>
+            <p className="text-sm text-[var(--text-muted)] mb-4">
               {t('task.actual_time')}（{t('common.minutes')}）
             </p>
             <input
@@ -207,7 +206,7 @@ export default function TaskCard({ task }: TaskCardProps) {
               value={actualMinutes}
               onChange={(e) => setActualMinutes(e.target.value)}
               placeholder="45"
-              className="w-full border border-gray-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-primary-500 mb-4"
+              className="w-full border-0 border-b border-[var(--border)] bg-transparent px-0 py-2 text-base text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] mb-4"
               style={{ fontSize: "16px" }}
             />
             <div className="flex gap-2">

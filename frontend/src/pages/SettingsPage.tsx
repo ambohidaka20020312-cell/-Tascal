@@ -1,18 +1,9 @@
 import React from "react";
 import { useSettingsStore } from "../store/settingsStore";
 
-const ACCENT_COLORS = [
-  { key: "blue", hex: "#3b82f6", label: "ブルー" },
-  { key: "purple", hex: "#8b5cf6", label: "パープル" },
-  { key: "green", hex: "#22c55e", label: "グリーン" },
-  { key: "orange", hex: "#f97316", label: "オレンジ" },
-  { key: "red", hex: "#ef4444", label: "レッド" },
-  { key: "pink", hex: "#ec4899", label: "ピンク" },
-] as const;
-
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100 mb-4">
+    <h2 className="text-xs font-semibold tracking-widest uppercase text-[var(--text-subtle)] mb-3">
       {children}
     </h2>
   );
@@ -20,7 +11,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 
 function Section({ children }: { children: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 mb-4">
+    <div className="bg-[var(--bg-secondary)] rounded-xl p-5 mb-4 border border-[var(--border)]">
       {children}
     </div>
   );
@@ -29,7 +20,7 @@ function Section({ children }: { children: React.ReactNode }) {
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-center justify-between py-2">
-      <span className="text-sm text-gray-700 dark:text-gray-300">{label}</span>
+      <span className="text-sm text-[var(--text-primary)] tracking-wide">{label}</span>
       <div>{children}</div>
     </div>
   );
@@ -41,7 +32,7 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
       onClick={() => onChange(!checked)}
       className={[
         "relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none",
-        checked ? "bg-[var(--accent-color)]" : "bg-gray-300 dark:bg-gray-600",
+        checked ? "bg-[var(--accent)]" : "bg-[var(--border)]",
       ].join(" ")}
     >
       <span
@@ -59,7 +50,7 @@ export default function SettingsPage() {
 
   return (
     <div className="max-w-2xl mx-auto py-6 px-2">
-      <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">設定</h1>
+      <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-wider mb-6">設定</h1>
 
       <Section>
         <SectionTitle>外観</SectionTitle>
@@ -71,34 +62,14 @@ export default function SettingsPage() {
                 key={t}
                 onClick={() => s.setTheme(t)}
                 className={[
-                  "px-3 py-1 rounded-lg text-xs font-medium border transition-colors",
+                  "px-3 py-1 rounded-lg text-xs font-medium border transition-colors tracking-wide",
                   s.theme === t
-                    ? "bg-[var(--accent-color)] text-white border-transparent"
-                    : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600",
+                    ? "bg-[var(--accent)] text-white dark:text-[#0f0f0f] border-transparent"
+                    : "bg-transparent text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--text-subtle)] hover:text-[var(--text-primary)]",
                 ].join(" ")}
               >
                 {t === "light" ? "ライト" : t === "dark" ? "ダーク" : "システム"}
               </button>
-            ))}
-          </div>
-        </Row>
-
-        <Row label="アクセントカラー">
-          <div className="flex gap-2">
-            {ACCENT_COLORS.map(({ key, hex }) => (
-              <button
-                key={key}
-                onClick={() => s.setAccentColor(key)}
-                title={key}
-                className="w-7 h-7 rounded-full transition-transform hover:scale-110 focus:outline-none"
-                style={{
-                  backgroundColor: hex,
-                  boxShadow:
-                    s.accentColor === key
-                      ? `0 0 0 2px white, 0 0 0 4px ${hex}`
-                      : undefined,
-                }}
-              />
             ))}
           </div>
         </Row>
@@ -110,10 +81,10 @@ export default function SettingsPage() {
                 key={d}
                 onClick={() => s.setDisplaySettings({ taskDensity: d })}
                 className={[
-                  "px-3 py-1 rounded-lg text-xs font-medium border transition-colors",
+                  "px-3 py-1 rounded-lg text-xs font-medium border transition-colors tracking-wide",
                   s.taskDensity === d
-                    ? "bg-[var(--accent-color)] text-white border-transparent"
-                    : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600",
+                    ? "bg-[var(--accent)] text-white dark:text-[#0f0f0f] border-transparent"
+                    : "bg-transparent text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--text-subtle)] hover:text-[var(--text-primary)]",
                 ].join(" ")}
               >
                 {d === "compact" ? "コンパクト" : d === "normal" ? "標準" : "広め"}
@@ -133,7 +104,7 @@ export default function SettingsPage() {
             max={60}
             value={s.pomodoroDuration}
             onChange={(e) => s.setPomodoroSettings({ pomodoroDuration: Number(e.target.value) })}
-            className="w-20 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm text-right focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
+            className="w-20 rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] px-2 py-1 text-sm text-right focus:outline-none focus:border-[var(--accent)]"
           />
         </Row>
 
@@ -144,7 +115,7 @@ export default function SettingsPage() {
             max={30}
             value={s.pomodoroBreakDuration}
             onChange={(e) => s.setPomodoroSettings({ pomodoroBreakDuration: Number(e.target.value) })}
-            className="w-20 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm text-right focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
+            className="w-20 rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] px-2 py-1 text-sm text-right focus:outline-none focus:border-[var(--accent)]"
           />
         </Row>
 
@@ -155,7 +126,7 @@ export default function SettingsPage() {
             max={60}
             value={s.pomodoroLongBreak}
             onChange={(e) => s.setPomodoroSettings({ pomodoroLongBreak: Number(e.target.value) })}
-            className="w-20 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm text-right focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
+            className="w-20 rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] px-2 py-1 text-sm text-right focus:outline-none focus:border-[var(--accent)]"
           />
         </Row>
 
@@ -166,7 +137,7 @@ export default function SettingsPage() {
             max={10}
             value={s.pomodoroLongBreakAfter}
             onChange={(e) => s.setPomodoroSettings({ pomodoroLongBreakAfter: Number(e.target.value) })}
-            className="w-20 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm text-right focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)]"
+            className="w-20 rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] px-2 py-1 text-sm text-right focus:outline-none focus:border-[var(--accent)]"
           />
         </Row>
 
@@ -194,7 +165,7 @@ export default function SettingsPage() {
             value={s.briefingTime}
             onChange={(e) => s.setNotificationSettings({ briefingTime: e.target.value })}
             disabled={!s.dailyBriefingEnabled}
-            className="rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-color)] disabled:opacity-50"
+            className="rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] text-[var(--text-primary)] px-2 py-1 text-sm focus:outline-none focus:border-[var(--accent)] disabled:opacity-40"
           />
         </Row>
       </Section>
@@ -209,10 +180,10 @@ export default function SettingsPage() {
                 key={v}
                 onClick={() => s.setDisplaySettings({ defaultView: v })}
                 className={[
-                  "px-3 py-1 rounded-lg text-xs font-medium border transition-colors",
+                  "px-3 py-1 rounded-lg text-xs font-medium border transition-colors tracking-wide",
                   s.defaultView === v
-                    ? "bg-[var(--accent-color)] text-white border-transparent"
-                    : "bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 border-gray-200 dark:border-gray-600",
+                    ? "bg-[var(--accent)] text-white dark:text-[#0f0f0f] border-transparent"
+                    : "bg-transparent text-[var(--text-muted)] border-[var(--border)] hover:border-[var(--text-subtle)] hover:text-[var(--text-primary)]",
                 ].join(" ")}
               >
                 {v === "today" ? "今日" : v === "week" ? "週" : "カレンダー"}

@@ -1,6 +1,6 @@
 import React from "react";
 
-type Variant = "primary" | "secondary" | "danger";
+type Variant = "primary" | "secondary" | "ghost" | "danger";
 type Size = "sm" | "md" | "lg";
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -12,11 +12,13 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantClasses: Record<Variant, string> = {
   primary:
-    "bg-primary-500 hover:bg-primary-600 text-white focus:ring-primary-500",
+    "bg-[var(--accent)] text-white dark:text-[#0f0f0f] hover:opacity-80 transition-opacity focus:ring-[var(--accent)]",
   secondary:
-    "bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 focus:ring-primary-500",
+    "bg-transparent border border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors focus:ring-[var(--accent)]",
+  ghost:
+    "bg-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors",
   danger:
-    "bg-red-500 hover:bg-red-600 text-white focus:ring-red-500",
+    "bg-transparent border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--text-primary)] hover:text-[var(--text-primary)] transition-colors focus:ring-[var(--accent)]",
 };
 
 const sizeClasses: Record<Size, string> = {
@@ -38,10 +40,9 @@ export default function Button({
     <button
       disabled={disabled || loading}
       className={[
-        "inline-flex items-center justify-center font-medium rounded-lg",
+        "inline-flex items-center justify-center font-medium rounded-lg tracking-wide",
         "focus:outline-none focus:ring-2 focus:ring-offset-2",
-        "transition-colors duration-150",
-        "disabled:opacity-50 disabled:cursor-not-allowed",
+        "disabled:opacity-40 disabled:cursor-not-allowed",
         variantClasses[variant],
         sizeClasses[size],
         className,
