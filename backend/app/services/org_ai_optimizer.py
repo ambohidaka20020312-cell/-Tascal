@@ -3,6 +3,7 @@ import json
 import anthropic
 from ..models.task import Task
 from ..models.organization import Organization, Department, OrganizationMember
+from ..models.member_skill import MemberSkill
 
 
 PRIORITY_WEIGHT = {"urgent": 4, "high": 3, "medium": 2, "low": 1}
@@ -21,46 +22,82 @@ class OrgAIOptimizer:
     def distribute_tasks(self, org_id: int, tasks: list, members: list, departments: list) -> dict:
         """
         タスクリストを各メンバー・部署に最適配分。
-        - メンバーの現在のタスク負荷
-        - 部署のスキルタグ（description から推定）
-        - タスクの優先度・締め切り
+        - メンバーのスキルタグとタスクのrequired_skillsでスキルスコアを計算
+        - メンバーの現在のタスク負荷（逆数スコア）
+        - 最終スコア = スキルスコア * 0.6 + 負荷スコア(逆数) * 0.4
         Claude APIで自然言語による配分理由も生成
         """
-        # Build load map: user_id -> current pending task count
-        load_map: dict[int, int] = {}
+        # Build load map: user_id -> (active task count, estimated minutes sum)
+        load_map: dict[int, dict] = {}
         for m in members:
             uid = m["user_id"]
-            count = Task.query.filter_by(
+            active_tasks = Task.query.filter_by(
                 org_id=org_id,
                 assigned_to=uid,
                 is_deleted=False,
-            ).filter(Task.status.in_(["pending", "in_progress"])).count()
-            load_map[uid] = count
+            ).filter(Task.status.in_(["pending", "in_progress"])).all()
+            count = len(active_tasks)
+            est_minutes = sum((t.estimated_minutes or 0) for t in active_tasks)
+            load_map[uid] = {"count": count, "est_minutes": est_minutes}
+
+        # Build skill map: user_id -> {skill_tag: level}
+        skill_map: dict[int, dict[str, int]] = {}
+        for m in members:
+            uid = m["user_id"]
+            skills = MemberSkill.query.filter_by(user_id=uid).all()
+            skill_map[uid] = {s.skill_tag: s.level for s in skills}
 
         dept_map = {d["id"]: d for d in departments}
         member_dept_map: dict[int, int | None] = {m["user_id"]: m.get("department_id") for m in members}
 
+        # Compute max load for normalisation
+        max_load = max((v["count"] * max(v["est_minutes"], 1) for v in load_map.values()), default=1) or 1
+
         assignments: list[dict] = []
         for task in tasks:
+            # Parse required_skills JSON list
+            required_skills: list[str] = []
+            raw_skills = task.get("required_skills")
+            if raw_skills:
+                try:
+                    required_skills = json.loads(raw_skills) if isinstance(raw_skills, str) else raw_skills
+                except (ValueError, TypeError):
+                    required_skills = []
+
             best_member = None
-            best_score = -1
+            best_score = -1.0
             for m in members:
                 uid = m["user_id"]
-                score = 0
-                # Lower load = better
-                score -= load_map.get(uid, 0)
-                # Skill match via department description keyword check
-                dept_id = member_dept_map.get(uid)
-                if dept_id and dept_id in dept_map:
-                    dept_desc = dept_map[dept_id].get("description", "").lower()
-                    task_title = (task.get("title", "") + " " + task.get("description", "")).lower()
-                    common = sum(1 for word in dept_desc.split() if len(word) > 3 and word in task_title)
-                    score += common * 2
-                # Priority weight as tie-breaker
-                score += PRIORITY_WEIGHT.get(task.get("priority", "medium"), 2)
 
-                if score > best_score:
-                    best_score = score
+                # --- Skill score (0.0 – 1.0 normalised) ---
+                if required_skills:
+                    member_skills = skill_map.get(uid, {})
+                    skill_score_raw = sum(
+                        member_skills.get(tag, 0) for tag in required_skills
+                    )
+                    max_possible = len(required_skills) * 5  # max level = 5
+                    skill_score = skill_score_raw / max_possible if max_possible > 0 else 0.0
+                else:
+                    # No required skills: fall back to department keyword match
+                    skill_score = 0.0
+                    dept_id = member_dept_map.get(uid)
+                    if dept_id and dept_id in dept_map:
+                        dept_desc = dept_map[dept_id].get("description", "").lower()
+                        task_text = (task.get("title", "") + " " + task.get("description", "")).lower()
+                        common = sum(1 for word in dept_desc.split() if len(word) > 3 and word in task_text)
+                        skill_score = min(common / 5.0, 1.0)  # cap at 1.0
+
+                # --- Load score (inverse, 0.0 – 1.0) ---
+                load = load_map.get(uid, {})
+                load_value = load.get("count", 0) * max(load.get("est_minutes", 1), 1)
+                load_score = 1.0 - (load_value / max_load)
+                load_score = max(0.0, load_score)
+
+                # --- Final score ---
+                final_score = skill_score * 0.6 + load_score * 0.4
+
+                if final_score > best_score:
+                    best_score = final_score
                     best_member = m
 
             assignments.append({
@@ -68,9 +105,12 @@ class OrgAIOptimizer:
                 "task_title": task["title"],
                 "assigned_to": best_member["user_id"] if best_member else None,
                 "department_id": member_dept_map.get(best_member["user_id"]) if best_member else None,
+                "score": round(best_score, 4),
             })
             if best_member:
-                load_map[best_member["user_id"]] = load_map.get(best_member["user_id"], 0) + 1
+                uid = best_member["user_id"]
+                load_map[uid]["count"] += 1
+                load_map[uid]["est_minutes"] += task.get("estimated_minutes") or 0
 
         # Generate AI explanation
         ai_message = self._generate_distribution_message(tasks, assignments, members, departments)

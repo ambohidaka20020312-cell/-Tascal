@@ -54,7 +54,7 @@ class OrganizationMember(db.Model):
     org_id = db.Column(db.Integer, db.ForeignKey("organizations.id"), nullable=False, index=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     department_id = db.Column(db.Integer, db.ForeignKey("departments.id"), nullable=True)
-    role = db.Column(db.String(20), default="member")  # owner / admin / member
+    role = db.Column(db.String(20), default="member")  # owner / manager / member
     joined_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     def to_dict(self):

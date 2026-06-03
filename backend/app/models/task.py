@@ -25,6 +25,10 @@ class Task(db.Model):
     department_id = db.Column(db.Integer, db.ForeignKey("departments.id"), nullable=True)
     assigned_to = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=True)
 
+    required_skills = db.Column(db.Text, nullable=True)  # JSON list of skill tags
+    delegation_level = db.Column(db.Integer, nullable=True)  # 0=社長→部署, 1=部署→個人
+    parent_task_id = db.Column(db.Integer, db.ForeignKey("tasks.id"), nullable=True)  # 委譲元タスクのID
+
     sort_order = db.Column(db.Integer, default=0)
     is_deleted = db.Column(db.Boolean, default=False)
     completed_at = db.Column(db.DateTime, nullable=True)
@@ -50,4 +54,7 @@ class Task(db.Model):
             "org_id": self.org_id,
             "department_id": self.department_id,
             "assigned_to": self.assigned_to,
+            "required_skills": self.required_skills,
+            "delegation_level": self.delegation_level,
+            "parent_task_id": self.parent_task_id,
         }
