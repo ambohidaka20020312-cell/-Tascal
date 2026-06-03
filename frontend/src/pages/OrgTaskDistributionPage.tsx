@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useOrgStore } from "../store/orgStore";
+import MemberLoadBar from "../components/org/MemberLoadBar";
 
 interface TaskItem {
   id: number;
@@ -16,11 +17,53 @@ interface Assignment {
   task_title: string;
   assigned_to: number | null;
   department_id: number | null;
+  ai_recommended_user_id?: number | null;
+  ai_skill_match_score?: number | null;
+  estimated_minutes?: number;
+  // 手動調整フラグ
+  manually_overridden?: boolean;
+  // 変更理由タグ
+  change_reason?: string | null;
 }
 
 interface DistributeResult {
   assignments: Assignment[];
   ai_message: string;
+}
+
+// メンバーの空き状況（リアルタイム負荷計算用）
+interface MemberLoad {
+  id: number;
+  name: string;
+  totalMinutes: number;
+  taskCount: number;
+  remaining_minutes: number;
+  active_task_count: number;
+}
+
+const CHANGE_REASON_OPTIONS = [
+  { value: "available", label: "手が空いている" },
+  { value: "requested", label: "本人希望" },
+  { value: "training", label: "スキル研修目的" },
+  { value: "other", label: "その他" },
+];
+
+function AvailabilityBadge({ remainingMinutes }: { remainingMinutes: number }) {
+  if (remainingMinutes >= 120) {
+    return (
+      <span className="inline-flex items-center text-xs px-1.5 py-0.5 rounded-full bg-green-100 text-green-700 font-medium whitespace-nowrap">
+        ⚡ 空き有り
+      </span>
+    );
+  }
+  if (remainingMinutes < 30) {
+    return (
+      <span className="inline-flex items-center text-xs px-1.5 py-0.5 rounded-full bg-red-100 text-red-700 font-medium whitespace-nowrap">
+        🔴 余裕なし
+      </span>
+    );
+  }
+  return null;
 }
 
 export default function OrgTaskDistributionPage() {
@@ -37,9 +80,11 @@ export default function OrgTaskDistributionPage() {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
+  // 各メンバーの初期負荷（API取得想定、モックは0始まり）
+  const [memberBaseLoad, setMemberBaseLoad] = useState<Record<number, { minutes: number; taskCount: number }>>({});
+
   const apiBase = import.meta.env.VITE_API_BASE_URL || "/api/v1";
   const token = localStorage.getItem("access_token");
-
   const authHeaders = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
 
   useEffect(() => {
@@ -62,6 +107,30 @@ export default function OrgTaskDistributionPage() {
     fetchTasks();
   }, [slug, apiBase, token]);
 
+  // メンバーの初期負荷をAPIから取得（今日のタスク状況）
+  useEffect(() => {
+    if (!slug || members.length === 0) return;
+    const fetchMemberLoads = async () => {
+      try {
+        const res = await fetch(`${apiBase}/org/${slug}/members/load`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const loadMap: Record<number, { minutes: number; taskCount: number }> = {};
+          (data.data as Array<{ user_id: number; total_minutes: number; task_count: number }>)
+            .forEach((item) => {
+              loadMap[item.user_id] = { minutes: item.total_minutes, taskCount: item.task_count };
+            });
+          setMemberBaseLoad(loadMap);
+        }
+      } catch {
+        // 取得失敗時は0として扱う（フォールバック）
+      }
+    };
+    fetchMemberLoads();
+  }, [slug, members, apiBase, token]);
+
   const handleDistribute = async () => {
     if (!slug) return;
     setDistributing(true);
@@ -74,8 +143,11 @@ export default function OrgTaskDistributionPage() {
       });
       if (!res.ok) throw new Error("AI振り分けに失敗しました");
       const data = await res.json();
-      setDistributeResult(data.data);
-      setPendingAssignments(data.data.assignments);
+      const result: DistributeResult = data.data;
+      setDistributeResult(result);
+      setPendingAssignments(
+        result.assignments.map((a) => ({ ...a, manually_overridden: false, change_reason: null }))
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "エラーが発生しました");
     } finally {
@@ -85,7 +157,22 @@ export default function OrgTaskDistributionPage() {
 
   const handleAssignmentChange = (taskId: number, newUserId: number | null) => {
     setPendingAssignments((prev) =>
-      prev.map((a) => (a.task_id === taskId ? { ...a, assigned_to: newUserId } : a))
+      prev.map((a) =>
+        a.task_id === taskId
+          ? {
+              ...a,
+              assigned_to: newUserId,
+              manually_overridden: newUserId !== a.ai_recommended_user_id,
+              change_reason: newUserId !== a.ai_recommended_user_id ? a.change_reason : null,
+            }
+          : a
+      )
+    );
+  };
+
+  const handleChangeReason = (taskId: number, reason: string) => {
+    setPendingAssignments((prev) =>
+      prev.map((a) => (a.task_id === taskId ? { ...a, change_reason: reason } : a))
     );
   };
 
@@ -94,7 +181,6 @@ export default function OrgTaskDistributionPage() {
     setApplying(true);
     setError(null);
     try {
-      // Apply each assignment via PATCH /tasks/:id
       await Promise.all(
         pendingAssignments.map((a) =>
           fetch(`${apiBase}/tasks/${a.task_id}`, {
@@ -116,6 +202,40 @@ export default function OrgTaskDistributionPage() {
     }
   };
 
+  // リアルタイムでメンバー負荷バーを計算
+  // pendingAssignmentsが変わるたびに各メンバーへの割り当て分を加算
+  const memberLoads: MemberLoad[] = useMemo(() => {
+    const assignedMinutesMap: Record<number, number> = {};
+    const assignedTaskCountMap: Record<number, number> = {};
+
+    pendingAssignments.forEach((a) => {
+      if (a.assigned_to != null) {
+        assignedMinutesMap[a.assigned_to] =
+          (assignedMinutesMap[a.assigned_to] ?? 0) + (a.estimated_minutes ?? 0);
+        assignedTaskCountMap[a.assigned_to] =
+          (assignedTaskCountMap[a.assigned_to] ?? 0) + 1;
+      }
+    });
+
+    return members.map((m) => {
+      const base = memberBaseLoad[m.user_id] ?? { minutes: 0, taskCount: 0 };
+      const addedMinutes = assignedMinutesMap[m.user_id] ?? 0;
+      const addedTasks = assignedTaskCountMap[m.user_id] ?? 0;
+      const totalMinutes = base.minutes + addedMinutes;
+      const totalTasks = base.taskCount + addedTasks;
+      // 残り時間: 8時間稼働想定から現在の総担当時間を引く
+      const remaining = Math.max(480 - totalMinutes, 0);
+      return {
+        id: m.user_id,
+        name: m.name || m.email || `User ${m.user_id}`,
+        totalMinutes,
+        taskCount: totalTasks,
+        remaining_minutes: remaining,
+        active_task_count: totalTasks,
+      };
+    });
+  }, [members, pendingAssignments, memberBaseLoad]);
+
   const priorityColor: Record<string, string> = {
     urgent: "bg-red-100 text-red-800",
     high: "bg-orange-100 text-orange-800",
@@ -135,7 +255,7 @@ export default function OrgTaskDistributionPage() {
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between mb-6">
           <div>
             <button
               onClick={() => navigate(`/org/${slug}`)}
@@ -155,6 +275,21 @@ export default function OrgTaskDistributionPage() {
             </button>
           )}
         </div>
+
+        {/* MemberLoadBar — 常時表示、振り分けのたびにリアルタイム更新 */}
+        {memberLoads.length > 0 && (
+          <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 mb-6">
+            <h2 className="text-sm font-semibold text-gray-700 mb-3">
+              メンバー負荷状況
+              {distributeResult && (
+                <span className="ml-2 text-xs text-indigo-500 font-normal">
+                  （振り分け結果を反映中）
+                </span>
+              )}
+            </h2>
+            <MemberLoadBar members={memberLoads} maxMinutes={480} />
+          </div>
+        )}
 
         {error && (
           <div className="mb-4 p-3 bg-red-50 text-red-700 rounded-lg border border-red-200">{error}</div>
@@ -196,12 +331,15 @@ export default function OrgTaskDistributionPage() {
         {/* Distribution Result */}
         {distributeResult && (
           <section>
-            {/* AI Message */}
+            {/* AI Message — あくまで「提案」として明示 */}
             <div className="bg-indigo-50 border border-indigo-200 rounded-xl p-5 mb-6">
               <div className="flex items-start gap-3">
-                <span className="text-2xl">AI</span>
+                <span className="text-2xl">🤖</span>
                 <div>
-                  <p className="font-semibold text-indigo-900 mb-1">AIによる配分コメント</p>
+                  <p className="font-semibold text-indigo-900 mb-0.5">AIによる配分提案</p>
+                  <p className="text-xs text-indigo-600 mb-2">
+                    以下はAIの提案です。最終判断は部署責任者が行ってください。
+                  </p>
                   <p className="text-indigo-800 text-sm leading-relaxed whitespace-pre-wrap">
                     {distributeResult.ai_message}
                   </p>
@@ -210,41 +348,108 @@ export default function OrgTaskDistributionPage() {
             </div>
 
             {/* Assignment List with manual override */}
-            <h2 className="text-lg font-semibold text-gray-700 mb-3">振り分け結果 (手動調整可能)</h2>
+            <h2 className="text-lg font-semibold text-gray-700 mb-3">
+              振り分け結果 <span className="text-sm font-normal text-gray-400">（手動調整可能）</span>
+            </h2>
             <div className="space-y-3 mb-6">
-              {pendingAssignments.map((a) => (
-                <div
-                  key={a.task_id}
-                  className="bg-white rounded-lg border border-gray-200 p-4 flex items-center justify-between gap-4"
-                >
-                  <span className="text-gray-800 font-medium flex-1">{a.task_title}</span>
-                  <div className="flex items-center gap-2">
-                    <label className="text-sm text-gray-500">担当者:</label>
-                    <select
-                      value={a.assigned_to ?? ""}
-                      onChange={(e) =>
-                        handleAssignmentChange(
-                          a.task_id,
-                          e.target.value ? Number(e.target.value) : null
-                        )
-                      }
-                      className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
-                    >
-                      <option value="">未割り当て</option>
-                      {members.map((m) => (
-                        <option key={m.user_id} value={m.user_id}>
-                          {m.name || m.email || `User ${m.user_id}`}
-                        </option>
-                      ))}
-                    </select>
+              {pendingAssignments.map((a) => {
+                const currentMember = memberLoads.find((m) => m.id === a.assigned_to);
+                const isManual = a.manually_overridden;
+
+                return (
+                  <div
+                    key={a.task_id}
+                    className="bg-white rounded-lg border border-gray-200 p-4"
+                  >
+                    <div className="flex items-start justify-between gap-4 flex-wrap">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-gray-800 font-medium">{a.task_title}</p>
+                        {/* AI推奨スコア（参考値として表示） */}
+                        {a.ai_skill_match_score != null && (
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            スキルマッチスコア（参考）: {a.ai_skill_match_score}%
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-2 items-end min-w-[220px]">
+                        <div className="flex items-center gap-2 flex-wrap justify-end">
+                          <label className="text-sm text-gray-500 whitespace-nowrap">担当者:</label>
+                          <div className="flex items-center gap-1.5">
+                            {/* AI推奨 or 手動調整済みバッジ */}
+                            {isManual ? (
+                              <span className="text-xs px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-700 font-medium whitespace-nowrap">
+                                ✏️ 手動調整済み
+                              </span>
+                            ) : (
+                              <span className="text-xs px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-600 font-medium whitespace-nowrap">
+                                🤖 推奨
+                              </span>
+                            )}
+                            <select
+                              value={a.assigned_to ?? ""}
+                              onChange={(e) =>
+                                handleAssignmentChange(
+                                  a.task_id,
+                                  e.target.value ? Number(e.target.value) : null
+                                )
+                              }
+                              className="border border-gray-300 rounded px-2 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                            >
+                              <option value="">未割り当て</option>
+                              {memberLoads.map((m) => {
+                                const isRecommended = m.id === a.ai_recommended_user_id;
+                                return (
+                                  <option key={m.id} value={m.id}>
+                                    {isRecommended ? "🤖 " : ""}
+                                    {m.name}
+                                    {" "}(残{m.remaining_minutes}分 / {m.active_task_count}件)
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* 選択中メンバーの空き状況バッジ */}
+                        {currentMember && (
+                          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+                            <AvailabilityBadge remainingMinutes={currentMember.remaining_minutes} />
+                            <span>進行中: {currentMember.active_task_count}件</span>
+                          </div>
+                        )}
+
+                        {/* 変更理由タグ（手動変更時のみ表示） */}
+                        {isManual && (
+                          <div className="flex items-center gap-1.5 flex-wrap justify-end">
+                            <span className="text-xs text-gray-400">変更理由:</span>
+                            {CHANGE_REASON_OPTIONS.map((opt) => (
+                              <button
+                                key={opt.value}
+                                onClick={() => handleChangeReason(a.task_id, opt.value)}
+                                className={`text-xs px-2 py-0.5 rounded-full border transition-colors ${
+                                  a.change_reason === opt.value
+                                    ? "bg-indigo-600 text-white border-indigo-600"
+                                    : "bg-white text-gray-600 border-gray-300 hover:border-indigo-400"
+                                }`}
+                              >
+                                {opt.label}
+                              </button>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             <div className="flex justify-end gap-3">
               <button
-                onClick={() => setDistributeResult(null)}
+                onClick={() => {
+                  setDistributeResult(null);
+                  setPendingAssignments([]);
+                }}
                 className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-100"
               >
                 キャンセル
