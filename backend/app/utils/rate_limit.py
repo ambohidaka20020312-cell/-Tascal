@@ -1,65 +1,61 @@
-"""
-Simple in-memory rate limiter for login attempt protection.
-Tracks failed login attempts per IP and locks out after threshold.
-"""
+import os
 import time
-from threading import Lock
-
-_lock = Lock()
-
-# {ip: {"count": int, "locked_until": float, "first_attempt": float}}
-_attempts: dict = {}
-
-MAX_ATTEMPTS = 5
-LOCKOUT_SECONDS = 15 * 60  # 15 minutes
-WINDOW_SECONDS = 15 * 60   # sliding window
+import redis
+from functools import wraps
+from flask import request, jsonify, current_app
 
 
-def is_locked(ip: str) -> bool:
-    """Return True if the IP is currently locked out."""
-    with _lock:
-        record = _attempts.get(ip)
-        if not record:
-            return False
-        if record.get("locked_until") and time.time() < record["locked_until"]:
-            return True
-        # Lock expired — clean up
-        if record.get("locked_until") and time.time() >= record["locked_until"]:
-            del _attempts[ip]
-        return False
+def _get_redis():
+    return redis.from_url(os.getenv("REDIS_URL", "redis://localhost:6379/0"))
 
 
-def record_failure(ip: str) -> None:
-    """Record a failed login attempt for the given IP."""
-    with _lock:
-        now = time.time()
-        record = _attempts.get(ip)
+def rate_limit(max_requests: int, window_seconds: int, key_prefix: str = "rl"):
+    """
+    Sliding window rate limiter using Redis.
+    key: {prefix}:{ip_or_user}
+    Uses Redis sorted set — timestamps as scores, prune old entries each request.
+    """
+    def decorator(f):
+        @wraps(f)
+        def wrapper(*args, **kwargs):
+            try:
+                r = _get_redis()
+                # キー: IPアドレス or JWT user_id
+                identifier = request.headers.get("X-Forwarded-For", request.remote_addr)
+                key = f"{key_prefix}:{identifier}"
+                now = time.time()
+                window_start = now - window_seconds
 
-        if record is None:
-            _attempts[ip] = {"count": 1, "first_attempt": now, "locked_until": None}
-            return
+                pipe = r.pipeline()
+                pipe.zremrangebyscore(key, 0, window_start)
+                pipe.zadd(key, {str(now): now})
+                pipe.zcard(key)
+                pipe.expire(key, window_seconds)
+                results = pipe.execute()
+                count = results[2]
 
-        # Reset if the window has expired
-        if now - record["first_attempt"] > WINDOW_SECONDS:
-            _attempts[ip] = {"count": 1, "first_attempt": now, "locked_until": None}
-            return
+                if count > max_requests:
+                    retry_after = int(window_seconds - (now - window_start))
+                    resp = jsonify({"error": {"code": "TOO_MANY_REQUESTS", "message": "リクエスト数が多すぎます"}})
+                    resp.status_code = 429
+                    resp.headers["Retry-After"] = str(retry_after)
+                    resp.headers["X-RateLimit-Limit"] = str(max_requests)
+                    resp.headers["X-RateLimit-Remaining"] = "0"
+                    resp.headers["X-RateLimit-Reset"] = str(int(now + retry_after))
+                    return resp
 
-        record["count"] += 1
-        if record["count"] >= MAX_ATTEMPTS:
-            record["locked_until"] = now + LOCKOUT_SECONDS
+                remaining = max(0, max_requests - count)
+                request.rate_limit_remaining = remaining
+                request.rate_limit_limit = max_requests
+            except redis.RedisError:
+                # Redisが落ちていてもサービスは継続（フェイルオープン）
+                current_app.logger.warning("Redis unavailable, rate limiting skipped")
+            return f(*args, **kwargs)
+        return wrapper
+    return decorator
 
 
-def record_success(ip: str) -> None:
-    """Clear failed attempt records for the given IP on successful login."""
-    with _lock:
-        _attempts.pop(ip, None)
-
-
-def lockout_remaining(ip: str) -> int:
-    """Return seconds remaining in lockout, or 0 if not locked."""
-    with _lock:
-        record = _attempts.get(ip)
-        if not record or not record.get("locked_until"):
-            return 0
-        remaining = int(record["locked_until"] - time.time())
-        return max(0, remaining)
+# ログイン試行専用（厳格）
+login_rate_limit = rate_limit(max_requests=5, window_seconds=900, key_prefix="login")
+# 一般API用
+api_rate_limit = rate_limit(max_requests=100, window_seconds=60, key_prefix="api")

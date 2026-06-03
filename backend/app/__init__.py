@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
@@ -20,7 +20,8 @@ _CSP = (
     "connect-src 'self' https://api.stripe.com; "
     "font-src 'self' data:; "
     "object-src 'none'; "
-    "base-uri 'self';"
+    "base-uri 'self'; "
+    "report-uri /api/v1/csp-report;"
 )
 
 
@@ -48,9 +49,19 @@ def create_app(config_name: str = "development"):
         response.headers["X-XSS-Protection"] = "1; mode=block"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Content-Security-Policy"] = _CSP
+        response.headers["Permissions-Policy"] = (
+            "camera=(), microphone=(self), geolocation=(), "
+            "payment=(self), usb=(), bluetooth=()"
+        )
+        response.headers["Cross-Origin-Opener-Policy"] = "same-origin"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
         # Prevent caching of sensitive API responses
         if response.content_type and "json" in response.content_type:
             response.headers["Cache-Control"] = "no-store"
+        # Rate limit headers
+        if hasattr(request, 'rate_limit_remaining'):
+            response.headers['X-RateLimit-Remaining'] = str(request.rate_limit_remaining)
+            response.headers['X-RateLimit-Limit'] = str(request.rate_limit_limit)
         return response
 
     # ------------------------------------------------------------------ #
