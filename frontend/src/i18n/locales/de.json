@@ -97,6 +97,16 @@
     "banner": "Offline — zwischengespeicherte Daten werden angezeigt",
     "back_online": "Verbindung wiederhergestellt"
   },
+  "dashboard": {
+    "pending": "Ausstehend",
+    "done_count": "Erledigt",
+    "no_tasks": "Keine Aufgaben",
+    "add": "+ HINZUFÜGEN",
+    "ai_optimize": "Mit KI optimieren",
+    "ai_advice": "KI-RATSCHLAG",
+    "tasks_label": "AUFGABEN",
+    "no_tasks_hint": "Fügen Sie Aufgaben hinzu, um Ihren Tag zu planen"
+  },
   "common": {
     "loading": "Wird geladen...",
     "error": "Ein Fehler ist aufgetreten",

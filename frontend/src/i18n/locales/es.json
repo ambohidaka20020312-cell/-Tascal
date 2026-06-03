@@ -97,6 +97,16 @@
     "banner": "Sin conexión — mostrando datos en caché",
     "back_online": "Conexión restaurada"
   },
+  "dashboard": {
+    "pending": "Pendiente",
+    "done_count": "Hecho",
+    "no_tasks": "Sin tareas",
+    "add": "+ AGREGAR",
+    "ai_optimize": "Optimizar con IA",
+    "ai_advice": "CONSEJO IA",
+    "tasks_label": "TAREAS",
+    "no_tasks_hint": "Agrega tareas para planificar tu día"
+  },
   "common": {
     "loading": "Cargando...",
     "error": "Ocurrió un error",

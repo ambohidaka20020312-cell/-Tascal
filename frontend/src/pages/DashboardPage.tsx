@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { ja } from "date-fns/locale";
+import { useTranslation } from "react-i18next";
 import { useTaskStore } from "../store/taskStore";
 import { useTasksQuery } from "../hooks/useTasks";
 import { aiApi } from "../utils/api";
@@ -25,6 +26,7 @@ function getDateChips(center: string, count = 7): string[] {
 }
 
 export default function DashboardPage() {
+  const { t } = useTranslation();
   const { tasks, selectedDate, setSelectedDate } = useTaskStore();
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [aiAdvice, setAiAdvice] = useState<string | null>(null);
@@ -116,7 +118,7 @@ export default function DashboardPage() {
             <h2 className={`font-bold text-[var(--text-primary)] tracking-wider ${isPhoneSmall ? "text-xl" : "text-2xl"}`}>{todayLabel}</h2>
             {!isTabletOrAbove && (
               <p className={`text-[var(--text-subtle)] tracking-wide ${isPhoneSmall ? "text-xs" : "text-sm"}`}>
-                未完了: {pendingCount}件 / 完了: {completedCount}件
+                {t("dashboard.pending")}: {pendingCount} / {t("dashboard.done_count")}: {completedCount}
               </p>
             )}
           </div>
@@ -162,13 +164,13 @@ export default function DashboardPage() {
         <div className="space-y-3">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] tracking-[0.2em] uppercase text-[var(--text-subtle)]">
-              {tasks.length > 0 ? `${tasks.length} TASKS` : "NO TASKS"}
+              {tasks.length > 0 ? `${tasks.length} ${t("dashboard.tasks_label")}` : t("dashboard.no_tasks")}
             </span>
             <button
               onClick={() => setShowTaskForm(true)}
               className="text-[10px] tracking-[0.15em] uppercase text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
             >
-              + ADD
+              {t("dashboard.add")}
             </button>
           </div>
 
@@ -192,8 +194,8 @@ export default function DashboardPage() {
                   <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
               </div>
-              <p className="text-[var(--text-muted)] text-sm tracking-wide">タスクがありません</p>
-              <p className="text-[var(--text-subtle)] text-xs mt-1">「+ 追加」からタスクを作成しましょう</p>
+              <p className="text-[var(--text-muted)] text-sm tracking-wide">{t("dashboard.no_tasks")}</p>
+              <p className="text-[var(--text-subtle)] text-xs mt-1">{t("dashboard.no_tasks_hint")}</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -215,7 +217,7 @@ export default function DashboardPage() {
             <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
-            AIでタスクを最適化
+            {t("dashboard.ai_optimize")}
           </Button>
 
           {aiAdvice && (
@@ -227,7 +229,7 @@ export default function DashboardPage() {
                   </svg>
                 </div>
                 <div>
-                  <p className="text-xs font-semibold tracking-widest uppercase text-[var(--text-subtle)] mb-1">AIアドバイス</p>
+                  <p className="text-xs font-semibold tracking-widest uppercase text-[var(--text-subtle)] mb-1">{t("dashboard.ai_advice")}</p>
                   <p className="text-sm text-[var(--text-primary)] whitespace-pre-wrap leading-relaxed">{aiAdvice}</p>
                 </div>
               </div>

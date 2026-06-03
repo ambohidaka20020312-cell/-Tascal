@@ -97,6 +97,16 @@
     "banner": "已离线 — 显示缓存数据",
     "back_online": "已恢复在线"
   },
+  "dashboard": {
+    "pending": "未完成",
+    "done_count": "已完成",
+    "no_tasks": "暂无任务",
+    "add": "+ 添加",
+    "ai_optimize": "AI 优化任务",
+    "ai_advice": "AI 建议",
+    "tasks_label": "任务",
+    "no_tasks_hint": "添加任务，规划今天的行程"
+  },
   "common": {
     "loading": "加载中...",
     "error": "发生错误",

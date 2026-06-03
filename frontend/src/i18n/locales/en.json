@@ -97,6 +97,16 @@
     "banner": "Offline — showing cached data",
     "back_online": "You are back online"
   },
+  "dashboard": {
+    "pending": "Pending",
+    "done_count": "Done",
+    "no_tasks": "No tasks",
+    "add": "+ ADD",
+    "ai_optimize": "Optimize with AI",
+    "ai_advice": "AI ADVICE",
+    "tasks_label": "TASKS",
+    "no_tasks_hint": "Add tasks to plan your day"
+  },
   "common": {
     "loading": "Loading...",
     "error": "An error occurred",

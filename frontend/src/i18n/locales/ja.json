@@ -97,6 +97,16 @@
     "banner": "オフライン中 — キャッシュされたデータを表示しています",
     "back_online": "オンラインに復帰しました"
   },
+  "dashboard": {
+    "pending": "未完了",
+    "done_count": "完了",
+    "no_tasks": "タスクがありません",
+    "add": "+ 追加",
+    "ai_optimize": "AIでタスクを最適化",
+    "ai_advice": "AIアドバイス",
+    "tasks_label": "TASKS",
+    "no_tasks_hint": "タスクを追加して今日を計画しましょう"
+  },
   "common": {
     "loading": "読み込み中...",
     "error": "エラーが発生しました",
