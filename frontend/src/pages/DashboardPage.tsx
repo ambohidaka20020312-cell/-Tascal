@@ -17,6 +17,8 @@ import Button from "../components/common/Button";
 import CategoryFilter from "../components/tasks/CategoryFilter";
 import ExportModal from "../components/tasks/ExportModal";
 import { useCategories } from "../hooks/useCategories";
+import DailyBriefingPanel from "../components/ai/DailyBriefingPanel";
+import ReplanButton from "../components/ai/ReplanButton";
 
 type FilterStatus = "all" | "pending" | "in_progress" | "completed" | "overrun";
 
@@ -440,6 +442,9 @@ export default function DashboardPage() {
             </p>
           )}
 
+          {/* Daily briefing panel */}
+          <DailyBriefingPanel />
+
           {/* Filter chips */}
           {tasks.length > 0 && (
             <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4">
@@ -629,6 +634,14 @@ export default function DashboardPage() {
                     onSelect={handleSelectTask}
                     categoryName={task.category_id != null ? categories.find((c) => c.id === task.category_id)?.name : undefined}
                   />
+                  {!bulkMode && task.status === "in_progress" && task.estimated_minutes != null && task.estimated_minutes > 0 && (
+                    <div className="flex justify-end px-1 -mt-1 mb-1">
+                      <ReplanButton
+                        taskId={task.id}
+                        estimatedMinutes={task.estimated_minutes}
+                      />
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
