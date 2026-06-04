@@ -131,6 +131,14 @@ export const skillApi = {
     api.get(`/org/${orgId}/tasks/received`),
 };
 
+export const orgApi = {
+  create: (name: string) => api.post("/org", { name }),
+  get: () => api.get("/org"),
+  invite: (orgId: number, email: string) => api.post(`/org/${orgId}/invite`, { email }),
+  removeMember: (orgId: number, userId: number) => api.delete(`/org/${orgId}/members/${userId}`),
+  getMembers: (orgId: number) => api.get(`/org/${orgId}/members`),
+};
+
 export const categoryApi = {
   list: () => api.get("/categories"),
   create: (data: { name: string; color?: string }) => api.post("/categories", data),
