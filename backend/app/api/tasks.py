@@ -1,6 +1,7 @@
 from flask import Blueprint, request, jsonify, Response
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..models.task import Task
+from ..models.task_note import TaskNote
 from ..models.user import User
 from .. import db
 from ..utils.validators import validate_task_fields
@@ -338,6 +339,41 @@ def export_tasks():
                 "Content-Disposition": f'attachment; filename="tascal_tasks_{today_str}.json"',
             },
         )
+
+
+@bp.get("/<int:task_id>/notes")
+@jwt_required()
+def list_notes(task_id):
+    user_id = get_jwt_identity()
+    task = Task.query.filter_by(id=task_id, user_id=user_id, is_deleted=False).first_or_404()
+    notes = TaskNote.query.filter_by(task_id=task.id).order_by(TaskNote.created_at.asc()).all()
+    return jsonify({"data": [n.to_dict() for n in notes]})
+
+
+@bp.post("/<int:task_id>/notes")
+@jwt_required()
+def create_note(task_id):
+    user_id = get_jwt_identity()
+    task = Task.query.filter_by(id=task_id, user_id=user_id, is_deleted=False).first_or_404()
+    data = request.get_json() or {}
+    content = data.get("content", "").strip()
+    if not content:
+        return jsonify({"error": {"code": "MISSING_FIELDS", "message": "メモの内容は必須です"}}), 400
+    note = TaskNote(task_id=task.id, user_id=user_id, content=content)
+    db.session.add(note)
+    db.session.commit()
+    return jsonify({"data": note.to_dict(), "message": "メモを追加しました"}), 201
+
+
+@bp.delete("/<int:task_id>/notes/<int:note_id>")
+@jwt_required()
+def delete_note(task_id, note_id):
+    user_id = get_jwt_identity()
+    task = Task.query.filter_by(id=task_id, user_id=user_id, is_deleted=False).first_or_404()
+    note = TaskNote.query.filter_by(id=note_id, task_id=task.id, user_id=user_id).first_or_404()
+    db.session.delete(note)
+    db.session.commit()
+    return jsonify({"message": "メモを削除しました"})
 
 
 def _next_recurrence_date(recurrence: str, base_date: datetime.date) -> datetime.date:

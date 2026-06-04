@@ -73,6 +73,9 @@ export const taskApi = {
   bulkDelete: (ids: number[]) => api.delete("/tasks/bulk", { data: { ids } }),
   export: (format: "csv" | "json", start?: string, end?: string) =>
     api.get("/tasks/export", { params: { format, start, end }, responseType: "blob" }),
+  getNotes: (taskId: number) => api.get(`/tasks/${taskId}/notes`),
+  addNote: (taskId: number, content: string) => api.post(`/tasks/${taskId}/notes`, { content }),
+  deleteNote: (taskId: number, noteId: number) => api.delete(`/tasks/${taskId}/notes/${noteId}`),
 };
 
 export const aiApi = {

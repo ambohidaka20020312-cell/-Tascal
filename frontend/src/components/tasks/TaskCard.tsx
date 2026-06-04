@@ -7,6 +7,7 @@ import { useViewport } from "../../hooks/useViewport";
 import OverrunAlert from "../ai/OverrunAlert";
 import { useFocusStore } from "../../store/focusStore";
 import CategoryBadge from "./CategoryBadge";
+import TaskNotesPanel from "./TaskNotesPanel";
 
 interface TaskCardProps {
   task: Task;
@@ -62,6 +63,7 @@ export default function TaskCard({ task, selectable, selected, onSelect, categor
   const [actualMinutes, setActualMinutes] = useState<string>("");
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const [showNotes, setShowNotes] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
   const [editEstimatedMinutes, setEditEstimatedMinutes] = useState(
@@ -346,6 +348,15 @@ export default function TaskCard({ task, selectable, selected, onSelect, categor
               )}
               <Button
                 size="sm"
+                variant="secondary"
+                onClick={() => setShowNotes((v) => !v)}
+                aria-label={`${task.title}のメモ`}
+                aria-expanded={showNotes}
+              >
+                📝
+              </Button>
+              <Button
+                size="sm"
                 variant="danger"
                 onClick={handleDelete}
                 loading={deleteTask.isPending}
@@ -365,6 +376,10 @@ export default function TaskCard({ task, selectable, selected, onSelect, categor
           </div>
         </div>
       </article>
+
+      {showNotes && (
+        <TaskNotesPanel taskId={task.id} onClose={() => setShowNotes(false)} />
+      )}
 
       {showCompleteModal && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
