@@ -91,6 +91,24 @@ def refresh():
     return jsonify({"data": {"access_token": create_access_token(identity=user_id)}})
 
 
+@bp.get("/profile")
+@jwt_required()
+def get_profile():
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": {"code": "NOT_FOUND", "message": "ユーザーが見つかりません"}}), 404
+    return jsonify({"data": {
+        "id": user.id,
+        "email": user.email,
+        "name": user.name,
+        "plan": user.plan,
+        "digest_unsubscribed": user.digest_unsubscribed,
+        "analytics_opt_out": user.analytics_opt_out,
+        "onboarding_completed": user.onboarding_completed,
+    }})
+
+
 @bp.patch("/profile")
 @jwt_required()
 def update_profile():

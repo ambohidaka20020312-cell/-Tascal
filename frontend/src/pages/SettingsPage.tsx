@@ -1,6 +1,7 @@
 import React from "react";
 import { useSettingsStore } from "../store/settingsStore";
 import PushNotificationToggle from "../components/settings/PushNotificationToggle";
+import NotificationSettings from "../components/settings/NotificationSettings";
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -174,6 +175,8 @@ export default function SettingsPage() {
           <PushNotificationToggle />
         </Row>
       </Section>
+
+      <NotificationSettings />
 
       <Section>
         <SectionTitle>表示</SectionTitle>

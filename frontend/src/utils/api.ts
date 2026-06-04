@@ -100,6 +100,9 @@ export const templateApi = {
 export const authApi = {
   updateProfile: (data: { name?: string; onboarding_completed?: boolean }) =>
     api.patch("/auth/profile", data),
+  getProfile: () => api.get("/auth/profile"),
+  unsubscribeDigest: () => api.post("/account/unsubscribe-digest"),
+  resubscribeDigest: () => api.post("/account/resubscribe-digest"),
 };
 
 export const billingApi = {
