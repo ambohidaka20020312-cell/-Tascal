@@ -12,6 +12,7 @@ import { useSpeechInput } from "../hooks/useSpeechInput";
 import { parseNaturalLanguageTask, ParsedTask } from "../utils/nlpTaskParser";
 import TaskCard from "../components/tasks/TaskCard";
 import TaskForm from "../components/tasks/TaskForm";
+import TaskSearch from "../components/tasks/TaskSearch";
 import Button from "../components/common/Button";
 import CategoryFilter from "../components/tasks/CategoryFilter";
 import { useCategories } from "../hooks/useCategories";
@@ -50,6 +51,10 @@ export default function DashboardPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [briefingDismissed, setBriefingDismissed] = useState(false);
   const { briefing } = useDailyBriefing();
+
+  // Search state
+  const [searchQuery, setSearchQuery] = useState("");
+  const searchRef = useRef<HTMLInputElement>(null);
 
   // Filter chip state
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
@@ -135,7 +140,7 @@ export default function DashboardPage() {
       setShowTaskForm(false);
     };
     const onFocusFilter = () => {
-      filterChipRef.current?.focus();
+      searchRef.current?.focus();
     };
     const onSetFilterAll = () => setFilterStatus("all");
     const onSetFilterTodo = () => setFilterStatus("pending");
@@ -236,8 +241,15 @@ export default function DashboardPage() {
     overrun: tasks.filter((t) => t.status === "overrun").length,
   };
 
-  const filteredTasks =
-    filterStatus === "all" ? tasks : tasks.filter((t) => t.status === filterStatus);
+  const filteredTasks = tasks.filter((t) => {
+    const matchesStatus = filterStatus === "all" || t.status === filterStatus;
+    const q = searchQuery.toLowerCase();
+    const matchesSearch =
+      !q ||
+      t.title.toLowerCase().includes(q) ||
+      (t.description?.toLowerCase().includes(q) ?? false);
+    return matchesStatus && matchesSearch;
+  });
 
   const today = new Date().toISOString().split("T")[0];
   const dateChips = getDateChips(selectedDate);
@@ -407,6 +419,14 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+
+          {/* Search input */}
+          <TaskSearch value={searchQuery} onChange={setSearchQuery} inputRef={searchRef} />
+          {searchQuery && (
+            <p className="text-[11px] text-[var(--text-subtle)] tracking-wide">
+              {filteredTasks.length}件のタスクが見つかりました
+            </p>
+          )}
 
           {/* Filter chips */}
           {tasks.length > 0 && (

@@ -26,6 +26,15 @@ def list_tasks():
         date = datetime.date.fromisoformat(date_str)
         query = query.filter_by(scheduled_date=date)
 
+    q = request.args.get("q", "").strip()
+    if q:
+        query = query.filter(
+            db.or_(
+                Task.title.ilike(f"%{q}%"),
+                Task.description.ilike(f"%{q}%"),
+            )
+        )
+
     category_id_str = request.args.get("category_id")
     if category_id_str is not None:
         try:
