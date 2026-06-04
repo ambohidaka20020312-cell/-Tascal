@@ -2,322 +2,318 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { useSubscription, useCheckout, usePortal } from "../hooks/useBilling";
-import PlanBadge from "../components/subscription/PlanBadge";
 
-interface PlanFeature {
-  text: string;
-  included: boolean;
+// ─── Feature rows ─────────────────────────────────────────────────────────────
+interface FeatureRow {
+  label: string;
+  free: string | boolean;
+  pro: string | boolean;
+  team: string | boolean;
 }
 
-interface PlanConfig {
-  id: "free" | "personal_pro" | "business" | "enterprise";
-  name: string;
-  price: string;
-  priceNote: string;
-  features: PlanFeature[];
-  highlighted: boolean;
-  badgeText?: string;
-  enterpriseContact?: boolean;
-}
-
-const personalPlans: PlanConfig[] = [
-  {
-    id: "free",
-    name: "Free",
-    price: "¥0",
-    priceNote: "ずっと無料",
-    highlighted: false,
-    features: [
-      { text: "タスク 20件/月", included: true },
-      { text: "AI最適化 3回/日", included: true },
-      { text: "カレンダービュー", included: true },
-      { text: "広告表示あり", included: true },
-      { text: "タスク 無制限", included: false },
-      { text: "AI最適化 無制限", included: false },
-      { text: "週次インサイト", included: false },
-    ],
-  },
-  {
-    id: "personal_pro",
-    name: "Personal Pro",
-    price: "¥980",
-    priceNote: "/ 月",
-    highlighted: true,
-    badgeText: "人気No.1",
-    features: [
-      { text: "タスク 無制限", included: true },
-      { text: "AI最適化 無制限", included: true },
-      { text: "カレンダービュー", included: true },
-      { text: "広告非表示", included: true },
-      { text: "週次インサイト", included: true },
-      { text: "優先サポート", included: true },
-    ],
-  },
+const FEATURES: FeatureRow[] = [
+  { label: "タスク数",       free: "20件/月", pro: "無制限",  team: "無制限" },
+  { label: "AI最適化",      free: "3回/日",  pro: "無制限",  team: "無制限" },
+  { label: "週次インサイト", free: false,     pro: true,      team: true },
+  { label: "広告",          free: "あり",    pro: "なし",    team: "なし" },
+  { label: "チーム共有",    free: false,     pro: false,     team: "最大5名" },
+  { label: "優先サポート",  free: false,     pro: false,     team: true },
 ];
 
-const businessPlans: PlanConfig[] = [
-  {
-    id: "business",
-    name: "Business",
-    price: "¥4,980",
-    priceNote: "/ 月",
-    highlighted: true,
-    badgeText: "法人向け",
-    features: [
-      { text: "最大10名まで利用可能", included: true },
-      { text: "部署管理", included: true },
-      { text: "AIタスク振り分け", included: true },
-      { text: "ローカルLLM対応", included: true },
-      { text: "タスク 無制限", included: true },
-      { text: "AI最適化 無制限", included: true },
-      { text: "広告非表示", included: true },
-    ],
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    price: "¥19,800〜",
-    priceNote: "/ 月",
-    highlighted: false,
-    badgeText: "大規模向け",
-    enterpriseContact: true,
-    features: [
-      { text: "メンバー数 無制限", included: true },
-      { text: "SSO対応", included: true },
-      { text: "専用サポート", included: true },
-      { text: "カスタムAIモデル", included: true },
-      { text: "部署管理", included: true },
-      { text: "AIタスク振り分け", included: true },
-      { text: "ローカルLLM対応", included: true },
-    ],
-  },
-];
-
-function CheckIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 20 20"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <path
-        fillRule="evenodd"
-        d="M16.704 4.153a.75.75 0 01.143 1.052l-8 10.5a.75.75 0 01-1.127.075l-4.5-4.5a.75.75 0 011.06-1.06l3.894 3.893 7.48-9.817a.75.75 0 011.05-.143z"
-        clipRule="evenodd"
-      />
-    </svg>
-  );
+// ─── Cell renderer ─────────────────────────────────────────────────────────────
+function Cell({ value }: { value: string | boolean }) {
+  if (value === true) {
+    return <span className="text-[var(--text-primary)] font-medium select-none">✓</span>;
+  }
+  if (value === false) {
+    return <span className="text-[var(--text-subtle)] select-none">✗</span>;
+  }
+  return <span className="text-[var(--text-primary)] text-sm">{value}</span>;
 }
 
-function XIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 20 20"
-      fill="currentColor"
-      aria-hidden="true"
-    >
-      <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />
-    </svg>
-  );
+// ─── Plan types ────────────────────────────────────────────────────────────────
+type PlanKey = "free" | "pro" | "team";
+type AnyPlan = "free" | "pro" | "team" | "personal_pro" | "business" | "enterprise";
+
+/** Normalise legacy / extended plan keys to the 3-column model */
+function normalisePlan(plan: AnyPlan): PlanKey {
+  if (plan === "personal_pro") return "pro";
+  if (plan === "business" || plan === "enterprise") return "team";
+  return plan as PlanKey;
 }
 
-type TabKey = "personal" | "business";
-
+// ─── Main component ────────────────────────────────────────────────────────────
 export default function SubscriptionPage() {
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<TabKey>("personal");
+  const [annual, setAnnual] = useState(false);
+
   const user = useAuthStore((s) => s.user);
   const { data: subscription, isLoading } = useSubscription();
   const checkout = useCheckout();
   const portal = usePortal();
 
-  const currentPlan = subscription?.plan ?? user?.plan ?? "free";
+  const rawPlan: AnyPlan = ((subscription?.plan ?? user?.plan ?? "free") as AnyPlan);
+  const currentPlan: PlanKey = normalisePlan(rawPlan);
   const isPaid = currentPlan !== "free";
 
-  const successParam = searchParams.get("success");
-  const canceledParam = searchParams.get("canceled");
-
+  // Feedback on Stripe redirect return
   useEffect(() => {
-    if (successParam === "true") {
+    if (searchParams.get("success") === "true") {
       alert("プランのアップグレードが完了しました！");
     }
-    if (canceledParam === "true") {
+    if (searchParams.get("canceled") === "true") {
       alert("チェックアウトがキャンセルされました。");
     }
-  }, [successParam, canceledParam]);
+  }, [searchParams]);
 
-  // Auto-select tab based on current plan
-  useEffect(() => {
-    if (currentPlan === "business" || currentPlan === "enterprise") {
-      setActiveTab("business");
-    }
-  }, [currentPlan]);
-
-  function handleUpgrade(planId: "personal_pro" | "business" | "enterprise") {
-    checkout.mutate(planId);
+  function handleUpgrade(plan: "pro" | "team") {
+    checkout.mutate(plan);
   }
 
   function handlePortal() {
     portal.mutate();
   }
 
-  const plans = activeTab === "personal" ? personalPlans : businessPlans;
+  // ─── Prices ───────────────────────────────────────────────────────────────
+  const PRICES: Record<PlanKey, { monthly: string; annual: string; note: string; annualNote: string }> = {
+    free: { monthly: "¥0",     annual: "¥0",      note: "ずっと無料", annualNote: "ずっと無料" },
+    pro:  { monthly: "¥980",   annual: "¥9,800",  note: "/ 月",       annualNote: "/ 年" },
+    team: { monthly: "¥2,980", annual: "¥29,800", note: "/ 月",       annualNote: "/ 年" },
+  };
+
+  function price(plan: PlanKey) {
+    return annual ? PRICES[plan].annual : PRICES[plan].monthly;
+  }
+  function priceNote(plan: PlanKey) {
+    return annual ? PRICES[plan].annualNote : PRICES[plan].note;
+  }
+
+  // ─── Column config ────────────────────────────────────────────────────────
+  const COLUMNS: { key: PlanKey; label: string; highlighted: boolean; badge?: string }[] = [
+    { key: "free", label: "Free", highlighted: false },
+    { key: "pro",  label: "Pro",  highlighted: true, badge: "おすすめ" },
+    { key: "team", label: "Team", highlighted: false },
+  ];
+
+  const upgradeOrder: PlanKey[] = ["free", "pro", "team"];
+
+  // ─── CTA button per column ────────────────────────────────────────────────
+  function renderCTA(plan: PlanKey) {
+    if (plan === currentPlan) {
+      return (
+        <button
+          disabled
+          className="w-full h-10 border border-[var(--border)] text-[var(--text-subtle)] text-xs tracking-[0.15em] uppercase rounded-lg opacity-60 cursor-not-allowed"
+        >
+          現在のプラン
+        </button>
+      );
+    }
+
+    const isUpgrade =
+      upgradeOrder.indexOf(plan) > upgradeOrder.indexOf(currentPlan);
+
+    if (isUpgrade) {
+      return (
+        <button
+          disabled={checkout.isPending}
+          onClick={() => handleUpgrade(plan as "pro" | "team")}
+          className="w-full h-10 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.15em] uppercase rounded-lg hover:opacity-80 transition-opacity disabled:opacity-40"
+        >
+          {checkout.isPending ? "処理中..." : "アップグレード"}
+        </button>
+      );
+    }
+
+    // Downgrade → Stripe customer portal
+    return (
+      <button
+        disabled={portal.isPending}
+        onClick={handlePortal}
+        className="w-full h-10 text-[var(--text-subtle)] text-xs tracking-[0.1em] underline underline-offset-2 hover:text-[var(--text-primary)] transition-colors disabled:opacity-40"
+      >
+        {portal.isPending ? "処理中..." : "ダウングレード"}
+      </button>
+    );
+  }
+
+  const PLAN_LABELS: Record<PlanKey, string> = { free: "Free", pro: "Pro", team: "Team" };
 
   return (
     <div className="bg-[var(--bg-primary)] py-8 sm:py-12 px-4 mb-16 md:mb-0">
-      <div className="mx-auto max-w-4xl">
-        {/* Header */}
-        <div className="mb-8 sm:mb-10 text-center">
+      <div className="mx-auto max-w-3xl">
+
+        {/* ── Header ─────────────────────────────────────────────────────── */}
+        <div className="mb-8 text-center">
           <p className="text-[10px] tracking-[0.25em] uppercase text-[var(--text-subtle)] mb-2">PRICING</p>
           <h1 className="text-2xl sm:text-3xl font-light tracking-wide text-[var(--text-primary)]">料金プラン</h1>
           <p className="mt-2 text-[var(--text-muted)] text-sm">
             あなたのワークフローに合ったプランを選びましょう
           </p>
-          {isLoading && (
-            <div className="mt-3 h-4 w-32 mx-auto animate-pulse bg-[var(--bg-secondary)] rounded" />
-          )}
-          {!isLoading && (
-            <div className="mt-3 inline-flex items-center gap-2 border border-[var(--border)] rounded-full px-4 py-2 text-sm text-[var(--text-muted)]">
-              現在のプラン:
-              <PlanBadge plan={currentPlan as "free" | "personal_pro" | "business" | "enterprise"} />
+        </div>
+
+        {/* ── Current plan badge ──────────────────────────────────────────── */}
+        <div className="mb-6 flex justify-center">
+          {isLoading ? (
+            <div className="h-8 w-48 animate-pulse bg-[var(--bg-secondary)] rounded-full" />
+          ) : (
+            <div className="inline-flex items-center gap-2 border border-[var(--border)] rounded-full px-4 py-1.5">
+              <span
+                className="w-2 h-2 rounded-full flex-shrink-0"
+                style={{
+                  backgroundColor:
+                    currentPlan === "free"
+                      ? "var(--text-subtle)"
+                      : "var(--text-primary)",
+                }}
+              />
+              <span className="text-xs text-[var(--text-muted)]">現在のプラン:</span>
+              <span className="text-xs font-semibold text-[var(--text-primary)] tracking-wide">
+                {PLAN_LABELS[currentPlan]}
+              </span>
+              {subscription?.cancel_at_period_end && (
+                <span className="text-[10px] text-[var(--text-subtle)]">（キャンセル予定）</span>
+              )}
             </div>
           )}
         </div>
 
-        {/* Tab switcher — underline style */}
+        {/* ── Annual / Monthly toggle ─────────────────────────────────────── */}
         <div className="mb-8 flex justify-center">
-          <div className="inline-flex border-b border-[var(--border)]">
+          <div className="inline-flex items-center gap-3">
+            <span
+              className={`text-sm transition-colors ${
+                !annual ? "text-[var(--text-primary)] font-medium" : "text-[var(--text-muted)]"
+              }`}
+            >
+              月払い
+            </span>
+
             <button
-              onClick={() => setActiveTab("personal")}
+              onClick={() => setAnnual((v) => !v)}
+              aria-pressed={annual}
               className={[
-                "px-6 py-2 text-sm tracking-wide transition-colors -mb-px",
-                activeTab === "personal"
-                  ? "border-b-2 border-[var(--text-primary)] text-[var(--text-primary)] font-medium"
-                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]",
+                "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
+                annual
+                  ? "bg-[var(--text-primary)]"
+                  : "bg-[var(--bg-secondary)] border border-[var(--border)]",
               ].join(" ")}
             >
-              個人向け
+              <span
+                className={[
+                  "inline-block h-4 w-4 transform rounded-full shadow transition-transform",
+                  annual
+                    ? "translate-x-6 bg-[var(--bg-primary)]"
+                    : "translate-x-1 bg-[var(--bg-primary)] border border-[var(--border)]",
+                ].join(" ")}
+              />
             </button>
-            <button
-              onClick={() => setActiveTab("business")}
-              className={[
-                "px-6 py-2 text-sm tracking-wide transition-colors -mb-px",
-                activeTab === "business"
-                  ? "border-b-2 border-[var(--text-primary)] text-[var(--text-primary)] font-medium"
-                  : "text-[var(--text-muted)] hover:text-[var(--text-primary)]",
-              ].join(" ")}
+
+            <span
+              className={`text-sm transition-colors ${
+                annual ? "text-[var(--text-primary)] font-medium" : "text-[var(--text-muted)]"
+              }`}
             >
-              法人向け
-            </button>
+              年払い
+              <span className="ml-1.5 text-[10px] tracking-[0.1em] text-[var(--text-subtle)]">
+                2ヶ月分お得
+              </span>
+            </span>
           </div>
         </div>
 
-        {/* Plan cards — 1 column mobile, 2 columns md+ */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 md:gap-8">
-          {plans
-            .filter((plan) => plan.id !== "enterprise")
-            .map((plan) => {
-              const isCurrent = plan.id === currentPlan;
+        {/* ── Comparison table ────────────────────────────────────────────── */}
+        <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
+          <table className="w-full border-collapse min-w-[480px]">
+            <thead>
+              <tr>
+                {/* Feature label column header */}
+                <th className="w-[36%] bg-[var(--bg-secondary)] border-b border-[var(--border)] px-4 py-4 text-left">
+                  <span className="sr-only">機能</span>
+                </th>
 
-              return (
-                <div
-                  key={plan.id}
-                  className={[
-                    "relative flex flex-col rounded-xl border border-[var(--border)] p-6 bg-[var(--bg-primary)]",
-                    isCurrent ? "ring-1 ring-[var(--text-primary)]" : "",
-                  ].join(" ")}
-                >
-                  {/* Badge */}
-                  {plan.badgeText && (
-                    <span className="absolute -top-3 left-6 text-[10px] tracking-[0.15em] uppercase text-[var(--text-subtle)] border border-[var(--border)] bg-[var(--bg-primary)] px-2 py-0.5 rounded-full">
-                      {plan.badgeText}
-                    </span>
-                  )}
-
-                  {/* Plan name & price */}
-                  <div className="mb-6">
-                    <div className="flex items-center gap-2 mb-3">
-                      <h2 className="text-base font-medium text-[var(--text-primary)]">
-                        {plan.name}
-                      </h2>
-                      {isCurrent && (
-                        <PlanBadge plan={plan.id as "free" | "personal_pro" | "business" | "enterprise"} />
+                {COLUMNS.map((col) => (
+                  <th
+                    key={col.key}
+                    className={[
+                      "w-[21%] px-3 py-4 text-center align-top",
+                      col.highlighted
+                        ? "border-x border-b border-[var(--text-primary)] bg-[var(--bg-primary)]"
+                        : "border-b border-[var(--border)] bg-[var(--bg-secondary)]",
+                    ].join(" ")}
+                  >
+                    {/* "おすすめ" badge row — always present for height alignment */}
+                    <div className="mb-1.5 h-[20px] flex items-center justify-center">
+                      {col.badge && (
+                        <span className="text-[9px] tracking-[0.15em] uppercase text-[var(--text-subtle)] border border-[var(--border)] rounded-full px-2 py-0.5">
+                          {col.badge}
+                        </span>
                       )}
                     </div>
-                    <div className="flex items-end gap-1">
-                      <span className="text-3xl font-light text-[var(--text-primary)]">
-                        {plan.price}
-                      </span>
-                      <span className="mb-1 text-sm text-[var(--text-muted)]">
-                        {plan.priceNote}
+
+                    <p className="text-sm font-semibold text-[var(--text-primary)] tracking-wide">
+                      {col.label}
+                    </p>
+
+                    <div className="mt-2 flex items-end justify-center gap-0.5">
+                      <span className="text-xl font-light text-[var(--text-primary)] leading-none">
+                        {price(col.key)}
                       </span>
                     </div>
-                  </div>
 
-                  {/* Features */}
-                  <ul className="mb-8 flex-1 space-y-3">
-                    {plan.features.map((feature) => (
-                      <li
-                        key={feature.text}
-                        className="flex items-center gap-2 text-sm"
-                      >
-                        {feature.included ? (
-                          <CheckIcon className="h-4 w-4 flex-shrink-0 text-[var(--text-primary)]" />
-                        ) : (
-                          <XIcon className="h-4 w-4 flex-shrink-0 text-[var(--text-subtle)]" />
-                        )}
-                        <span className={feature.included ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]"}>
-                          {feature.text}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
+                    <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
+                      {priceNote(col.key)}
+                    </p>
+                  </th>
+                ))}
+              </tr>
+            </thead>
 
-                  {/* CTA */}
-                  {isCurrent ? (
-                    <button disabled className="w-full h-11 border border-[var(--border)] text-[var(--text-subtle)] text-xs tracking-[0.15em] uppercase rounded-lg opacity-60 cursor-not-allowed">
-                      現在のプラン
-                    </button>
-                  ) : plan.id === "free" ? (
-                    <button disabled className="w-full h-11 border border-[var(--border)] text-[var(--text-subtle)] text-xs tracking-[0.15em] uppercase rounded-lg opacity-60 cursor-not-allowed">
-                      選択中
-                    </button>
-                  ) : (
-                    <button
-                      disabled={checkout.isPending}
-                      className="w-full h-11 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.15em] uppercase rounded-lg hover:opacity-80 transition-opacity disabled:opacity-40"
-                      onClick={() =>
-                        handleUpgrade(plan.id as "personal_pro" | "business" | "enterprise")
-                      }
+            <tbody>
+              {FEATURES.map((row, i) => (
+                <tr
+                  key={row.label}
+                  className={i % 2 === 0 ? "bg-[var(--bg-primary)]" : "bg-[var(--bg-secondary)]"}
+                >
+                  <td className="border-b border-[var(--border)] px-4 py-3 text-sm text-[var(--text-muted)]">
+                    {row.label}
+                  </td>
+                  {COLUMNS.map((col) => (
+                    <td
+                      key={col.key}
+                      className={[
+                        "border-b border-[var(--border)] px-3 py-3 text-center text-sm",
+                        col.highlighted ? "border-x border-[var(--text-primary)]" : "",
+                      ].join(" ")}
                     >
-                      {checkout.isPending ? "..." : "今すぐ始める"}
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+                      <Cell value={row[col.key]} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+
+              {/* CTA row */}
+              <tr className="bg-[var(--bg-primary)]">
+                <td className="px-4 py-4" />
+                {COLUMNS.map((col) => (
+                  <td
+                    key={col.key}
+                    className={[
+                      "px-3 py-4 text-center",
+                      col.highlighted
+                        ? "border-x border-b border-[var(--text-primary)] rounded-b"
+                        : "",
+                    ].join(" ")}
+                  >
+                    {renderCTA(col.key)}
+                  </td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
         </div>
 
-        {/* Enterprise banner */}
-        {plans.some((p) => p.id === "enterprise") && (
-          <div className="mt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl px-6 py-5">
-            <div>
-              <p className="text-[10px] tracking-[0.2em] uppercase text-[var(--text-subtle)] mb-1">ENTERPRISE</p>
-              <p className="text-sm font-medium text-[var(--text-primary)]">大規模チーム向けカスタムプラン</p>
-              <p className="text-xs text-[var(--text-muted)] mt-0.5">SSO・専用サポート・カスタムAIモデル対応。¥19,800〜/月</p>
-            </div>
-            <a
-              href="mailto:enterprise@tascal.app"
-              className="shrink-0 px-5 h-9 inline-flex items-center bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.15em] uppercase rounded-lg hover:opacity-80 transition-opacity"
-            >
-              お問い合わせ
-            </a>
-          </div>
-        )}
-
-        {/* Manage subscription (paid users only) */}
+        {/* ── Stripe portal for paid users ────────────────────────────────── */}
         {isPaid && (
           <div className="mt-8 flex flex-col items-center gap-3">
             <p className="text-xs text-[var(--text-subtle)] tracking-wide">
@@ -328,13 +324,13 @@ export default function SubscriptionPage() {
               onClick={handlePortal}
               className="px-5 h-9 border border-[var(--border)] text-[var(--text-primary)] text-xs tracking-[0.15em] uppercase rounded-lg hover:bg-[var(--bg-secondary)] transition-colors disabled:opacity-40"
             >
-              {portal.isPending ? "..." : "プランを管理する"}
+              {portal.isPending ? "処理中..." : "プランを管理する"}
             </button>
           </div>
         )}
 
-        {/* Subscription status detail */}
-        {subscription && subscription.current_period_end && (
+        {/* ── Renewal date ────────────────────────────────────────────────── */}
+        {subscription?.current_period_end && (
           <p className="mt-4 text-center text-xs text-[var(--text-subtle)]">
             次回更新日:{" "}
             {new Date(subscription.current_period_end).toLocaleDateString("ja-JP")}
