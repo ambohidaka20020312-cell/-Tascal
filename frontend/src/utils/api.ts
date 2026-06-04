@@ -71,6 +71,8 @@ export const taskApi = {
   reorder: (order: number[]) => api.patch("/tasks/reorder", { order }),
   bulkComplete: (ids: number[]) => api.post("/tasks/bulk-complete", { ids }),
   bulkDelete: (ids: number[]) => api.delete("/tasks/bulk", { data: { ids } }),
+  export: (format: "csv" | "json", start?: string, end?: string) =>
+    api.get("/tasks/export", { params: { format, start, end }, responseType: "blob" }),
 };
 
 export const aiApi = {

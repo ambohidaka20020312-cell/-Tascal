@@ -15,6 +15,7 @@ import TaskForm from "../components/tasks/TaskForm";
 import TaskSearch from "../components/tasks/TaskSearch";
 import Button from "../components/common/Button";
 import CategoryFilter from "../components/tasks/CategoryFilter";
+import ExportModal from "../components/tasks/ExportModal";
 import { useCategories } from "../hooks/useCategories";
 
 type FilterStatus = "all" | "pending" | "in_progress" | "completed" | "overrun";
@@ -46,6 +47,7 @@ export default function DashboardPage() {
   const { t } = useTranslation();
   const { tasks, selectedDate, setSelectedDate, reorderTasks } = useTaskStore();
   const [showTaskForm, setShowTaskForm] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [taskFormInit, setTaskFormInit] = useState<Partial<ParsedTask>>({});
   const [aiAdvice, setAiAdvice] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
@@ -399,6 +401,16 @@ export default function DashboardPage() {
                 </button>
               )}
               <button
+                onClick={() => setShowExportModal(true)}
+                aria-label="タスクをエクスポート"
+                title="エクスポート"
+                className="text-[var(--text-subtle)] hover:text-[var(--text-muted)] transition-colors"
+              >
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+              </button>
+              <button
                 onClick={openTaskForm}
                 className="text-[10px] tracking-[0.15em] uppercase text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
               >
@@ -694,6 +706,8 @@ export default function DashboardPage() {
           initialDescription={taskFormInit.description_hint}
         />
       )}
+
+      <ExportModal isOpen={showExportModal} onClose={() => setShowExportModal(false)} />
     </div>
   );
 }

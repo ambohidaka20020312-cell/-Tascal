@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, Response
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..models.task import Task
 from ..models.user import User
@@ -7,7 +7,10 @@ from ..utils.validators import validate_task_fields
 from ..utils.cache import cached, invalidate_user_cache
 from ..utils.plan_limits import check_task_limit
 from sqlalchemy import func
+import csv
 import datetime
+import io
+import json
 
 FREE_MONTHLY_TASK_LIMIT = 20
 
@@ -276,6 +279,65 @@ def task_stats():
             "total_completed": total_completed,
         }
     })
+
+
+@bp.get("/export")
+@jwt_required()
+def export_tasks():
+    user_id = get_jwt_identity()
+    fmt = request.args.get("format", "json").lower()
+    start_str = request.args.get("start")
+    end_str = request.args.get("end")
+
+    query = Task.query.filter_by(user_id=user_id, is_deleted=False)
+    if start_str:
+        try:
+            start_date = datetime.date.fromisoformat(start_str)
+            query = query.filter(Task.scheduled_date >= start_date)
+        except ValueError:
+            return jsonify({"error": {"code": "INVALID_DATE", "message": "start の日付形式が無効です"}}), 400
+    if end_str:
+        try:
+            end_date = datetime.date.fromisoformat(end_str)
+            query = query.filter(Task.scheduled_date <= end_date)
+        except ValueError:
+            return jsonify({"error": {"code": "INVALID_DATE", "message": "end の日付形式が無効です"}}), 400
+
+    tasks = query.order_by(Task.scheduled_date.asc().nullslast(), Task.created_at.asc()).all()
+    today_str = datetime.date.today().isoformat()
+
+    if fmt == "csv":
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow([
+            "id", "title", "description", "priority", "status",
+            "estimated_minutes", "actual_minutes", "scheduled_date",
+            "category_id", "recurrence", "created_at",
+        ])
+        for t in tasks:
+            writer.writerow([
+                t.id, t.title, t.description, t.priority, t.status,
+                t.estimated_minutes, t.actual_minutes, t.scheduled_date,
+                t.category_id, t.recurrence, t.created_at,
+            ])
+        csv_data = output.getvalue()
+        return Response(
+            csv_data,
+            mimetype="text/csv",
+            headers={
+                "Content-Disposition": f'attachment; filename="tascal_tasks_{today_str}.csv"',
+            },
+        )
+    else:
+        task_list = [t.to_dict() for t in tasks]
+        json_data = json.dumps(task_list, ensure_ascii=False, default=str)
+        return Response(
+            json_data,
+            mimetype="application/json",
+            headers={
+                "Content-Disposition": f'attachment; filename="tascal_tasks_{today_str}.json"',
+            },
+        )
 
 
 def _next_recurrence_date(recurrence: str, base_date: datetime.date) -> datetime.date:
