@@ -5,24 +5,40 @@ import { useCreateTask } from "../../hooks/useTasks";
 import { useTemplates, useCreateTemplate } from "../../hooks/useTemplates";
 import { Task } from "../../store/taskStore";
 
+type Priority = Task["priority"];
+
 interface TaskFormProps {
   onClose: () => void;
   defaultDate?: string;
+  initialTitle?: string;
+  initialPriority?: Priority;
+  initialEstimatedMinutes?: number;
+  initialScheduledDate?: string;
+  initialDescription?: string;
 }
 
-type Priority = Task["priority"];
 type Recurrence = "none" | "daily" | "weekly" | "monthly";
 const WEEKDAYS = ["月", "火", "水", "木", "金", "土", "日"] as const;
 const WEEKDAY_CODES = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
 
-export default function TaskForm({ onClose, defaultDate }: TaskFormProps) {
+export default function TaskForm({
+  onClose,
+  defaultDate,
+  initialTitle,
+  initialPriority,
+  initialEstimatedMinutes,
+  initialScheduledDate,
+  initialDescription,
+}: TaskFormProps) {
   const { t } = useTranslation();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState<Priority>("medium");
-  const [estimatedMinutes, setEstimatedMinutes] = useState<string>("");
+  const [title, setTitle] = useState(initialTitle ?? "");
+  const [description, setDescription] = useState(initialDescription ?? "");
+  const [priority, setPriority] = useState<Priority>(initialPriority ?? "medium");
+  const [estimatedMinutes, setEstimatedMinutes] = useState<string>(
+    initialEstimatedMinutes ? String(initialEstimatedMinutes) : ""
+  );
   const [scheduledDate, setScheduledDate] = useState(
-    defaultDate ?? new Date().toISOString().split("T")[0]
+    initialScheduledDate ?? defaultDate ?? new Date().toISOString().split("T")[0]
   );
   const [recurrence, setRecurrence] = useState<Recurrence>("none");
   const [weekdays, setWeekdays] = useState<string[]>(["MON"]);

@@ -4,6 +4,7 @@ export interface ParsedTask {
   scheduled_date?: string
   due_datetime?: string
   priority?: 'low' | 'medium' | 'high' | 'urgent'
+  description_hint?: string
 }
 
 function getToday(): string {
@@ -104,9 +105,9 @@ export function parseNaturalLanguageTask(input: string): ParsedTask {
 
   text = text.replace(/まで[にの]?/, ' ')
 
-  if (/急ぎ|緊急|urgent/i.test(text)) {
+  if (/最優先|急ぎ|緊急|urgent/i.test(text)) {
     priority = 'urgent'
-    text = text.replace(/急ぎ|緊急|urgent/gi, ' ')
+    text = text.replace(/最優先|急ぎ|緊急|urgent/gi, ' ')
   } else if (/高優先度|重要|high/i.test(text)) {
     priority = 'high'
     text = text.replace(/高優先度|重要|high/gi, ' ')
@@ -117,6 +118,11 @@ export function parseNaturalLanguageTask(input: string): ParsedTask {
     priority = 'medium'
   }
 
+  // Category hints: detect keywords and surface them as description hints
+  const categoryHints: string[] = []
+  if (/会議|ミーティング|MTG/i.test(text)) categoryHints.push('会議')
+  if (/資料|ドキュメント|レポート/i.test(text)) categoryHints.push('資料')
+
   const title = text.replace(/\s+/g, ' ').trim()
 
   const result: ParsedTask = { title: title || input.trim() }
@@ -124,6 +130,7 @@ export function parseNaturalLanguageTask(input: string): ParsedTask {
   if (scheduled_date) result.scheduled_date = scheduled_date
   if (due_datetime) result.due_datetime = due_datetime
   if (priority) result.priority = priority
+  if (categoryHints.length > 0) result.description_hint = categoryHints.join('・')
 
   return result
 }

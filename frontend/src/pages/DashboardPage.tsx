@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { format, addDays, subDays } from "date-fns";
 import { ja } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
@@ -8,6 +8,8 @@ import { aiApi, taskApi } from "../utils/api";
 import { useViewport } from "../hooks/useViewport";
 import { useDailyBriefing } from "../hooks/useDailyBriefing";
 import { useDragSort } from "../hooks/useDragSort";
+import { useSpeechInput } from "../hooks/useSpeechInput";
+import { parseNaturalLanguageTask, ParsedTask } from "../utils/nlpTaskParser";
 import TaskCard from "../components/tasks/TaskCard";
 import TaskForm from "../components/tasks/TaskForm";
 import Button from "../components/common/Button";
@@ -26,14 +28,30 @@ function getDateChips(center: string, count = 7): string[] {
   );
 }
 
+function priorityLabel(p: ParsedTask["priority"]) {
+  switch (p) {
+    case "urgent": return "最優先";
+    case "high": return "高";
+    case "low": return "低";
+    default: return "中";
+  }
+}
+
 export default function DashboardPage() {
   const { t } = useTranslation();
   const { tasks, selectedDate, setSelectedDate, reorderTasks } = useTaskStore();
   const [showTaskForm, setShowTaskForm] = useState(false);
+  const [taskFormInit, setTaskFormInit] = useState<Partial<ParsedTask>>({});
   const [aiAdvice, setAiAdvice] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [briefingDismissed, setBriefingDismissed] = useState(false);
   const { briefing } = useDailyBriefing();
+
+  // Quick-add state
+  const [quickAddVisible, setQuickAddVisible] = useState(false);
+  const [quickAddText, setQuickAddText] = useState("");
+  const [quickAddParsed, setQuickAddParsed] = useState<ParsedTask | null>(null);
+  const quickAddRef = useRef<HTMLInputElement>(null);
 
   const { deviceType, isLandscape } = useViewport();
   const isPhoneSmall = deviceType === "phone-small";
@@ -48,6 +66,76 @@ export default function DashboardPage() {
       // silently ignore reorder persistence errors
     });
   });
+
+  // Voice input: parse result and open TaskForm pre-filled
+  const handleVoiceResult = useCallback((transcript: string) => {
+    const parsed = parseNaturalLanguageTask(transcript);
+    setTaskFormInit(parsed);
+    setShowTaskForm(true);
+  }, []);
+
+  const { isSupported: voiceSupported, isListening, start: startListening, stop: stopListening } =
+    useSpeechInput(handleVoiceResult);
+
+  // Keyboard shortcut: "n" opens quick-add (when not already in an input)
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        setQuickAddVisible(true);
+      }
+      if (e.key === "Escape") {
+        setQuickAddVisible(false);
+        setQuickAddText("");
+        setQuickAddParsed(null);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  // Focus quick-add input when shown
+  useEffect(() => {
+    if (quickAddVisible) {
+      setTimeout(() => quickAddRef.current?.focus(), 50);
+    }
+  }, [quickAddVisible]);
+
+  const handleQuickAddChange = (value: string) => {
+    setQuickAddText(value);
+    if (value.trim()) {
+      setQuickAddParsed(parseNaturalLanguageTask(value));
+    } else {
+      setQuickAddParsed(null);
+    }
+  };
+
+  const handleQuickAddConfirm = () => {
+    if (!quickAddParsed || !quickAddText.trim()) return;
+    setTaskFormInit(quickAddParsed);
+    setQuickAddVisible(false);
+    setQuickAddText("");
+    setQuickAddParsed(null);
+    setShowTaskForm(true);
+  };
+
+  const handleQuickAddKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      handleQuickAddConfirm();
+    } else if (e.key === "Escape") {
+      setQuickAddVisible(false);
+      setQuickAddText("");
+      setQuickAddParsed(null);
+    }
+  };
+
+  const openTaskForm = () => {
+    setTaskFormInit({});
+    setShowTaskForm(true);
+  };
 
   const handleAiOptimize = async () => {
     setAiLoading(true);
@@ -170,17 +258,102 @@ export default function DashboardPage() {
       <div className={`grid gap-5 items-start ${isTabletOrAbove || isLandscape ? "grid-cols-2" : "grid-cols-1"}`}>
         {/* Left: Task list */}
         <div className="space-y-3">
+          {/* Task list header with voice + add buttons */}
           <div className="flex items-center justify-between mb-2">
             <span className="text-[10px] tracking-[0.2em] uppercase text-[var(--text-subtle)]">
               {tasks.length > 0 ? `${tasks.length} ${t("dashboard.tasks_label")}` : t("dashboard.no_tasks")}
             </span>
-            <button
-              onClick={() => setShowTaskForm(true)}
-              className="text-[10px] tracking-[0.15em] uppercase text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-            >
-              {t("dashboard.add")}
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Voice input button — only shown if Speech API is available */}
+              {voiceSupported && (
+                <button
+                  onClick={isListening ? stopListening : startListening}
+                  aria-label={isListening ? "録音を停止" : "音声でタスクを追加"}
+                  title={isListening ? "録音を停止" : "音声でタスクを追加"}
+                  className={[
+                    "relative flex items-center justify-center w-6 h-6 rounded-full transition-colors",
+                    isListening
+                      ? "text-[var(--text-primary)]"
+                      : "text-[var(--text-subtle)] hover:text-[var(--text-muted)]",
+                  ].join(" ")}
+                >
+                  {/* Pulsing ring when recording */}
+                  {isListening && (
+                    <span className="absolute inset-0 rounded-full border border-[var(--text-primary)] animate-ping opacity-60" />
+                  )}
+                  {/* Red dot indicator */}
+                  {isListening && (
+                    <span className="absolute top-0 right-0 w-1.5 h-1.5 rounded-full bg-[var(--text-primary)] animate-pulse" />
+                  )}
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 18.75a6 6 0 006-6v-1.5m-6 7.5a6 6 0 01-6-6v-1.5m6 7.5v3.75m-3.75 0h7.5M12 15.75a3 3 0 01-3-3V4.5a3 3 0 116 0v8.25a3 3 0 01-3 3z" />
+                  </svg>
+                </button>
+              )}
+              <button
+                onClick={openTaskForm}
+                className="text-[10px] tracking-[0.15em] uppercase text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
+              >
+                {t("dashboard.add")}
+              </button>
+            </div>
           </div>
+
+          {/* Quick-add text input */}
+          {quickAddVisible && (
+            <div className="mb-2">
+              <input
+                ref={quickAddRef}
+                type="text"
+                value={quickAddText}
+                onChange={(e) => handleQuickAddChange(e.target.value)}
+                onKeyDown={handleQuickAddKeyDown}
+                placeholder="タスクを追加... (例: 明日の会議資料を作る 1時間 高優先度)"
+                className="w-full border border-[var(--border)] rounded-lg px-3 py-2 text-sm bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)] placeholder:text-[var(--text-subtle)]"
+              />
+              {quickAddParsed && quickAddText.trim() && (
+                <div className="mt-1.5 px-3 py-2 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg text-[11px] text-[var(--text-muted)] space-y-0.5">
+                  <div className="flex gap-3 flex-wrap">
+                    <span>
+                      <span className="text-[var(--text-subtle)] tracking-wide">タイトル</span>{" "}
+                      <span className="text-[var(--text-primary)]">{quickAddParsed.title || "—"}</span>
+                    </span>
+                    {quickAddParsed.estimated_minutes && (
+                      <span>
+                        <span className="text-[var(--text-subtle)] tracking-wide">時間</span>{" "}
+                        <span className="text-[var(--text-primary)]">{quickAddParsed.estimated_minutes}分</span>
+                      </span>
+                    )}
+                    <span>
+                      <span className="text-[var(--text-subtle)] tracking-wide">優先度</span>{" "}
+                      <span className="text-[var(--text-primary)]">{priorityLabel(quickAddParsed.priority)}</span>
+                    </span>
+                    {quickAddParsed.scheduled_date && (
+                      <span>
+                        <span className="text-[var(--text-subtle)] tracking-wide">日付</span>{" "}
+                        <span className="text-[var(--text-primary)]">{quickAddParsed.scheduled_date}</span>
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      onClick={handleQuickAddConfirm}
+                      className="text-[10px] tracking-[0.15em] uppercase text-[var(--text-primary)] hover:opacity-70 transition-opacity"
+                    >
+                      確定 (Enter)
+                    </button>
+                    <span className="text-[var(--border)]">·</span>
+                    <button
+                      onClick={() => { setQuickAddVisible(false); setQuickAddText(""); setQuickAddParsed(null); }}
+                      className="text-[10px] tracking-[0.15em] uppercase text-[var(--text-subtle)] hover:text-[var(--text-muted)] transition-colors"
+                    >
+                      キャンセル (Esc)
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {isLoading ? (
             <div className="space-y-3">
@@ -209,7 +382,7 @@ export default function DashboardPage() {
                 新しいタスクを追加して、<br />生産的な1日を始めましょう
               </p>
               <button
-                onClick={() => setShowTaskForm(true)}
+                onClick={() => setQuickAddVisible(true)}
                 className="flex items-center gap-2 px-5 py-2.5 border border-[var(--border)] text-[var(--text-muted)] text-sm tracking-wide hover:border-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
@@ -281,8 +454,13 @@ export default function DashboardPage() {
 
       {showTaskForm && (
         <TaskForm
-          onClose={() => setShowTaskForm(false)}
+          onClose={() => { setShowTaskForm(false); setTaskFormInit({}); }}
           defaultDate={selectedDate}
+          initialTitle={taskFormInit.title}
+          initialPriority={taskFormInit.priority}
+          initialEstimatedMinutes={taskFormInit.estimated_minutes}
+          initialScheduledDate={taskFormInit.scheduled_date}
+          initialDescription={taskFormInit.description_hint}
         />
       )}
     </div>
