@@ -27,7 +27,14 @@
     "cancel": "Cancel",
     "no_tasks": "No tasks",
     "focus": "Focus",
-    "template_save": "Save as Template"
+    "template_save": "Save as Template",
+    "recurrence": "Recurrence",
+    "recurrence_none": "None",
+    "recurrence_daily": "Daily",
+    "recurrence_weekly": "Weekly",
+    "recurrence_monthly": "Monthly",
+    "save_as_template": "Save as Template",
+    "from_template": "Add from Template"
   },
   "ai": {
     "optimize": "Optimize with AI",
@@ -114,7 +121,8 @@
     "close": "Close",
     "confirm": "Confirm",
     "minutes": "min",
-    "hours": "hr"
+    "hours": "hr",
+    "offline": "Offline"
   },
   "insights": {
     "title": "Weekly Insights",

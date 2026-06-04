@@ -27,7 +27,14 @@
     "cancel": "취소",
     "no_tasks": "할 일이 없습니다",
     "focus": "집중",
-    "template_save": "템플릿으로 저장"
+    "template_save": "템플릿으로 저장",
+    "recurrence": "반복",
+    "recurrence_none": "없음",
+    "recurrence_daily": "매일",
+    "recurrence_weekly": "매주",
+    "recurrence_monthly": "매월",
+    "save_as_template": "템플릿으로 저장",
+    "from_template": "템플릿에서 추가"
   },
   "ai": {
     "optimize": "AI로 최적화",
@@ -114,7 +121,8 @@
     "close": "닫기",
     "confirm": "확인",
     "minutes": "분",
-    "hours": "시간"
+    "hours": "시간",
+    "offline": "오프라인"
   },
   "insights": {
     "title": "주간 인사이트",

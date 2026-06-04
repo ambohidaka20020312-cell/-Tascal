@@ -27,7 +27,14 @@
     "cancel": "Cancelar",
     "no_tasks": "Nenhuma tarefa",
     "focus": "Foco",
-    "template_save": "Salvar como modelo"
+    "template_save": "Salvar como modelo",
+    "recurrence": "Recorrência",
+    "recurrence_none": "Nenhuma",
+    "recurrence_daily": "Diariamente",
+    "recurrence_weekly": "Semanalmente",
+    "recurrence_monthly": "Mensalmente",
+    "save_as_template": "Salvar como modelo",
+    "from_template": "Adicionar do modelo"
   },
   "ai": {
     "optimize": "Otimizar com IA",
@@ -114,7 +121,8 @@
     "close": "Fechar",
     "confirm": "Confirmar",
     "minutes": "min",
-    "hours": "h"
+    "hours": "h",
+    "offline": "Sem conexão"
   },
   "insights": {
     "title": "Insights semanais",

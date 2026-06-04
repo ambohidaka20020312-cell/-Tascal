@@ -27,7 +27,14 @@
     "cancel": "Cancelar",
     "no_tasks": "No hay tareas",
     "focus": "Concentrarse",
-    "template_save": "Guardar como plantilla"
+    "template_save": "Guardar como plantilla",
+    "recurrence": "Recurrencia",
+    "recurrence_none": "Ninguna",
+    "recurrence_daily": "Diariamente",
+    "recurrence_weekly": "Semanalmente",
+    "recurrence_monthly": "Mensualmente",
+    "save_as_template": "Guardar como plantilla",
+    "from_template": "Agregar desde plantilla"
   },
   "ai": {
     "optimize": "Optimizar con IA",
@@ -114,7 +121,8 @@
     "close": "Cerrar",
     "confirm": "Confirmar",
     "minutes": "min",
-    "hours": "h"
+    "hours": "h",
+    "offline": "Sin conexión"
   },
   "insights": {
     "title": "Estadísticas semanales",

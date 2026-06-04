@@ -27,7 +27,14 @@
     "cancel": "إلغاء",
     "no_tasks": "لا توجد مهام",
     "focus": "تركيز",
-    "template_save": "حفظ كقالب"
+    "template_save": "حفظ كقالب",
+    "recurrence": "التكرار",
+    "recurrence_none": "بدون تكرار",
+    "recurrence_daily": "يومياً",
+    "recurrence_weekly": "أسبوعياً",
+    "recurrence_monthly": "شهرياً",
+    "save_as_template": "حفظ كقالب",
+    "from_template": "إضافة من قالب"
   },
   "ai": {
     "optimize": "تحسين بالذكاء الاصطناعي",
@@ -114,7 +121,8 @@
     "close": "إغلاق",
     "confirm": "تأكيد",
     "minutes": "دقيقة",
-    "hours": "ساعة"
+    "hours": "ساعة",
+    "offline": "غير متصل"
   },
   "insights": {
     "title": "إحصاءات الأسبوع",

@@ -27,7 +27,14 @@
     "cancel": "Annuler",
     "no_tasks": "Aucune tâche",
     "focus": "Focus",
-    "template_save": "Enregistrer comme modèle"
+    "template_save": "Enregistrer comme modèle",
+    "recurrence": "Récurrence",
+    "recurrence_none": "Aucune",
+    "recurrence_daily": "Quotidien",
+    "recurrence_weekly": "Hebdomadaire",
+    "recurrence_monthly": "Mensuel",
+    "save_as_template": "Enregistrer comme modèle",
+    "from_template": "Ajouter depuis un modèle"
   },
   "ai": {
     "optimize": "Optimiser avec l'IA",
@@ -114,7 +121,8 @@
     "close": "Fermer",
     "confirm": "Confirmer",
     "minutes": "min",
-    "hours": "h"
+    "hours": "h",
+    "offline": "Hors ligne"
   },
   "insights": {
     "title": "Statistiques hebdomadaires",

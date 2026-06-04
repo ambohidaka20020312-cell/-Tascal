@@ -27,7 +27,14 @@
     "cancel": "取消",
     "no_tasks": "暂无任务",
     "focus": "专注",
-    "template_save": "保存为模板"
+    "template_save": "保存为模板",
+    "recurrence": "重复",
+    "recurrence_none": "无",
+    "recurrence_daily": "每天",
+    "recurrence_weekly": "每周",
+    "recurrence_monthly": "每月",
+    "save_as_template": "保存为模板",
+    "from_template": "从模板添加"
   },
   "ai": {
     "optimize": "AI 优化",
@@ -114,7 +121,8 @@
     "close": "关闭",
     "confirm": "确认",
     "minutes": "分钟",
-    "hours": "小时"
+    "hours": "小时",
+    "offline": "离线"
   },
   "insights": {
     "title": "每周洞察",

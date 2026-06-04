@@ -27,7 +27,14 @@
     "cancel": "取消",
     "no_tasks": "沒有任務",
     "focus": "專注",
-    "template_save": "儲存為範本"
+    "template_save": "儲存為範本",
+    "recurrence": "重複",
+    "recurrence_none": "無",
+    "recurrence_daily": "每天",
+    "recurrence_weekly": "每週",
+    "recurrence_monthly": "每月",
+    "save_as_template": "儲存為範本",
+    "from_template": "從範本新增"
   },
   "ai": {
     "optimize": "AI 最佳化",
@@ -114,7 +121,8 @@
     "close": "關閉",
     "confirm": "確認",
     "minutes": "分鐘",
-    "hours": "小時"
+    "hours": "小時",
+    "offline": "離線"
   },
   "insights": {
     "title": "每週洞察",

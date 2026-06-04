@@ -27,7 +27,14 @@
     "cancel": "Abbrechen",
     "no_tasks": "Keine Aufgaben",
     "focus": "Fokus",
-    "template_save": "Als Vorlage speichern"
+    "template_save": "Als Vorlage speichern",
+    "recurrence": "Wiederholung",
+    "recurrence_none": "Keine",
+    "recurrence_daily": "Täglich",
+    "recurrence_weekly": "Wöchentlich",
+    "recurrence_monthly": "Monatlich",
+    "save_as_template": "Als Vorlage speichern",
+    "from_template": "Aus Vorlage hinzufügen"
   },
   "ai": {
     "optimize": "Mit KI optimieren",
@@ -114,7 +121,8 @@
     "close": "Schließen",
     "confirm": "Bestätigen",
     "minutes": "Min.",
-    "hours": "Std."
+    "hours": "Std.",
+    "offline": "Offline"
   },
   "insights": {
     "title": "Wöchentliche Einblicke",

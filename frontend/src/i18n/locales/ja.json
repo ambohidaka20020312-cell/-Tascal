@@ -27,7 +27,14 @@
     "cancel": "キャンセル",
     "no_tasks": "タスクがありません",
     "focus": "フォーカス",
-    "template_save": "テンプレートとして保存"
+    "template_save": "テンプレートとして保存",
+    "recurrence": "繰り返し",
+    "recurrence_none": "なし",
+    "recurrence_daily": "毎日",
+    "recurrence_weekly": "毎週",
+    "recurrence_monthly": "毎月",
+    "save_as_template": "テンプレートとして保存",
+    "from_template": "テンプレートから追加"
   },
   "ai": {
     "optimize": "AIで最適化",
@@ -114,7 +121,8 @@
     "close": "閉じる",
     "confirm": "確認",
     "minutes": "分",
-    "hours": "時間"
+    "hours": "時間",
+    "offline": "オフライン"
   },
   "insights": {
     "title": "週次インサイト",
