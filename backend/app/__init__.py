@@ -1,4 +1,5 @@
-from flask import Flask, jsonify, request
+import os
+from flask import Flask, jsonify, request, send_file, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
@@ -38,6 +39,15 @@ def create_app(config_name: str = "development"):
 
     from .api import register_blueprints
     register_blueprints(app)
+
+    @app.route("/api/v1/docs/openapi.yaml")
+    def openapi_spec():
+        spec_path = os.path.join(os.path.dirname(__file__), "openapi.yaml")
+        return send_file(spec_path, mimetype="application/yaml")
+
+    @app.route("/api/v1/docs")
+    def api_docs():
+        return render_template("swagger.html")
 
     # ------------------------------------------------------------------ #
     # Security headers — added to every response                          #

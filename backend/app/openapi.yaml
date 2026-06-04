@@ -1,0 +1,263 @@
+openapi: "3.0.3"
+info:
+  title: Tascal API
+  version: "1.0.0"
+  description: AI-powered task management API
+servers:
+  - url: /api/v1
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Task:
+      type: object
+      properties:
+        id: {type: integer}
+        title: {type: string}
+        description: {type: string, nullable: true}
+        priority: {type: string, enum: [low, medium, high, urgent]}
+        status: {type: string, enum: [pending, in_progress, done, overdue]}
+        estimated_minutes: {type: integer, nullable: true}
+        actual_minutes: {type: integer, nullable: true}
+        scheduled_date: {type: string, format: date, nullable: true}
+        recurrence: {type: string, nullable: true}
+        category_id: {type: integer, nullable: true}
+        created_at: {type: string, format: date-time}
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code: {type: string}
+            message: {type: string}
+paths:
+  /auth/register:
+    post:
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, name]
+              properties:
+                email: {type: string, format: email}
+                password: {type: string, minLength: 8}
+                name: {type: string}
+      responses:
+        "201": {description: User created}
+        "409": {description: Email already exists}
+  /auth/login:
+    post:
+      summary: Login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: {type: string}
+                password: {type: string}
+      responses:
+        "200":
+          description: Tokens
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      access_token: {type: string}
+                      refresh_token: {type: string}
+  /tasks:
+    get:
+      summary: List tasks
+      security: [{bearerAuth: []}]
+      parameters:
+        - name: date
+          in: query
+          schema: {type: string, format: date}
+        - name: category_id
+          in: query
+          schema: {type: integer}
+        - name: q
+          in: query
+          schema: {type: string}
+      responses:
+        "200":
+          description: Task list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items: {$ref: "#/components/schemas/Task"}
+    post:
+      summary: Create task
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title]
+              properties:
+                title: {type: string}
+                description: {type: string}
+                priority: {type: string, enum: [low, medium, high, urgent]}
+                estimated_minutes: {type: integer}
+                scheduled_date: {type: string, format: date}
+                recurrence: {type: string}
+                category_id: {type: integer}
+      responses:
+        "201": {description: Task created}
+        "403": {description: Plan limit reached}
+  /tasks/{id}:
+    patch:
+      summary: Update task
+      security: [{bearerAuth: []}]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: integer}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: "#/components/schemas/Task"}
+      responses:
+        "200": {description: Updated task}
+    delete:
+      summary: Delete task
+      security: [{bearerAuth: []}]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: integer}
+      responses:
+        "200": {description: Deleted}
+  /tasks/{id}/complete:
+    post:
+      summary: Mark task complete
+      security: [{bearerAuth: []}]
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: integer}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                actual_minutes: {type: integer}
+      responses:
+        "200": {description: Completed}
+  /tasks/bulk-complete:
+    post:
+      summary: Bulk complete tasks
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items: {type: integer}
+      responses:
+        "200": {description: Completed}
+  /tasks/export:
+    get:
+      summary: Export tasks
+      security: [{bearerAuth: []}]
+      parameters:
+        - name: format
+          in: query
+          schema: {type: string, enum: [csv, json]}
+        - name: start
+          in: query
+          schema: {type: string, format: date}
+        - name: end
+          in: query
+          schema: {type: string, format: date}
+      responses:
+        "200":
+          description: File download
+  /ai/optimize:
+    get:
+      summary: Get AI optimization plan
+      security: [{bearerAuth: []}]
+      responses:
+        "200": {description: Optimization plan}
+  /ai/replan:
+    post:
+      summary: Replan after task overrun
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                overrun_task_id: {type: integer}
+                actual_minutes_so_far: {type: integer}
+      responses:
+        "200": {description: Replan result}
+  /ai/insights:
+    get:
+      summary: Weekly insights (Pro+)
+      security: [{bearerAuth: []}]
+      responses:
+        "200": {description: Insights data}
+  /billing/subscription:
+    get:
+      summary: Get current subscription
+      security: [{bearerAuth: []}]
+      responses:
+        "200": {description: Subscription info}
+  /categories:
+    get:
+      summary: List categories
+      security: [{bearerAuth: []}]
+      responses:
+        "200": {description: Category list}
+    post:
+      summary: Create category
+      security: [{bearerAuth: []}]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: {type: string}
+                color: {type: string}
+      responses:
+        "201": {description: Created}
+  /health:
+    get:
+      summary: Health check
+      responses:
+        "200": {description: OK}
