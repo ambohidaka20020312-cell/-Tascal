@@ -54,6 +54,19 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-query': ['@tanstack/react-query'],
+          'vendor-calendar': ['@fullcalendar/react', '@fullcalendar/daygrid', '@fullcalendar/timegrid', '@fullcalendar/interaction'],
+          'vendor-i18n': ['i18next', 'react-i18next'],
+        },
+      },
+    },
+    chunkSizeWarningLimit: 600,
+  },
   server: {
     proxy: {
       "/api": "http://localhost:5000",
