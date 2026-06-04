@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/authStore";
 import AppLayout from "./components/layout/AppLayout";
@@ -12,6 +12,10 @@ import SettingsPage from "./pages/SettingsPage";
 import AccountPage from "./pages/AccountPage";
 import CookieConsent from "./components/legal/CookieConsent";
 import OnboardingWizard from "./components/onboarding/OnboardingWizard";
+import UpgradePrompt from "./components/subscription/UpgradePrompt";
+import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/legal/TermsOfServicePage";
+import CookiePolicyPage from "./pages/legal/CookiePolicyPage";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -31,10 +35,29 @@ function OnboardingGate({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function GlobalUpgradeListener() {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState<"task_limit" | "ai_limit" | "insights" | "generic">("generic");
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const code = (e as CustomEvent).detail?.code as string ?? "";
+      if (code === "TASK_LIMIT") setReason("task_limit");
+      else if (code === "AI_LIMIT") setReason("ai_limit");
+      else if (code === "INSIGHTS_PRO") setReason("insights");
+      else setReason("generic");
+      setOpen(true);
+    };
+    window.addEventListener("upgrade-required", handler);
+    return () => window.removeEventListener("upgrade-required", handler);
+  }, []);
+  return <UpgradePrompt isOpen={open} onClose={() => setOpen(false)} reason={reason} />;
+}
+
 export default function App() {
   return (
     <>
     <CookieConsent />
+    <GlobalUpgradeListener />
     <Routes>
       {/* 認証不要ページ — AppLayoutなし */}
       <Route path="/login" element={<LoginPage />} />
@@ -115,6 +138,9 @@ export default function App() {
           </PrivateRoute>
         }
       />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsOfServicePage />} />
+      <Route path="/cookies" element={<CookiePolicyPage />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </>

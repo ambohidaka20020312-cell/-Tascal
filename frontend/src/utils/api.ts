@@ -52,6 +52,9 @@ api.interceptors.response.use(
         }
       }
     }
+    if (error.response?.status === 403 && error.response?.data?.error?.code === "UPGRADE_REQUIRED") {
+      window.dispatchEvent(new CustomEvent("upgrade-required", { detail: error.response.data.error }));
+    }
     return Promise.reject(error);
   }
 );
