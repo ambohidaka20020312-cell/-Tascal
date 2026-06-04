@@ -2,13 +2,13 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { taskApi } from "../utils/api";
 import { useTaskStore, Task } from "../store/taskStore";
 
-export function useTasksQuery(date?: string) {
+export function useTasksQuery(date?: string, categoryId?: number | null) {
   const setTasks = useTaskStore((s) => s.setTasks);
 
   return useQuery({
-    queryKey: ["tasks", date],
+    queryKey: ["tasks", date, categoryId ?? null],
     queryFn: async () => {
-      const res = await taskApi.list(date);
+      const res = await taskApi.list(date, categoryId);
       const tasks: Task[] = res.data.data ?? res.data;
       setTasks(tasks);
       return tasks;

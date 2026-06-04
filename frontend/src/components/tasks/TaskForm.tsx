@@ -4,6 +4,7 @@ import Button from "../common/Button";
 import { useCreateTask } from "../../hooks/useTasks";
 import { useTemplates, useCreateTemplate } from "../../hooks/useTemplates";
 import { Task } from "../../store/taskStore";
+import { useCategories, useCreateCategory } from "../../hooks/useCategories";
 
 type Priority = Task["priority"];
 
@@ -44,10 +45,15 @@ export default function TaskForm({
   const [weekdays, setWeekdays] = useState<string[]>(["MON"]);
   const [showTemplates, setShowTemplates] = useState(false);
   const [error, setError] = useState("");
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+  const [showNewCategory, setShowNewCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
 
   const createTask = useCreateTask();
   const createTemplate = useCreateTemplate();
   const { data: templates } = useTemplates();
+  const { data: categories = [] } = useCategories();
+  const createCategory = useCreateCategory();
 
   const buildRecurrenceRule = () => {
     if (recurrence === "none") return undefined;
@@ -76,6 +82,18 @@ export default function TaskForm({
     } catch { /* silent */ }
   };
 
+  const handleCreateNewCategory = async () => {
+    const name = newCategoryName.trim();
+    if (!name) return;
+    try {
+      const res = await createCategory.mutateAsync({ name });
+      const created = res.data.data ?? res.data;
+      setCategoryId(created.id);
+      setNewCategoryName("");
+      setShowNewCategory(false);
+    } catch { /* silent */ }
+  };
+
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -91,6 +109,7 @@ export default function TaskForm({
         estimated_minutes: estimatedMinutes ? parseInt(estimatedMinutes, 10) : null,
         scheduled_date: scheduledDate || null,
         recurrence: buildRecurrenceRule() ?? null,
+        category_id: categoryId,
       } as Partial<Task>);
       onClose();
     } catch {
@@ -182,6 +201,56 @@ export default function TaskForm({
                 rows={2}
                 className={`${inputCls} resize-none`}
               />
+            </div>
+
+            {/* Category selector */}
+            <div>
+              <label htmlFor="task-category" className="block text-[10px] tracking-[0.15em] uppercase text-[var(--text-subtle)] mb-1.5">カテゴリ</label>
+              <select
+                id="task-category"
+                value={categoryId ?? ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val === "__new__") {
+                    setShowNewCategory(true);
+                    setCategoryId(null);
+                  } else {
+                    setCategoryId(val ? parseInt(val, 10) : null);
+                    setShowNewCategory(false);
+                  }
+                }}
+                className={`${inputCls} bg-[var(--bg-primary)]`}
+              >
+                <option value="">なし</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+                <option value="__new__">+ 新カテゴリ</option>
+              </select>
+              {showNewCategory && (
+                <div className="mt-2 flex gap-2">
+                  <input
+                    type="text"
+                    value={newCategoryName}
+                    onChange={(e) => setNewCategoryName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") { e.preventDefault(); void handleCreateNewCategory(); }
+                      if (e.key === "Escape") { setShowNewCategory(false); setNewCategoryName(""); }
+                    }}
+                    placeholder="カテゴリ名"
+                    className={`${inputCls} flex-1`}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleCreateNewCategory()}
+                    disabled={createCategory.isPending || !newCategoryName.trim()}
+                    className="px-3 py-2 text-xs border border-[var(--border)] text-[var(--text-muted)] rounded-lg hover:border-[var(--text-muted)] disabled:opacity-40 transition-colors"
+                  >
+                    追加
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">

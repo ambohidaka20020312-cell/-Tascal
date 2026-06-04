@@ -60,7 +60,8 @@ api.interceptors.response.use(
 );
 
 export const taskApi = {
-  list: (date?: string) => api.get("/tasks", { params: { date } }),
+  list: (date?: string, category_id?: number | null) =>
+    api.get("/tasks", { params: { date, ...(category_id != null ? { category_id } : {}) } }),
   create: (data: object) => api.post("/tasks", data),
   update: (id: number, data: object) => api.patch(`/tasks/${id}`, data),
   delete: (id: number) => api.delete(`/tasks/${id}`),
@@ -120,6 +121,13 @@ export const skillApi = {
     api.post(`/org/${orgId}/tasks/${taskId}/delegate`, { target_type: targetType, target_id: targetId }),
   getReceivedTasks: (orgId: number) =>
     api.get(`/org/${orgId}/tasks/received`),
+};
+
+export const categoryApi = {
+  list: () => api.get("/categories"),
+  create: (data: { name: string; color?: string }) => api.post("/categories", data),
+  update: (id: number, data: { name?: string; color?: string }) => api.put(`/categories/${id}`, data),
+  delete: (id: number) => api.delete(`/categories/${id}`),
 };
 
 export default api;

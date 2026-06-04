@@ -26,6 +26,14 @@ def list_tasks():
         date = datetime.date.fromisoformat(date_str)
         query = query.filter_by(scheduled_date=date)
 
+    category_id_str = request.args.get("category_id")
+    if category_id_str is not None:
+        try:
+            category_id = int(category_id_str)
+            query = query.filter_by(category_id=category_id)
+        except ValueError:
+            pass
+
     tasks = query.order_by(Task.sort_order.asc().nullslast(), Task.created_at.desc()).all()
     return jsonify({"data": [t.to_dict() for t in tasks]})
 
@@ -77,6 +85,7 @@ def create_task():
         due_datetime=data.get("due_datetime"),
         recurrence=data.get("recurrence"),
         recurrence_end_date=data.get("recurrence_end_date"),
+        category_id=data.get("category_id"),
     )
     db.session.add(task)
     db.session.commit()
@@ -96,7 +105,7 @@ def update_task(task_id):
     if not ok:
         return jsonify({"error": {"code": "VALIDATION_ERROR", "message": msg}}), 400
 
-    for field in ["title", "description", "priority", "estimated_minutes", "scheduled_date", "due_datetime", "sort_order", "status", "recurrence", "recurrence_end_date"]:
+    for field in ["title", "description", "priority", "estimated_minutes", "scheduled_date", "due_datetime", "sort_order", "status", "recurrence", "recurrence_end_date", "category_id"]:
         if field in data:
             setattr(task, field, data[field])
 

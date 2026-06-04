@@ -13,6 +13,8 @@ import { parseNaturalLanguageTask, ParsedTask } from "../utils/nlpTaskParser";
 import TaskCard from "../components/tasks/TaskCard";
 import TaskForm from "../components/tasks/TaskForm";
 import Button from "../components/common/Button";
+import CategoryFilter from "../components/tasks/CategoryFilter";
+import { useCategories } from "../hooks/useCategories";
 
 type FilterStatus = "all" | "pending" | "in_progress" | "completed" | "overrun";
 
@@ -51,6 +53,9 @@ export default function DashboardPage() {
 
   // Filter chip state
   const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+  const [filterCategoryId, setFilterCategoryId] = useState<number | null>(null);
+
+  const { data: categories = [] } = useCategories();
 
   // Bulk select state
   const [bulkMode, setBulkMode] = useState(false);
@@ -98,7 +103,7 @@ export default function DashboardPage() {
   const isTabletOrAbove =
     deviceType === "tablet" || deviceType === "desktop" || deviceType === "ultrawide";
 
-  const { isLoading, isError } = useTasksQuery(selectedDate);
+  const { isLoading, isError } = useTasksQuery(selectedDate, filterCategoryId);
 
   const { handlers: dragHandlers, dragIndex, overIndex } = useDragSort(tasks, (reordered) => {
     reorderTasks(reordered);
@@ -446,6 +451,15 @@ export default function DashboardPage() {
             </div>
           )}
 
+          {/* Category filter */}
+          {categories.length > 0 && (
+            <CategoryFilter
+              categories={categories}
+              selected={filterCategoryId}
+              onSelect={setFilterCategoryId}
+            />
+          )}
+
           {/* Quick-add text input */}
           {quickAddVisible && (
             <div className="mb-2">
@@ -581,6 +595,7 @@ export default function DashboardPage() {
                     selectable={bulkMode}
                     selected={selectedIds.has(task.id)}
                     onSelect={handleSelectTask}
+                    categoryName={task.category_id != null ? categories.find((c) => c.id === task.category_id)?.name : undefined}
                   />
                 </div>
               ))}

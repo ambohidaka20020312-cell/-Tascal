@@ -6,12 +6,14 @@ import { useCompleteTask, useDeleteTask, useUpdateTask } from "../../hooks/useTa
 import { useViewport } from "../../hooks/useViewport";
 import OverrunAlert from "../ai/OverrunAlert";
 import { useFocusStore } from "../../store/focusStore";
+import CategoryBadge from "./CategoryBadge";
 
 interface TaskCardProps {
   task: Task;
   selectable?: boolean;
   selected?: boolean;
   onSelect?: (id: number, checked: boolean) => void;
+  categoryName?: string;
 }
 
 // Monochrome priority dots — color by shade, not hue
@@ -55,7 +57,7 @@ function getDaysUntilDue(dueDatetime: string): number {
   return Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-export default function TaskCard({ task, selectable, selected, onSelect }: TaskCardProps) {
+export default function TaskCard({ task, selectable, selected, onSelect, categoryName }: TaskCardProps) {
   const { t } = useTranslation();
   const [actualMinutes, setActualMinutes] = useState<string>("");
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -194,6 +196,7 @@ export default function TaskCard({ task, selectable, selected, onSelect }: TaskC
                     · あと{getDaysUntilDue(task.due_datetime)}日
                   </span>
                 )}
+                {categoryName && <CategoryBadge name={categoryName} />}
               </div>
 
               {/* Inline edit mode */}
