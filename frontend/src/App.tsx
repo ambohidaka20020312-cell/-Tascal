@@ -16,6 +16,7 @@ import UpgradePrompt from "./components/subscription/UpgradePrompt";
 import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/legal/TermsOfServicePage";
 import CookiePolicyPage from "./pages/legal/CookiePolicyPage";
+import { OfflineIndicator } from "./components/common/OfflineIndicator";
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -56,6 +57,7 @@ function GlobalUpgradeListener() {
 export default function App() {
   return (
     <>
+    <OfflineIndicator />
     <CookieConsent />
     <GlobalUpgradeListener />
     <Routes>
