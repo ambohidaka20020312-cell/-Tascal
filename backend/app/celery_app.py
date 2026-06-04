@@ -19,6 +19,10 @@ def make_celery(app):
             "task": "app.tasks.cleanup.cleanup_deleted_tasks",
             "schedule": crontab(hour=3, minute=0),  # 毎日3時
         },
+        "generate-recurring-tasks": {
+            "task": "app.tasks.recurring.generate_recurring_tasks",
+            "schedule": crontab(hour=0, minute=5),
+        },
     }
 
     class ContextTask(celery.Task):
