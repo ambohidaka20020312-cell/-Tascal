@@ -13,7 +13,7 @@ export interface Task {
   sort_order: number;
   completed_at: string | null;
   created_at: string;
-  recurrence: string | null;
+  recurrence?: string | null;
 }
 
 interface TaskState {
