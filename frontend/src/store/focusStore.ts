@@ -10,12 +10,15 @@ interface FocusStore {
   pomodoroCount: number;
   pomodorosToday: number;
   lastPomodoroDate: string;
+  totalFocusMinutesToday: number;
+  lastFocusDate: string;
   pomodoroDuration: () => number;
   pomodoroBreakDuration: () => number;
   startFocus: (taskId: number, mode: "normal" | "pomodoro") => void;
   endFocus: () => void;
   nextPomodoro: () => void;
   incrementPomodoro: () => void;
+  addFocusMinutes: (minutes: number) => void;
 }
 
 export const useFocusStore = create<FocusStore>()(
@@ -27,6 +30,8 @@ export const useFocusStore = create<FocusStore>()(
       pomodoroCount: 0,
       pomodorosToday: 0,
       lastPomodoroDate: "",
+      totalFocusMinutesToday: 0,
+      lastFocusDate: "",
       pomodoroDuration: () => useSettingsStore.getState().pomodoroDuration,
       pomodoroBreakDuration: () => useSettingsStore.getState().pomodoroBreakDuration,
       startFocus: (taskId, mode) => {
@@ -56,12 +61,28 @@ export const useFocusStore = create<FocusStore>()(
           set({ pomodorosToday: pomodorosToday + 1 });
         }
       },
+      addFocusMinutes: (minutes: number) => {
+        const today = new Date().toISOString().split("T")[0];
+        const { lastFocusDate, totalFocusMinutesToday, pomodorosToday } = get();
+        if (lastFocusDate !== today) {
+          set({
+            totalFocusMinutesToday: minutes,
+            lastFocusDate: today,
+            pomodorosToday: 0,
+          });
+        } else {
+          void pomodorosToday; // referenced only to satisfy linter; real reset handled in incrementPomodoro
+          set({ totalFocusMinutesToday: totalFocusMinutesToday + minutes });
+        }
+      },
     }),
     {
       name: "focus-store",
       partialize: (state) => ({
         pomodorosToday: state.pomodorosToday,
         lastPomodoroDate: state.lastPomodoroDate,
+        totalFocusMinutesToday: state.totalFocusMinutesToday,
+        lastFocusDate: state.lastFocusDate,
       }),
     }
   )
