@@ -16,6 +16,8 @@ import CookiePolicyPage from "./pages/legal/CookiePolicyPage";
 import { OfflineIndicator } from "./components/common/OfflineIndicator";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { ToastProvider } from "./components/common/Toast";
+import ShortcutsOverlay from "./components/common/ShortcutsOverlay";
+import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 
 // Lazy-loaded heavy pages
 const CalendarPage = lazy(() => import("./pages/CalendarPage"));
@@ -66,12 +68,19 @@ function GlobalUpgradeListener() {
   return <UpgradePrompt isOpen={open} onClose={() => setOpen(false)} reason={reason} />;
 }
 
+function AppShell({ children }: { children: React.ReactNode }) {
+  useKeyboardShortcuts();
+  return <>{children}</>;
+}
+
 export default function App() {
   return (
     <ToastProvider>
+      <AppShell>
       <OfflineIndicator />
       <CookieConsent />
       <GlobalUpgradeListener />
+      <ShortcutsOverlay />
       <Routes>
         {/* 認証不要ページ — AppLayoutなし */}
         <Route path="/login" element={<LoginPage />} />
@@ -177,6 +186,7 @@ export default function App() {
         <Route path="/cookies" element={<CookiePolicyPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </AppShell>
     </ToastProvider>
   );
 }

@@ -91,6 +91,7 @@ export default function DashboardPage() {
   const [quickAddText, setQuickAddText] = useState("");
   const [quickAddParsed, setQuickAddParsed] = useState<ParsedTask | null>(null);
   const quickAddRef = useRef<HTMLInputElement>(null);
+  const filterChipRef = useRef<HTMLButtonElement>(null);
 
   const { deviceType, isLandscape } = useViewport();
   const isPhoneSmall = deviceType === "phone-small";
@@ -116,23 +117,43 @@ export default function DashboardPage() {
   const { isSupported: voiceSupported, isListening, start: startListening, stop: stopListening } =
     useSpeechInput(handleVoiceResult);
 
-  // Keyboard shortcut: "n" opens quick-add (when not already in an input)
+  // Custom event listeners for global keyboard shortcuts
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement).tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
-      if (e.key === "n" || e.key === "N") {
-        e.preventDefault();
-        setQuickAddVisible(true);
-      }
-      if (e.key === "Escape") {
-        setQuickAddVisible(false);
-        setQuickAddText("");
-        setQuickAddParsed(null);
-      }
+    const onOpenTaskForm = () => {
+      setTaskFormInit({});
+      setShowTaskForm(true);
     };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
+    const onCloseOverlays = () => {
+      setQuickAddVisible(false);
+      setQuickAddText("");
+      setQuickAddParsed(null);
+      setShowTaskForm(false);
+    };
+    const onFocusFilter = () => {
+      filterChipRef.current?.focus();
+    };
+    const onSetFilterAll = () => setFilterStatus("all");
+    const onSetFilterTodo = () => setFilterStatus("pending");
+    const onSetFilterInProgress = () => setFilterStatus("in_progress");
+    const onSetFilterDone = () => setFilterStatus("completed");
+
+    window.addEventListener("open-task-form", onOpenTaskForm);
+    window.addEventListener("close-overlays", onCloseOverlays);
+    window.addEventListener("focus-filter", onFocusFilter);
+    window.addEventListener("set-filter:all", onSetFilterAll);
+    window.addEventListener("set-filter:todo", onSetFilterTodo);
+    window.addEventListener("set-filter:in_progress", onSetFilterInProgress);
+    window.addEventListener("set-filter:done", onSetFilterDone);
+
+    return () => {
+      window.removeEventListener("open-task-form", onOpenTaskForm);
+      window.removeEventListener("close-overlays", onCloseOverlays);
+      window.removeEventListener("focus-filter", onFocusFilter);
+      window.removeEventListener("set-filter:all", onSetFilterAll);
+      window.removeEventListener("set-filter:todo", onSetFilterTodo);
+      window.removeEventListener("set-filter:in_progress", onSetFilterInProgress);
+      window.removeEventListener("set-filter:done", onSetFilterDone);
+    };
   }, []);
 
   // Focus quick-add input when shown
@@ -278,12 +299,22 @@ export default function DashboardPage() {
               </p>
             )}
           </div>
+          <div className="flex items-center gap-2">
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent("toggle-shortcuts"))}
+            aria-label="キーボードショートカット一覧"
+            title="キーボードショートカット一覧"
+            className="w-5 h-5 flex items-center justify-center rounded-full border border-[var(--border)] text-[var(--text-subtle)] hover:text-[var(--text-muted)] hover:border-[var(--text-muted)] transition-colors text-[10px] font-medium leading-none"
+          >
+            ?
+          </button>
           <input
             type="date"
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
             className="hidden sm:block border border-[var(--border)] rounded-lg px-3 py-1.5 text-sm bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:border-[var(--accent)]"
           />
+          </div>
         </div>
 
         {/* Mobile date chips */}
@@ -383,12 +414,13 @@ export default function DashboardPage() {
                   { key: "completed", label: "完了" },
                   { key: "overrun", label: "期限超過" },
                 ] as { key: FilterStatus; label: string }[]
-              ).map(({ key, label }) => {
+              ).map(({ key, label }, idx) => {
                 const count = chipCounts[key];
                 const active = filterStatus === key;
                 return (
                   <button
                     key={key}
+                    ref={idx === 0 ? filterChipRef : undefined}
                     onClick={() => setFilterStatus(key)}
                     className={[
                       "shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] tracking-wide transition-colors",
