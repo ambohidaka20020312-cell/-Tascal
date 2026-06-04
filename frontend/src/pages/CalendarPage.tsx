@@ -3,8 +3,8 @@ import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
 import interactionPlugin, { DateClickArg } from "@fullcalendar/interaction";
-import { EventClickArg, EventInput, DatesSetArg } from "@fullcalendar/core";
-import { useQuery } from "@tanstack/react-query";
+import { EventClickArg, EventInput, DatesSetArg, EventDropArg, EventMountArg } from "@fullcalendar/core";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { calendarApi, taskApi } from "../utils/api";
 import { Task } from "../store/taskStore";
 import Modal from "../components/common/Modal";
@@ -16,6 +16,14 @@ const PRIORITY_COLOR: Record<Task["priority"], string> = {
   high: "#f97316",
   medium: "#3b82f6",
   low: "#6b7280",
+};
+
+/** Opacity applied to event background per priority level */
+const PRIORITY_OPACITY: Record<Task["priority"], number> = {
+  urgent: 1,
+  high: 0.75,
+  medium: 0.5,
+  low: 0.3,
 };
 
 const STATUS_LABEL: Record<Task["status"], string> = {
@@ -39,7 +47,16 @@ interface NewTaskForm {
   description: string;
 }
 
+/** Convert hex color + opacity to rgba string */
+function hexToRgba(hex: string, opacity: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r},${g},${b},${opacity})`;
+}
+
 export default function CalendarPage() {
+  const queryClient = useQueryClient();
   const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
     start: "",
     end: "",
@@ -64,16 +81,25 @@ export default function CalendarPage() {
     enabled: Boolean(dateRange.start && dateRange.end),
   });
 
-  const events: EventInput[] = (calendarTasks ?? []).map((task) => ({
-    id: String(task.id),
-    title: task.title,
-    start: task.scheduled_date ?? task.due_datetime ?? undefined,
-    end: task.due_datetime ?? undefined,
-    backgroundColor: PRIORITY_COLOR[task.priority],
-    borderColor: PRIORITY_COLOR[task.priority],
-    textColor: "#fff",
-    extendedProps: { task },
-  }));
+  const events: EventInput[] = (calendarTasks ?? []).map((task) => {
+    const color = PRIORITY_COLOR[task.priority];
+    const opacity = PRIORITY_OPACITY[task.priority];
+    const bgColor = hexToRgba(color, opacity);
+    const isRecurring = Boolean(task.recurrence);
+    return {
+      id: String(task.id),
+      title: task.title + (isRecurring ? " ↻" : ""),
+      start: task.scheduled_date ?? task.due_datetime ?? undefined,
+      end: task.due_datetime ?? undefined,
+      backgroundColor: bgColor,
+      borderColor: color,
+      textColor: "#fff",
+      extendedProps: {
+        task,
+        description: task.description,
+      },
+    };
+  });
 
   const handleDatesSet = useCallback((arg: DatesSetArg) => {
     setDateRange({
@@ -90,6 +116,25 @@ export default function CalendarPage() {
   const handleDateClick = useCallback((arg: DateClickArg) => {
     setNewTaskDate(arg.dateStr);
     setNewTaskForm({ title: "", priority: "medium", estimated_minutes: "", description: "" });
+  }, []);
+
+  const handleEventDrop = useCallback(
+    async (info: EventDropArg) => {
+      const taskId = parseInt(info.event.id, 10);
+      const newDate = info.event.startStr.split("T")[0];
+      try {
+        await taskApi.update(taskId, { scheduled_date: newDate });
+        queryClient.invalidateQueries({ queryKey: ["calendar-tasks"] });
+      } catch {
+        info.revert();
+      }
+    },
+    [queryClient],
+  );
+
+  const handleEventDidMount = useCallback((info: EventMountArg) => {
+    const desc = info.event.extendedProps.description as string | undefined;
+    info.el.title = desc || info.event.title;
   }, []);
 
   const handleCreateTask = async () => {
@@ -121,7 +166,7 @@ export default function CalendarPage() {
         <div>
           <p className="text-[10px] tracking-[0.25em] uppercase text-[var(--text-subtle)] mb-1">CALENDAR</p>
           <h1 className="text-2xl font-light tracking-wide text-[var(--text-primary)]">カレンダー</h1>
-          <p className="text-xs text-[var(--text-subtle)] mt-0.5 tracking-wide hidden sm:block">日付をクリックしてタスクを追加、タスクをクリックして詳細を確認</p>
+          <p className="text-xs text-[var(--text-subtle)] mt-0.5 tracking-wide hidden sm:block">日付をクリックしてタスクを追加、タスクをドラッグして日程変更</p>
           <p className="text-xs text-[var(--text-subtle)] mt-0.5 tracking-wide sm:hidden">日付をタップしてタスクを追加</p>
         </div>
 
@@ -152,6 +197,9 @@ export default function CalendarPage() {
             datesSet={handleDatesSet}
             eventClick={handleEventClick}
             dateClick={handleDateClick}
+            editable={true}
+            eventDrop={handleEventDrop}
+            eventDidMount={handleEventDidMount}
             height="auto"
             eventDisplay="block"
             dayMaxEvents={3}
@@ -171,6 +219,9 @@ export default function CalendarPage() {
             <div className="flex items-start justify-between gap-4">
               <h3 className="text-lg font-semibold text-gray-800 leading-snug">
                 {selectedTask.title}
+                {selectedTask.recurrence && (
+                  <span className="ml-2 text-sm text-gray-400" title="繰り返しタスク">↻</span>
+                )}
               </h3>
               <span
                 className="flex-shrink-0 text-xs font-semibold px-2.5 py-1 rounded-full text-white"
@@ -217,6 +268,12 @@ export default function CalendarPage() {
                   <dd className="text-gray-800 font-medium mt-0.5">
                     {new Date(selectedTask.due_datetime).toLocaleString("ja-JP")}
                   </dd>
+                </div>
+              )}
+              {selectedTask.recurrence && (
+                <div className="col-span-2">
+                  <dt className="text-gray-400 text-xs font-medium">繰り返し</dt>
+                  <dd className="text-gray-800 font-medium mt-0.5">{selectedTask.recurrence}</dd>
                 </div>
               )}
             </dl>
