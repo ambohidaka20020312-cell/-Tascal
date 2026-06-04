@@ -63,6 +63,28 @@ export function useDeleteTask() {
   });
 }
 
+export function useBulkComplete() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: number[]) => taskApi.bulkComplete(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+}
+
+export function useBulkDelete() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (ids: number[]) => taskApi.bulkDelete(ids),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["tasks"] });
+    },
+  });
+}
+
 export function useUpdateTask() {
   const queryClient = useQueryClient();
   const updateTask = useTaskStore((s) => s.updateTask);

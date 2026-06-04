@@ -9,6 +9,9 @@ import { useFocusStore } from "../../store/focusStore";
 
 interface TaskCardProps {
   task: Task;
+  selectable?: boolean;
+  selected?: boolean;
+  onSelect?: (id: number, checked: boolean) => void;
 }
 
 // Monochrome priority dots — color by shade, not hue
@@ -52,7 +55,7 @@ function getDaysUntilDue(dueDatetime: string): number {
   return Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-export default function TaskCard({ task }: TaskCardProps) {
+export default function TaskCard({ task, selectable, selected, onSelect }: TaskCardProps) {
   const { t } = useTranslation();
   const [actualMinutes, setActualMinutes] = useState<string>("");
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -122,9 +125,34 @@ export default function TaskCard({ task }: TaskCardProps) {
         className={[
           "group border-b border-[var(--border)] -mx-4 px-4 transition-colors hover:bg-[var(--bg-secondary)]",
           task.status === "completed" ? "opacity-40" : "",
+          selectable && selected ? "bg-[var(--bg-secondary)]" : "",
         ].join(" ")}
       >
-        <div className={`flex-1 ${isPhoneSmall ? "py-3" : "py-4"}`}>
+        <div className={`flex items-start gap-3 ${isPhoneSmall ? "py-3" : "py-4"}`}>
+          {selectable && (
+            <div className="shrink-0 pt-0.5">
+              <button
+                type="button"
+                role="checkbox"
+                aria-checked={selected}
+                aria-label={`${task.title}を選択`}
+                onClick={() => onSelect?.(task.id, !selected)}
+                className={[
+                  "w-4 h-4 rounded border flex items-center justify-center transition-colors shrink-0",
+                  selected
+                    ? "bg-[var(--text-primary)] border-[var(--text-primary)]"
+                    : "border-[var(--border)] hover:border-[var(--text-muted)]",
+                ].join(" ")}
+              >
+                {selected && (
+                  <svg className="w-2.5 h-2.5 text-[var(--bg-primary)]" fill="none" viewBox="0 0 12 12" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2 6l3 3 5-5" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          )}
+          <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-3">
             <div className="flex-1 min-w-0">
               {/* Priority dot + label row */}
@@ -331,6 +359,7 @@ export default function TaskCard({ task }: TaskCardProps) {
               <OverrunAlert task={task} actualMinutes={task.actual_minutes} />
             </div>
           )}
+          </div>
         </div>
       </article>
 

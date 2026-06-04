@@ -3,7 +3,7 @@ import { format, addDays, subDays } from "date-fns";
 import { ja } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 import { useTaskStore } from "../store/taskStore";
-import { useTasksQuery } from "../hooks/useTasks";
+import { useTasksQuery, useBulkComplete, useBulkDelete } from "../hooks/useTasks";
 import { aiApi, taskApi } from "../utils/api";
 import { useViewport } from "../hooks/useViewport";
 import { useDailyBriefing } from "../hooks/useDailyBriefing";
@@ -13,6 +13,8 @@ import { parseNaturalLanguageTask, ParsedTask } from "../utils/nlpTaskParser";
 import TaskCard from "../components/tasks/TaskCard";
 import TaskForm from "../components/tasks/TaskForm";
 import Button from "../components/common/Button";
+
+type FilterStatus = "all" | "pending" | "in_progress" | "completed" | "overrun";
 
 interface AiOptimizeResult {
   message?: string;
@@ -46,6 +48,43 @@ export default function DashboardPage() {
   const [aiLoading, setAiLoading] = useState(false);
   const [briefingDismissed, setBriefingDismissed] = useState(false);
   const { briefing } = useDailyBriefing();
+
+  // Filter chip state
+  const [filterStatus, setFilterStatus] = useState<FilterStatus>("all");
+
+  // Bulk select state
+  const [bulkMode, setBulkMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const bulkComplete = useBulkComplete();
+  const bulkDelete = useBulkDelete();
+
+  const handleSelectTask = (id: number, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(id); else next.delete(id);
+      return next;
+    });
+  };
+
+  const handleBulkComplete = async () => {
+    if (selectedIds.size === 0) return;
+    await bulkComplete.mutateAsync(Array.from(selectedIds));
+    setSelectedIds(new Set());
+    setBulkMode(false);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    if (!confirm(`${selectedIds.size}件のタスクを削除しますか？`)) return;
+    await bulkDelete.mutateAsync(Array.from(selectedIds));
+    setSelectedIds(new Set());
+    setBulkMode(false);
+  };
+
+  const handleCancelBulk = () => {
+    setSelectedIds(new Set());
+    setBulkMode(false);
+  };
 
   // Quick-add state
   const [quickAddVisible, setQuickAddVisible] = useState(false);
@@ -161,6 +200,18 @@ export default function DashboardPage() {
   const completedCount = tasks.filter((t) => t.status === "completed").length;
   const totalCount = tasks.length;
   const achievementRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  // Filter chip counts
+  const chipCounts = {
+    all: tasks.length,
+    pending: tasks.filter((t) => t.status === "pending").length,
+    in_progress: tasks.filter((t) => t.status === "in_progress").length,
+    completed: tasks.filter((t) => t.status === "completed").length,
+    overrun: tasks.filter((t) => t.status === "overrun").length,
+  };
+
+  const filteredTasks =
+    filterStatus === "all" ? tasks : tasks.filter((t) => t.status === filterStatus);
 
   const today = new Date().toISOString().split("T")[0];
   const dateChips = getDateChips(selectedDate);
@@ -305,8 +356,63 @@ export default function DashboardPage() {
               >
                 {t("dashboard.add")}
               </button>
+              {tasks.length > 0 && (
+                <button
+                  onClick={() => { setBulkMode((v) => !v); setSelectedIds(new Set()); }}
+                  className={[
+                    "text-[10px] tracking-[0.15em] uppercase transition-colors",
+                    bulkMode
+                      ? "text-[var(--text-primary)]"
+                      : "text-[var(--text-subtle)] hover:text-[var(--text-muted)]",
+                  ].join(" ")}
+                >
+                  選択
+                </button>
+              )}
             </div>
           </div>
+
+          {/* Filter chips */}
+          {tasks.length > 0 && (
+            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-none -mx-4 px-4">
+              {(
+                [
+                  { key: "all", label: "すべて" },
+                  { key: "pending", label: "未着手" },
+                  { key: "in_progress", label: "進行中" },
+                  { key: "completed", label: "完了" },
+                  { key: "overrun", label: "期限超過" },
+                ] as { key: FilterStatus; label: string }[]
+              ).map(({ key, label }) => {
+                const count = chipCounts[key];
+                const active = filterStatus === key;
+                return (
+                  <button
+                    key={key}
+                    onClick={() => setFilterStatus(key)}
+                    className={[
+                      "shrink-0 flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] tracking-wide transition-colors",
+                      active
+                        ? "bg-[var(--text-primary)] text-[var(--bg-primary)]"
+                        : "border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--text-muted)]",
+                    ].join(" ")}
+                  >
+                    {label}
+                    <span
+                      className={[
+                        "inline-flex items-center justify-center rounded-full w-4 h-4 text-[9px] font-medium",
+                        active
+                          ? "bg-[var(--bg-primary)] text-[var(--text-primary)] opacity-70"
+                          : "bg-[var(--bg-secondary)] text-[var(--text-subtle)]",
+                      ].join(" ")}
+                    >
+                      {count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
 
           {/* Quick-add text input */}
           {quickAddVisible && (
@@ -391,7 +497,7 @@ export default function DashboardPage() {
             <div className="text-center py-10 text-[var(--text-muted)] text-sm">
               タスクの取得に失敗しました
             </div>
-          ) : tasks.length === 0 ? (
+          ) : filteredTasks.length === 0 ? (
             <div className="text-center py-14 flex flex-col items-center">
               <div className="w-16 h-16 border border-[var(--border)] rounded-2xl flex items-center justify-center mx-auto mb-5">
                 <svg className="w-8 h-8 text-[var(--text-subtle)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
@@ -416,27 +522,34 @@ export default function DashboardPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {tasks.map((task, index) => (
+              {filteredTasks.map((task, index) => (
                 <div
                   key={task.id}
-                  {...dragHandlers(index)}
+                  {...(bulkMode ? {} : dragHandlers(index))}
                   className={[
                     "group/drag relative transition-opacity",
-                    dragIndex === index ? "opacity-50 cursor-grabbing" : "cursor-grab",
-                    overIndex === index && dragIndex !== index
+                    !bulkMode && dragIndex === index ? "opacity-50 cursor-grabbing" : !bulkMode ? "cursor-grab" : "",
+                    !bulkMode && overIndex === index && dragIndex !== index
                       ? "border-t-2 border-[var(--accent)]"
                       : "",
                   ].join(" ")}
                 >
-                  {/* Drag handle — visible on hover */}
-                  <span
-                    aria-hidden="true"
-                    className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/drag:opacity-100 text-[var(--text-subtle)] text-xs select-none pointer-events-none transition-opacity z-10"
-                    style={{ lineHeight: 1 }}
-                  >
-                    ⠿
-                  </span>
-                  <TaskCard task={task} />
+                  {/* Drag handle — hidden in bulk mode */}
+                  {!bulkMode && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/drag:opacity-100 text-[var(--text-subtle)] text-xs select-none pointer-events-none transition-opacity z-10"
+                      style={{ lineHeight: 1 }}
+                    >
+                      ⠿
+                    </span>
+                  )}
+                  <TaskCard
+                    task={task}
+                    selectable={bulkMode}
+                    selected={selectedIds.has(task.id)}
+                    onSelect={handleSelectTask}
+                  />
                 </div>
               ))}
             </div>
@@ -474,6 +587,34 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Bulk action floating bar */}
+      {bulkMode && selectedIds.size > 0 && (
+        <div className="fixed left-0 right-0 bottom-20 md:bottom-4 flex justify-center px-4 z-40 pointer-events-none">
+          <div className="pointer-events-auto flex items-center gap-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-4 py-3 shadow-lg">
+            <button
+              onClick={handleBulkComplete}
+              disabled={bulkComplete.isPending}
+              className="text-xs tracking-wide text-[var(--text-primary)] hover:opacity-70 transition-opacity disabled:opacity-40 border border-[var(--border)] px-3 py-1.5 rounded-lg"
+            >
+              {bulkComplete.isPending ? "…" : `${selectedIds.size}件を完了にする`}
+            </button>
+            <button
+              onClick={handleBulkDelete}
+              disabled={bulkDelete.isPending}
+              className="text-xs tracking-wide text-[var(--text-primary)] hover:opacity-70 transition-opacity disabled:opacity-40 border border-[var(--border)] px-3 py-1.5 rounded-lg"
+            >
+              {bulkDelete.isPending ? "…" : `${selectedIds.size}件を削除する`}
+            </button>
+            <button
+              onClick={handleCancelBulk}
+              className="text-xs tracking-wide text-[var(--text-subtle)] hover:text-[var(--text-muted)] transition-colors px-2 py-1.5"
+            >
+              キャンセル
+            </button>
+          </div>
+        </div>
+      )}
 
       {showTaskForm && (
         <TaskForm

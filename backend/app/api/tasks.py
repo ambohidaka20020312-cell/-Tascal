@@ -156,6 +156,34 @@ def complete_task(task_id):
     return jsonify(response_data)
 
 
+@bp.post("/bulk-complete")
+@jwt_required()
+def bulk_complete():
+    data = request.get_json()
+    ids = data.get("ids", [])
+    user_id = get_jwt_identity()
+    tasks = Task.query.filter(Task.id.in_(ids), Task.user_id == user_id).all()
+    for task in tasks:
+        task.status = "completed"
+        task.actual_minutes = 0
+        task.completed_at = datetime.datetime.utcnow()
+    db.session.commit()
+    invalidate_user_cache(user_id)
+    return jsonify({"data": {"count": len(tasks)}, "message": f"{len(tasks)}件を完了にしました"})
+
+
+@bp.delete("/bulk")
+@jwt_required()
+def bulk_delete():
+    data = request.get_json()
+    ids = data.get("ids", [])
+    user_id = get_jwt_identity()
+    count = Task.query.filter(Task.id.in_(ids), Task.user_id == user_id).update({"is_deleted": True}, synchronize_session=False)
+    db.session.commit()
+    invalidate_user_cache(user_id)
+    return jsonify({"data": {"count": count}, "message": f"{count}件を削除しました"})
+
+
 @bp.get("/stats")
 @jwt_required()
 def task_stats():

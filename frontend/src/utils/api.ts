@@ -68,6 +68,8 @@ export const taskApi = {
     api.post(`/tasks/${id}/complete`, { actual_minutes }),
   stats: () => api.get("/tasks/stats"),
   reorder: (order: number[]) => api.patch("/tasks/reorder", { order }),
+  bulkComplete: (ids: number[]) => api.post("/tasks/bulk-complete", { ids }),
+  bulkDelete: (ids: number[]) => api.delete("/tasks/bulk", { data: { ids } }),
 };
 
 export const aiApi = {
