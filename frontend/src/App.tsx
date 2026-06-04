@@ -1,14 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { lazy, Suspense, useState, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuthStore } from "./store/authStore";
 import AppLayout from "./components/layout/AppLayout";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
-import CalendarPage from "./pages/CalendarPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
-import InsightsPage from "./pages/InsightsPage";
-import SettingsPage from "./pages/SettingsPage";
 import AccountPage from "./pages/AccountPage";
 import CookieConsent from "./components/legal/CookieConsent";
 import OnboardingWizard from "./components/onboarding/OnboardingWizard";
@@ -17,6 +14,21 @@ import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/legal/TermsOfServicePage";
 import CookiePolicyPage from "./pages/legal/CookiePolicyPage";
 import { OfflineIndicator } from "./components/common/OfflineIndicator";
+import { ErrorBoundary } from "./components/common/ErrorBoundary";
+import { ToastProvider } from "./components/common/Toast";
+
+// Lazy-loaded heavy pages
+const CalendarPage = lazy(() => import("./pages/CalendarPage"));
+const InsightsPage = lazy(() => import("./pages/InsightsPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+
+function PageSkeleton() {
+  return (
+    <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="w-6 h-6 border border-[var(--border)] border-t-[var(--text-muted)] rounded-full animate-spin" />
+    </div>
+  );
+}
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
@@ -56,95 +68,115 @@ function GlobalUpgradeListener() {
 
 export default function App() {
   return (
-    <>
-    <OfflineIndicator />
-    <CookieConsent />
-    <GlobalUpgradeListener />
-    <Routes>
-      {/* 認証不要ページ — AppLayoutなし */}
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/register" element={<RegisterPage />} />
+    <ToastProvider>
+      <OfflineIndicator />
+      <CookieConsent />
+      <GlobalUpgradeListener />
+      <Routes>
+        {/* 認証不要ページ — AppLayoutなし */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
 
-      {/* 認証必要ページ — AppLayoutでラップ */}
-      <Route
-        path="/"
-        element={
-          <PrivateRoute>
-            <OnboardingGate>
+        {/* 認証必要ページ — AppLayoutでラップ */}
+        <Route
+          path="/"
+          element={
+            <PrivateRoute>
+              <OnboardingGate>
+                <AppLayout>
+                  <ErrorBoundary>
+                    <DashboardPage />
+                  </ErrorBoundary>
+                </AppLayout>
+              </OnboardingGate>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/calendar"
+          element={
+            <PrivateRoute>
+              <OnboardingGate>
+                <AppLayout>
+                  <ErrorBoundary>
+                    <Suspense fallback={<PageSkeleton />}>
+                      <CalendarPage />
+                    </Suspense>
+                  </ErrorBoundary>
+                </AppLayout>
+              </OnboardingGate>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/subscription"
+          element={
+            <PrivateRoute>
               <AppLayout>
-                <DashboardPage />
+                <ErrorBoundary>
+                  <SubscriptionPage />
+                </ErrorBoundary>
               </AppLayout>
-            </OnboardingGate>
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/calendar"
-        element={
-          <PrivateRoute>
-            <OnboardingGate>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/plans"
+          element={
+            <PrivateRoute>
               <AppLayout>
-                <CalendarPage />
+                <ErrorBoundary>
+                  <SubscriptionPage />
+                </ErrorBoundary>
               </AppLayout>
-            </OnboardingGate>
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/subscription"
-        element={
-          <PrivateRoute>
-            <AppLayout>
-              <SubscriptionPage />
-            </AppLayout>
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/plans"
-        element={
-          <PrivateRoute>
-            <AppLayout>
-              <SubscriptionPage />
-            </AppLayout>
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/insights"
-        element={
-          <PrivateRoute>
-            <AppLayout>
-              <InsightsPage />
-            </AppLayout>
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <PrivateRoute>
-            <AppLayout>
-              <SettingsPage />
-            </AppLayout>
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/account"
-        element={
-          <PrivateRoute>
-            <AppLayout>
-              <AccountPage />
-            </AppLayout>
-          </PrivateRoute>
-        }
-      />
-      <Route path="/privacy" element={<PrivacyPolicyPage />} />
-      <Route path="/terms" element={<TermsOfServicePage />} />
-      <Route path="/cookies" element={<CookiePolicyPage />} />
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-    </>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/insights"
+          element={
+            <PrivateRoute>
+              <AppLayout>
+                <ErrorBoundary>
+                  <Suspense fallback={<PageSkeleton />}>
+                    <InsightsPage />
+                  </Suspense>
+                </ErrorBoundary>
+              </AppLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/settings"
+          element={
+            <PrivateRoute>
+              <AppLayout>
+                <ErrorBoundary>
+                  <Suspense fallback={<PageSkeleton />}>
+                    <SettingsPage />
+                  </Suspense>
+                </ErrorBoundary>
+              </AppLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/account"
+          element={
+            <PrivateRoute>
+              <AppLayout>
+                <ErrorBoundary>
+                  <AccountPage />
+                </ErrorBoundary>
+              </AppLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsOfServicePage />} />
+        <Route path="/cookies" element={<CookiePolicyPage />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </ToastProvider>
   );
 }

@@ -194,16 +194,25 @@ export default function DashboardPage() {
       {/* Tablet+: stats row */}
       {isTabletOrAbove && (
         <div className="flex gap-8 border-b border-[var(--border)] pb-6">
-          {[
-            { value: completedCount, label: "DONE" },
-            { value: totalCount, label: "TOTAL" },
-            { value: `${achievementRate}%`, label: "RATE" },
-          ].map(({ value, label }) => (
-            <div key={label}>
-              <p className="text-3xl font-light tracking-tight text-[var(--text-primary)]">{value}</p>
-              <p className="text-[10px] tracking-[0.2em] text-[var(--text-subtle)] mt-0.5">{label}</p>
-            </div>
-          ))}
+          {isLoading ? (
+            [1, 2, 3].map((i) => (
+              <div key={i} className="animate-pulse">
+                <div className="h-8 w-10 bg-[var(--bg-tertiary)] rounded mb-1" />
+                <div className="h-2.5 w-8 bg-[var(--bg-tertiary)] rounded" />
+              </div>
+            ))
+          ) : (
+            [
+              { value: completedCount, label: "DONE" },
+              { value: totalCount, label: "TOTAL" },
+              { value: `${achievementRate}%`, label: "RATE" },
+            ].map(({ value, label }) => (
+              <div key={label}>
+                <p className="text-3xl font-light tracking-tight text-[var(--text-primary)]">{value}</p>
+                <p className="text-[10px] tracking-[0.2em] text-[var(--text-subtle)] mt-0.5">{label}</p>
+              </div>
+            ))
+          )}
         </div>
       )}
 
@@ -357,10 +366,24 @@ export default function DashboardPage() {
 
           {isLoading ? (
             <div className="space-y-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] p-4 animate-pulse">
-                  <div className="h-4 bg-[var(--bg-tertiary)] rounded w-3/4 mb-2" />
-                  <div className="h-3 bg-[var(--bg-tertiary)] rounded w-1/2" />
+              {[3, 4, 5, 3, 4].map((widthClass, i) => (
+                <div
+                  key={i}
+                  className="bg-[var(--bg-secondary)] rounded-lg border border-[var(--border)] p-4 animate-pulse"
+                >
+                  {/* Title row: priority dot + title bar */}
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-2 h-2 rounded-full bg-[var(--bg-tertiary)] flex-shrink-0" />
+                    <div
+                      className="h-4 bg-[var(--bg-tertiary)] rounded"
+                      style={{ width: `${widthClass * 16}%` }}
+                    />
+                  </div>
+                  {/* Metadata row */}
+                  <div className="flex gap-3 ml-4">
+                    <div className="h-3 bg-[var(--bg-tertiary)] rounded w-16" />
+                    <div className="h-3 bg-[var(--bg-tertiary)] rounded w-12" />
+                  </div>
                 </div>
               ))}
             </div>
