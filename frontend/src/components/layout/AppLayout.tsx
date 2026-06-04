@@ -62,6 +62,14 @@ function PlansIcon({ active }: { active: boolean }) {
   );
 }
 
+function TeamIcon({ active }: { active: boolean }) {
+  return (
+    <svg className={`w-6 h-6 ${active ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]"}`} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6 5.87v-2a4 4 0 00-2-3.46M15 7a4 4 0 11-8 0 4 4 0 018 0zm6 4a3 3 0 11-6 0 3 3 0 016 0zM3 11a3 3 0 116 0 3 3 0 01-6 0z" />
+    </svg>
+  );
+}
+
 function ProfileIcon({ active }: { active: boolean }) {
   return (
     <svg className={`w-6 h-6 ${active ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]"}`} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
@@ -92,10 +100,13 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const isActive = (to: string) =>
     to === "/" ? pathname === "/" : pathname.startsWith(to);
 
+  const isTeamPlan = plan === "team";
+
   const SIDEBAR_NAV = [
     { label: t('nav.today'), to: "/", Icon: HomeIcon },
     { label: t('nav.calendar'), to: "/calendar", Icon: CalendarIcon },
     { label: t('subscription.title'), to: "/plans", Icon: PlansIcon },
+    { label: "チーム", to: isTeamPlan ? "/team" : "/subscription", Icon: TeamIcon, dimmed: !isTeamPlan },
   ];
 
   return (
@@ -128,19 +139,21 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
             {/* Nav items */}
             <nav aria-label="メインナビゲーション" className="flex-1 py-4 space-y-0.5 px-2">
-              {SIDEBAR_NAV.map(({ label, to, Icon }) => {
-                const active = isActive(to);
+              {SIDEBAR_NAV.map(({ label, to, Icon, dimmed }) => {
+                const active = isActive(to) && !dimmed;
                 const showLabel = isDesktop || isUltrawide;
                 return (
                   <Link
-                    key={to}
+                    key={label}
                     to={to}
                     aria-current={active ? "page" : undefined}
                     className={[
                       "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors min-h-touch relative",
-                      active
-                        ? "text-[var(--text-primary)] font-medium"
-                        : "text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]",
+                      dimmed
+                        ? "opacity-40 cursor-default"
+                        : active
+                          ? "text-[var(--text-primary)] font-medium"
+                          : "text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]",
                       !showLabel ? "justify-center" : "",
                     ].join(" ")}
                     title={!showLabel ? label : undefined}
@@ -328,6 +341,23 @@ export default function AppLayout({ children }: AppLayoutProps) {
             >
               <PlansIcon active={isActive("/plans")} />
               <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>{t('subscription.title')}</span>
+            </Link>
+
+            {/* Team */}
+            <Link
+              to={isTeamPlan ? "/team" : "/subscription"}
+              role="tab"
+              aria-selected={isTeamPlan && isActive("/team")}
+              aria-current={isTeamPlan && isActive("/team") ? "page" : undefined}
+              className={[
+                "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
+                !isTeamPlan
+                  ? "opacity-40"
+                  : isActive("/team") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
+              ].join(" ")}
+            >
+              <TeamIcon active={isTeamPlan && isActive("/team")} />
+              <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>チーム</span>
             </Link>
 
             {/* Profile / Logout */}

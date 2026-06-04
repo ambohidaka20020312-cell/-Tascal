@@ -7,6 +7,7 @@ import RegisterPage from "./pages/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import AccountPage from "./pages/AccountPage";
+import TeamPage from "./pages/TeamPage";
 import CookieConsent from "./components/legal/CookieConsent";
 import OnboardingWizard from "./components/onboarding/OnboardingWizard";
 import UpgradePrompt from "./components/subscription/UpgradePrompt";
@@ -176,6 +177,18 @@ export default function App() {
               <AppLayout>
                 <ErrorBoundary>
                   <AccountPage />
+                </ErrorBoundary>
+              </AppLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/team"
+          element={
+            <PrivateRoute>
+              <AppLayout>
+                <ErrorBoundary>
+                  <TeamPage />
                 </ErrorBoundary>
               </AppLayout>
             </PrivateRoute>
