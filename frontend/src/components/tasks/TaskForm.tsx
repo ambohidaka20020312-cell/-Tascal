@@ -6,6 +6,7 @@ import { useTemplates, useCreateTemplate } from "../../hooks/useTemplates";
 import { Task } from "../../store/taskStore";
 import { useCategories, useCreateCategory } from "../../hooks/useCategories";
 import { useEstimationHint } from "../../hooks/useEstimationHint";
+import { useAutoEstimate } from "../../hooks/useAutoEstimate";
 
 type Priority = Task["priority"];
 
@@ -66,6 +67,18 @@ export default function TaskForm({
     return isNaN(n) ? null : n;
   }, [estimatedMinutes]);
   const estimationHint = useEstimationHint(estimatedNum, categoryId, priority);
+
+  const selectedCategoryName = useMemo(
+    () => categories.find((c) => c.id === categoryId)?.name ?? "",
+    [categories, categoryId]
+  );
+  const autoEstimate = useAutoEstimate(
+    title,
+    description,
+    selectedCategoryName,
+    estimatedMinutes,
+    (mins) => setEstimatedMinutes(mins)
+  );
 
   const buildRecurrenceRule = () => {
     if (recurrence === "none") return undefined;
@@ -294,6 +307,44 @@ export default function TaskForm({
               <div>
                 <label htmlFor="task-estimated-minutes" className="block text-[10px] tracking-[0.15em] uppercase text-[var(--text-subtle)] mb-1.5">{t('task.estimated_time')}（分）</label>
                 <input id="task-estimated-minutes" type="number" min={1} value={estimatedMinutes} onChange={(e) => setEstimatedMinutes(e.target.value)} placeholder="60" className={inputCls} />
+                {/* AI auto-estimate suggestion */}
+                {autoEstimate.loading && (
+                  <p className="mt-1 text-[11px] text-[var(--text-subtle)] flex items-center gap-1">
+                    <span className="inline-block w-3 h-3 border border-current border-t-transparent rounded-full animate-spin" />
+                    AIが時間を見積もっています…
+                  </p>
+                )}
+                {autoEstimate.estimate && !autoEstimate.loading && (
+                  <div className="mt-1.5 flex items-start gap-2 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-3 py-2">
+                    <span className="text-[11px] text-[var(--text-subtle)] mt-0.5">✦</span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[11px] text-[var(--text-primary)]">
+                        AIの見積もり: <strong>{autoEstimate.estimate.minutes}分</strong>
+                        <span className="ml-1 text-[var(--text-subtle)]">
+                          ({autoEstimate.estimate.confidence === "high" ? "確度高" : autoEstimate.estimate.confidence === "medium" ? "確度中" : "参考値"})
+                        </span>
+                      </p>
+                      <p className="text-[10px] text-[var(--text-subtle)] mt-0.5 truncate">{autoEstimate.estimate.reason}</p>
+                    </div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button
+                        type="button"
+                        onClick={autoEstimate.accept}
+                        className="px-2 py-1 text-[10px] bg-[var(--text-primary)] text-[var(--bg-primary)] rounded transition-opacity hover:opacity-80"
+                      >
+                        採用
+                      </button>
+                      <button
+                        type="button"
+                        onClick={autoEstimate.dismiss}
+                        className="px-2 py-1 text-[10px] border border-[var(--border)] text-[var(--text-subtle)] rounded hover:border-[var(--text-subtle)]"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  </div>
+                )}
+                {/* Past performance hint (shown when user has manually set minutes) */}
                 {estimationHint && (
                   <p className="mt-1 flex items-center gap-1 text-[11px] text-[var(--text-muted)]">
                     <span className={estimationHint.tendency === "underestimate" ? "text-amber-500" : "text-emerald-500"}>

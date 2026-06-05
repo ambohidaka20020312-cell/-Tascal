@@ -193,6 +193,72 @@ def estimation_patterns():
     return jsonify({"data": patterns})
 
 
+@bp.post("/estimate-duration")
+@jwt_required()
+def estimate_duration():
+    """
+    Given a task title (+ optional description/category), ask Claude to
+    estimate how many minutes the task will likely take.
+    Returns { minutes: int, confidence: "high"|"medium"|"low", reason: str }
+    Free plan: counts against the daily AI limit.
+    """
+    limit_error = check_ai_limit()
+    if limit_error is not None:
+        return limit_error
+
+    body = request.get_json(silent=True) or {}
+    title = (body.get("title") or "").strip()
+    description = (body.get("description") or "").strip()
+    category_name = (body.get("category_name") or "").strip()
+
+    if not title:
+        return jsonify({"error": {"code": "MISSING_TITLE", "message": "title は必須です"}}), 400
+
+    context_parts = [f"タスク名: {title}"]
+    if description:
+        context_parts.append(f"詳細: {description}")
+    if category_name:
+        context_parts.append(f"カテゴリ: {category_name}")
+    context = "\n".join(context_parts)
+
+    prompt = f"""\
+あなたはタスク管理の専門家です。以下のタスクが完了するまでにかかる時間を見積もってください。
+
+{context}
+
+以下のJSON形式のみで回答してください（他の文言は一切不要）:
+{{"minutes": <整数>, "confidence": "<high|medium|low>", "reason": "<日本語で一文>"}}
+
+見積もりの目安:
+- メール返信・確認: 5〜15分
+- 簡単なタスク・レポート確認: 15〜30分
+- 中程度の作業・会議: 30〜60分
+- 複雑な作業・資料作成: 60〜120分
+- 大きなプロジェクト作業: 120分以上"""
+
+    try:
+        client = get_llm_client()
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=100,
+            messages=[{"role": "user", "content": prompt}],
+        )
+        import json, re
+        raw = response.content[0].text.strip()
+        # Extract JSON even if wrapped in markdown
+        m = re.search(r'\{.*\}', raw, re.DOTALL)
+        if not m:
+            raise ValueError("no JSON in response")
+        data = json.loads(m.group())
+        minutes = max(5, min(480, int(data.get("minutes", 30))))
+        confidence = data.get("confidence", "medium")
+        reason = data.get("reason", "")
+        return jsonify({"data": {"minutes": minutes, "confidence": confidence, "reason": reason}})
+    except Exception as e:
+        current_app.logger.warning("estimate-duration failed: %s", e)
+        return jsonify({"data": {"minutes": 30, "confidence": "low", "reason": "見積もりを取得できませんでした"}})
+
+
 @bp.post("/estimation-suggest")
 @jwt_required()
 def estimation_suggest():
