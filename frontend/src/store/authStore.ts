@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { authApi } from "../utils/api";
+import analytics from "../utils/analytics";
 
 interface User {
   id: number;
@@ -22,7 +23,10 @@ interface AuthState {
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
-  setUser: (user) => set({ user }),
+  setUser: (user) => {
+    set({ user });
+    if (user) analytics.identify(user.id.toString(), { plan: user.plan });
+  },
   updateUser: (patch) => {
     const current = get().user;
     if (current) set({ user: { ...current, ...patch } });
@@ -31,6 +35,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try { await authApi.logout(); } catch { /* ignore */ }
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
+    analytics.reset();
     set({ user: null });
   },
   isAuthenticated: () => !!get().user,

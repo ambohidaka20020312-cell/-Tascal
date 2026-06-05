@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { authApi } from "../utils/api";
 import { useAuthStore } from "../store/authStore";
+import analytics from "../utils/analytics";
 
 export function useTrialBanner() {
   const { user, updateUser } = useAuthStore();
@@ -14,6 +15,7 @@ export function useTrialBanner() {
         updateUser(updatedUser);
       }
       queryClient.invalidateQueries({ queryKey: ["me"] });
+      analytics.track("trial_started");
     },
   });
 

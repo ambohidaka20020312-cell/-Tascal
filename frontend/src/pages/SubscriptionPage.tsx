@@ -4,6 +4,7 @@ import { useAuthStore } from "../store/authStore";
 import { useSubscription, useCheckout, usePortal } from "../hooks/useBilling";
 import { useIAP } from "../hooks/useIAP";
 import { isWeb } from "../utils/platform";
+import analytics from "../utils/analytics";
 
 // ─── Feature rows ─────────────────────────────────────────────────────────────
 interface FeatureRow {
@@ -74,6 +75,7 @@ export default function SubscriptionPage() {
   }, [searchParams]);
 
   async function handleUpgrade(plan: "pro" | "team") {
+    analytics.track("upgrade_clicked", { plan, is_native: useNativeIAP });
     if (useNativeIAP) {
       // Native: use RevenueCat / Apple IAP
       setIapError("");
