@@ -55,6 +55,8 @@ services:
         value: https://tascal-api.onrender.com/api/v1
       # VITE_STRIPE_PUBLISHABLE_KEY = pk_test_... (Renderダッシュボードで設定)
       # VITE_SENTRY_DSN             = https://...@sentry.io/... (Sentryプロジェクトから取得)
+      # - key: VITE_MIXPANEL_TOKEN
+      #   value: # Mixpanelダッシュボードで設定
     headers:
       - path: /sw.js
         name: Cache-Control

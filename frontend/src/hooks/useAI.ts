@@ -1,5 +1,6 @@
 import { useMutation } from "@tanstack/react-query";
 import { aiApi } from "../utils/api";
+import analytics from "../utils/analytics";
 
 export interface OptimizeResult {
   message: string;
@@ -28,6 +29,9 @@ export function useOptimize(date?: string) {
     mutationFn: async () => {
       const res = await aiApi.optimize(date);
       return res.data.data as OptimizeResult;
+    },
+    onSuccess: () => {
+      analytics.track("ai_optimize_used");
     },
   });
 }

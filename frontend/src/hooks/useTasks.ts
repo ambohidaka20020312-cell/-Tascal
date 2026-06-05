@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { taskApi } from "../utils/api";
 import { useTaskStore, Task } from "../store/taskStore";
+import analytics from "../utils/analytics";
 
 export function useTasksQuery(date?: string, categoryId?: number | null) {
   const setTasks = useTaskStore((s) => s.setTasks);
@@ -22,10 +23,16 @@ export function useCreateTask() {
 
   return useMutation({
     mutationFn: (data: Partial<Task>) => taskApi.create(data),
-    onSuccess: (res) => {
+    onSuccess: (res, data) => {
       const task: Task = res.data.data ?? res.data;
       addTask(task);
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      analytics.track("task_created", {
+        priority: data.priority,
+        has_deadline: !!data.due_datetime,
+        is_fixed: data.is_fixed,
+        deadline_type: data.deadline_type,
+      });
     },
   });
 }
@@ -46,6 +53,10 @@ export function useCompleteTask() {
       const updated: Task = res.data.data ?? res.data;
       updateTask(variables.id, updated);
       queryClient.invalidateQueries({ queryKey: ["tasks"] });
+      analytics.track("task_completed", {
+        actual_minutes: variables.actual_minutes,
+        estimated_minutes: updated.estimated_minutes,
+      });
     },
   });
 }
