@@ -1,4 +1,7 @@
 import os
+import sentry_sdk
+from sentry_sdk.integrations.flask import FlaskIntegration
+from sentry_sdk.integrations.sqlalchemy import SqlalchemyIntegration
 from flask import Flask, jsonify, request, send_file, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
@@ -29,6 +32,17 @@ _CSP = (
 
 
 def create_app(config_name: str = "development"):
+    sentry_dsn = os.getenv("SENTRY_DSN")
+    if sentry_dsn:
+        sentry_sdk.init(
+            dsn=sentry_dsn,
+            integrations=[
+                FlaskIntegration(),
+                SqlalchemyIntegration(),
+            ],
+            traces_sample_rate=0.1,
+        )
+
     app = Flask(__name__)
 
     from .config import config
