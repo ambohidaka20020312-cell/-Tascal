@@ -48,6 +48,7 @@
     "date-fns": "^4.1.0",
     "i18next": "^23.16.8",
     "i18next-browser-languagedetector": "^7.2.2",
+    "mixpanel-browser": "^2.80.0",
     "react": "^18.3.1",
     "react-dnd": "^16.0.1",
     "react-dnd-html5-backend": "^16.0.1",
