@@ -8,7 +8,7 @@ from alembic import op
 import sqlalchemy as sa
 
 revision = "011"
-down_revision = "010"
+down_revision = "010_organizations"
 branch_labels = None
 depends_on = None
 
