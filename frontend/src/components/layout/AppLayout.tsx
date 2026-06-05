@@ -280,7 +280,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
       {isPhone && (
         <nav
           aria-label="メインナビゲーション"
-          className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--bg-primary)] border-t border-[var(--border)] pb-safe"
+          className="fixed bottom-0 left-0 right-0 z-50 bg-[var(--bg-primary)]/90 backdrop-blur-sm border-t border-[var(--border)] pb-safe"
           style={{ height: `calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px))` }}
         >
           <div role="tablist" className="flex items-center h-[var(--bottom-nav-height)]">

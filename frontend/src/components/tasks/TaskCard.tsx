@@ -266,7 +266,7 @@ export default function TaskCard({ task, selectable, selected, onSelect, categor
                       <button
                         onClick={() => setIsEditing(true)}
                         aria-label={`${task.title}を編集`}
-                        className="opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-[var(--text-subtle)] hover:text-[var(--text-muted)]"
+                        className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity shrink-0 text-[var(--text-subtle)] hover:text-[var(--text-muted)]"
                         style={{ fontSize: "14px", lineHeight: 1 }}
                       >
                         ✎

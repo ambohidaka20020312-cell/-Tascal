@@ -107,6 +107,7 @@ export default function DashboardPage() {
   const [quickAddParsed, setQuickAddParsed] = useState<ParsedTask | null>(null);
   const quickAddRef = useRef<HTMLInputElement>(null);
   const filterChipRef = useRef<HTMLButtonElement>(null);
+  const selectedDateChipRef = useRef<HTMLButtonElement>(null);
 
   const { deviceType, isLandscape } = useViewport();
   const isPhoneSmall = deviceType === "phone-small";
@@ -177,6 +178,13 @@ export default function DashboardPage() {
       setTimeout(() => quickAddRef.current?.focus(), 50);
     }
   }, [quickAddVisible]);
+
+  // Scroll selected date chip into view on load and when selectedDate changes
+  useEffect(() => {
+    if (selectedDateChipRef.current) {
+      selectedDateChipRef.current.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+    }
+  }, [selectedDate]);
 
   const handleQuickAddChange = (value: string) => {
     setQuickAddText(value);
@@ -349,6 +357,7 @@ export default function DashboardPage() {
             return (
               <button
                 key={d}
+                ref={isSelected ? selectedDateChipRef : undefined}
                 onClick={() => setSelectedDate(d)}
                 className={[
                   "flex flex-col items-center shrink-0 rounded-xl px-3 py-2 min-w-touch transition-colors",
@@ -605,7 +614,7 @@ export default function DashboardPage() {
               </button>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2 pb-24 sm:pb-4">
               {filteredTasks.map((task, index) => (
                 <div
                   key={task.id}
@@ -682,6 +691,17 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+
+      {/* Mobile FAB — visible only on mobile, above bottom nav */}
+      <button
+        onClick={openTaskForm}
+        aria-label="タスクを追加"
+        className="sm:hidden fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full bg-[var(--accent)] text-white dark:text-[#0f0f0f] shadow-lg flex items-center justify-center transition-transform active:scale-95"
+      >
+        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+      </button>
 
       {/* Bulk action floating bar */}
       {bulkMode && selectedIds.size > 0 && (
