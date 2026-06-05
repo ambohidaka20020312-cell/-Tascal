@@ -166,6 +166,26 @@ def send_message(channel_id):
     db.session.add(msg)
     db.session.commit()
 
+    # Send Web Push to all channel members except the sender
+    try:
+        from .notifications import send_push
+        members = ChannelMember.query.filter(
+            ChannelMember.channel_id == channel_id,
+            ChannelMember.user_id != user.id,
+        ).all()
+        for member in members:
+            recipient = User.query.get(member.user_id)
+            if recipient:
+                send_push(
+                    recipient,
+                    title=f"{user.name or 'Tascal'} からメッセージ",
+                    body=body[:100],
+                    url=f"/chat/{channel_id}",
+                )
+    except Exception:
+        pass
+
+
     # Emit via SocketIO if available
     try:
         from .. import socketio

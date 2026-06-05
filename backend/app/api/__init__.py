@@ -17,6 +17,7 @@ def register_blueprints(app: Flask):
     from .categories import bp as categories_bp
     from .teams import bp as teams_bp
     from .channels import bp as channels_bp
+    from .notifications import notifications_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
     app.register_blueprint(tasks_bp, url_prefix="/api/v1/tasks")
@@ -33,3 +34,4 @@ def register_blueprints(app: Flask):
     app.register_blueprint(categories_bp, url_prefix="/api/v1/categories")
     app.register_blueprint(teams_bp, url_prefix="/api/v1/teams")
     app.register_blueprint(channels_bp, url_prefix="/api/v1/channels")
+    app.register_blueprint(notifications_bp, url_prefix="/api/v1/notifications")
