@@ -19,6 +19,7 @@ import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { ToastProvider } from "./components/common/Toast";
 import ShortcutsOverlay from "./components/common/ShortcutsOverlay";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import MiniTimer from "./components/timer/MiniTimer";
 
 // Lazy-loaded heavy pages
 const CalendarPage = lazy(() => import("./pages/CalendarPage"));
@@ -79,6 +80,7 @@ export default function App() {
     <ToastProvider>
       <AppShell>
       <OfflineIndicator />
+      <MiniTimer />
       <CookieConsent />
       <GlobalUpgradeListener />
       <ShortcutsOverlay />

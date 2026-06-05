@@ -6,6 +6,7 @@ import { useCompleteTask, useDeleteTask, useUpdateTask, useSubtasks } from "../.
 import { useViewport } from "../../hooks/useViewport";
 import OverrunAlert from "../ai/OverrunAlert";
 import { useFocusStore } from "../../store/focusStore";
+import { useMiniTimerStore } from "../../store/miniTimerStore";
 import CategoryBadge from "./CategoryBadge";
 import TaskNotesPanel from "./TaskNotesPanel";
 import SubtaskList from "./SubtaskList";
@@ -80,6 +81,13 @@ export default function TaskCard({ task, selectable, selected, onSelect, categor
   const deleteTask = useDeleteTask();
   const updateTask = useUpdateTask();
   const startFocus = useFocusStore((s) => s.startFocus);
+  const {
+    activeTaskId: timerTaskId,
+    isRunning: timerRunning,
+    startTimer,
+    pauseTimer: pauseMiniTimer,
+    resumeTimer: resumeMiniTimer,
+  } = useMiniTimerStore();
 
   // Only fetch subtasks for parent tasks (parent_task_id == null)
   const isParentTask = task.parent_task_id == null;
@@ -355,6 +363,30 @@ export default function TaskCard({ task, selectable, selected, onSelect, categor
                       onClick={() => startFocus(task.id, "pomodoro")}
                     >
                       ◎
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      aria-label={
+                        timerTaskId === task.id
+                          ? timerRunning
+                            ? "タイマーを一時停止"
+                            : "タイマーを再開"
+                          : "タイマーを開始"
+                      }
+                      onClick={() => {
+                        if (timerTaskId === task.id) {
+                          timerRunning ? pauseMiniTimer() : resumeMiniTimer();
+                        } else {
+                          startTimer(task.id, task.title);
+                        }
+                      }}
+                      style={{
+                        opacity: timerTaskId === task.id ? 1 : undefined,
+                        fontWeight: timerTaskId === task.id ? 700 : undefined,
+                      }}
+                    >
+                      {timerTaskId === task.id && timerRunning ? "⏱" : "⏱"}
                     </Button>
                   </div>
                 </>
