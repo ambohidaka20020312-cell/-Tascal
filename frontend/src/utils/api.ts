@@ -102,6 +102,7 @@ export const templateApi = {
 };
 
 export const authApi = {
+  logout: () => api.post("/auth/logout"),
   updateProfile: (data: { name?: string; onboarding_completed?: boolean }) =>
     api.patch("/auth/profile", data),
   getProfile: () => api.get("/auth/profile"),

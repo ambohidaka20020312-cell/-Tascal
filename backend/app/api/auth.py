@@ -1,11 +1,22 @@
 from flask import Blueprint, request, jsonify
-from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt
 from ..models.user import User
 from .. import db
 from ..utils.rate_limit import is_locked, lockout_remaining, record_failure, record_success
 from ..utils.validators import validate_password
 
 bp = Blueprint("auth", __name__)
+
+# Simple in-memory token blacklist (use Redis in production)
+_token_blacklist: set = set()
+
+
+@bp.post("/logout")
+@jwt_required()
+def logout():
+    jti = get_jwt()["jti"]
+    _token_blacklist.add(jti)
+    return jsonify({"message": "ログアウトしました"}), 200
 
 
 def _get_client_ip() -> str:

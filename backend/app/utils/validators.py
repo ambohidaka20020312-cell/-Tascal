@@ -4,6 +4,21 @@ Input validation helpers for Tascal API.
 import re
 from typing import Any
 
+
+def sanitize_string(s: str, max_length: int = 500) -> str:
+    """Strip control characters and limit length."""
+    if not isinstance(s, str):
+        return str(s)[:max_length]
+    # Remove null bytes and control characters (except \n \t)
+    cleaned = re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]', '', s)
+    return cleaned[:max_length]
+
+
+def validate_email(email: str) -> bool:
+    """Basic email validation."""
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return bool(re.match(pattern, email)) and len(email) <= 254
+
 ALLOWED_PRIORITIES = {"low", "medium", "high", "urgent"}
 ALLOWED_STATUSES = {"pending", "in_progress", "completed", "overdue"}
 ALLOWED_RECURRENCES = {"none", "daily", "weekly", "monthly", "weekdays"}

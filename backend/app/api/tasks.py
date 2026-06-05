@@ -4,7 +4,7 @@ from ..models.task import Task
 from ..models.task_note import TaskNote
 from ..models.user import User
 from .. import db
-from ..utils.validators import validate_task_fields
+from ..utils.validators import validate_task_fields, sanitize_string
 from ..utils.cache import cached, invalidate_user_cache
 from ..utils.plan_limits import check_task_limit
 from sqlalchemy import func
@@ -88,10 +88,13 @@ def create_task():
     if not ok:
         return jsonify({"error": {"code": "VALIDATION_ERROR", "message": msg}}), 400
 
+    title = sanitize_string(data.get("title", ""), max_length=200)
+    description = sanitize_string(data.get("description", "") or "", max_length=2000)
+
     task = Task(
         user_id=user_id,
-        title=data["title"],
-        description=data.get("description", ""),
+        title=title,
+        description=description,
         priority=data.get("priority", "medium"),
         estimated_minutes=data.get("estimated_minutes"),
         scheduled_date=data.get("scheduled_date"),
@@ -118,6 +121,11 @@ def update_task(task_id):
     ok, msg = validate_task_fields(data)
     if not ok:
         return jsonify({"error": {"code": "VALIDATION_ERROR", "message": msg}}), 400
+
+    if "title" in data:
+        data["title"] = sanitize_string(data["title"], max_length=200)
+    if "description" in data:
+        data["description"] = sanitize_string(data.get("description") or "", max_length=2000)
 
     for field in ["title", "description", "priority", "estimated_minutes", "scheduled_date", "due_datetime", "sort_order", "status", "recurrence", "recurrence_end_date", "category_id"]:
         if field in data:
