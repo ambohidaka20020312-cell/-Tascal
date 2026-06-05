@@ -4,6 +4,8 @@ import { useAuthStore } from "./store/authStore";
 import AppLayout from "./components/layout/AppLayout";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import DashboardPage from "./pages/DashboardPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import AccountPage from "./pages/AccountPage";
@@ -89,6 +91,8 @@ export default function App() {
         {/* 認証不要ページ — AppLayoutなし */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
+        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* 認証必要ページ — AppLayoutでラップ */}
         <Route

@@ -1,5 +1,5 @@
 import { useState, FormEvent } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import api from "../utils/api";
 import { useAuthStore } from "../store/authStore";
@@ -12,6 +12,8 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const resetDone = searchParams.get("reset") === "done";
   const setUser = useAuthStore((s) => s.setUser);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -80,6 +82,12 @@ export default function LoginPage() {
               アカウントにサインイン
             </p>
 
+            {resetDone && (
+              <p className="text-xs text-emerald-500 border-l-2 border-emerald-500 pl-3 mb-6 tracking-wide">
+                パスワードを更新しました。新しいパスワードでログインしてください。
+              </p>
+            )}
+
             {error && (
               <p
                 id="login-error"
@@ -141,12 +149,19 @@ export default function LoginPage() {
               </button>
             </form>
 
-            <p className="text-xs text-[var(--text-subtle)] mt-8 tracking-wide">
-              アカウントをお持ちでない方は{" "}
-              <Link to="/register" className="text-[var(--text-primary)] hover:underline">
-                {t("auth.register")}
-              </Link>
-            </p>
+            <div className="mt-8 space-y-3">
+              <p className="text-xs text-[var(--text-subtle)] tracking-wide">
+                <Link to="/forgot-password" className="text-[var(--text-primary)] hover:underline">
+                  パスワードをお忘れの方
+                </Link>
+              </p>
+              <p className="text-xs text-[var(--text-subtle)] tracking-wide">
+                アカウントをお持ちでない方は{" "}
+                <Link to="/register" className="text-[var(--text-primary)] hover:underline">
+                  {t("auth.register")}
+                </Link>
+              </p>
+            </div>
           </div>
         </div>
       </div>

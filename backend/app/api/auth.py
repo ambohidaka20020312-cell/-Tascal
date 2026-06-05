@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt
 from ..models.user import User
 from .. import db
@@ -139,3 +139,68 @@ def update_profile():
 
     db.session.commit()
     return jsonify({"data": {"user": user.to_dict()}, "message": "プロフィールを更新しました"})
+
+
+@bp.post("/forgot-password")
+def forgot_password():
+    data = request.get_json() or {}
+    email = (data.get("email") or "").strip().lower()
+    if not email:
+        return jsonify({"error": {"code": "MISSING_FIELDS", "message": "メールアドレスを入力してください"}}), 400
+
+    user = User.query.filter_by(email=email).first()
+    # Always return 200 to avoid email enumeration
+    if not user:
+        return jsonify({"message": "メールを送信しました（登録済みの場合）"}), 200
+
+    token = user.generate_reset_token()
+    db.session.commit()
+
+    frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:5173")
+    reset_link = f"{frontend_url}/reset-password?token={token}"
+
+    try:
+        from flask_mail import Message
+        from .. import mail
+        msg = Message(
+            subject="【Tascal】パスワードリセット",
+            recipients=[user.email],
+            body=(
+                f"パスワードリセットのリクエストを受け付けました。\n\n"
+                f"以下のリンクをクリックして新しいパスワードを設定してください（有効期限：1時間）:\n\n"
+                f"{reset_link}\n\n"
+                f"このメールに心当たりがない場合は無視してください。\n\n"
+                f"Tascal サポートチーム\ntascal.support@gmail.com"
+            ),
+        )
+        mail.send(msg)
+    except Exception as e:
+        current_app.logger.error("Password reset email failed: %s", e)
+        # Still commit the token — user can retry or admin can look up token in dev
+
+    return jsonify({"message": "メールを送信しました（登録済みの場合）"}), 200
+
+
+@bp.post("/reset-password")
+def reset_password():
+    data = request.get_json() or {}
+    token = (data.get("token") or "").strip()
+    new_password = data.get("password") or ""
+
+    if not token or not new_password:
+        return jsonify({"error": {"code": "MISSING_FIELDS", "message": "トークンと新しいパスワードを入力してください"}}), 400
+
+    from ..utils.validators import validate_password
+    ok, msg = validate_password(new_password)
+    if not ok:
+        return jsonify({"error": {"code": "WEAK_PASSWORD", "message": msg}}), 400
+
+    user = User.query.filter_by(password_reset_token=token).first()
+    if not user or not user.reset_token_valid():
+        return jsonify({"error": {"code": "INVALID_TOKEN", "message": "リンクが無効または期限切れです。再度パスワードリセットをお試しください"}}), 400
+
+    user.set_password(new_password)
+    user.clear_reset_token()
+    db.session.commit()
+
+    return jsonify({"message": "パスワードを更新しました"}), 200
