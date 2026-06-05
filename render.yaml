@@ -22,14 +22,23 @@ services:
       - key: JWT_SECRET_KEY
         generateValue: true
       - key: FRONTEND_URL
-        value: https://tascal.onrender.com   # ← フロントエンドのURLに変更
-      # ── 以下はRenderダッシュボードの「Environment」で手動設定 ──
-      # ANTHROPIC_API_KEY      = sk-ant-...
-      # STRIPE_SECRET_KEY      = sk_live_...
-      # STRIPE_WEBHOOK_SECRET  = whsec_...
-      # STRIPE_PRICE_ID_PRO    = price_...
-      # MAIL_PASSWORD          = Gmail アプリパスワード（16桁）
-      # ALLOWED_ORIGINS        = https://tascal.onrender.com
+        value: https://tascal-frontend.onrender.com
+      - key: ALLOWED_ORIGINS
+        value: https://tascal-frontend.onrender.com
+      - key: MAIL_SERVER
+        value: smtp.gmail.com
+      - key: MAIL_PORT
+        value: "587"
+      - key: MAIL_USERNAME
+        value: tascal.support@gmail.com
+      - key: MAIL_DEFAULT_SENDER
+        value: tascal.support@gmail.com
+      # ── Renderダッシュボードの「Environment」タブで手動設定 ──
+      # ANTHROPIC_API_KEY   = sk-ant-...
+      # STRIPE_SECRET_KEY   = sk_test_... (まずテストキーでOK)
+      # STRIPE_WEBHOOK_SECRET = whsec_...
+      # STRIPE_PRICE_ID_PRO = price_...
+      # MAIL_PASSWORD       = Gmailアプリパスワード16桁
 
   # ─────────────────────────────────────────
   # React PWA (frontend) — Static Site
@@ -42,8 +51,8 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://tascal-api.onrender.com/api/v1  # ← バックエンドのURLに変更
-      # VITE_STRIPE_PUBLISHABLE_KEY = pk_live_...
+        value: https://tascal-api.onrender.com/api/v1
+      # VITE_STRIPE_PUBLISHABLE_KEY = pk_test_... (Renderダッシュボードで設定)
     headers:
       - path: /sw.js
         name: Cache-Control
