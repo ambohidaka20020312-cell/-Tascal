@@ -86,6 +86,7 @@ export const aiApi = {
     api.post("/ai/replan", { overrun_task_id, actual_minutes_so_far }),
   insights: () => api.get("/ai/insights"),
   dailyBriefing: () => api.get("/ai/daily-briefing"),
+  suggestions: () => api.get("/ai/suggestions"),
 };
 
 export const calendarApi = {

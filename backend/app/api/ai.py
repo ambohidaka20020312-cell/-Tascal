@@ -70,6 +70,60 @@ def insights():
     return jsonify({"data": result})
 
 
+@bp.get("/suggestions")
+@jwt_required()
+@cached("ai_suggestions", ttl=3600)
+def get_suggestions():
+    """Analyze user's completed tasks and suggest new ones."""
+    import json
+    from anthropic import Anthropic
+
+    user_id = get_jwt_identity()
+
+    thirty_days_ago = (datetime.date.today() - datetime.timedelta(days=30)).isoformat()
+    completed = Task.query.filter(
+        Task.user_id == user_id,
+        Task.status == "completed",
+        Task.created_at >= thirty_days_ago,
+        Task.is_deleted == False,
+    ).limit(50).all()
+
+    if len(completed) < 3:
+        return jsonify({"data": {"suggestions": [], "message": "もっとタスクを完了すると提案が増えます"}})
+
+    task_list = "\n".join([
+        f"- {t.title} (優先度: {t.priority}, カテゴリ: {t.category_id or 'なし'})"
+        for t in completed[:20]
+    ])
+
+    client = Anthropic(api_key=current_app.config["ANTHROPIC_API_KEY"])
+    msg = client.messages.create(
+        model="claude-sonnet-4-6",
+        max_tokens=400,
+        messages=[{
+            "role": "user",
+            "content": f"""以下は過去30日間に完了したタスクです:
+{task_list}
+
+このパターンから、ユーザーが次に取り組むべきタスクを5つ提案してください。
+JSON配列形式で返してください（```jsonコードブロック不要、直接配列のみ）:
+[
+  {{"title": "タスク名", "priority": "medium", "estimated_minutes": 30, "reason": "提案理由（短く）"}},
+  ...
+]"""
+        }]
+    )
+
+    try:
+        suggestions = json.loads(msg.content[0].text)
+        if not isinstance(suggestions, list):
+            suggestions = []
+    except (json.JSONDecodeError, IndexError):
+        suggestions = []
+
+    return jsonify({"data": {"suggestions": suggestions[:5]}})
+
+
 @bp.get("/daily-briefing")
 @jwt_required()
 def daily_briefing():

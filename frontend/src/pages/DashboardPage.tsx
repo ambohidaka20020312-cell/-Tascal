@@ -19,6 +19,7 @@ import ExportModal from "../components/tasks/ExportModal";
 import { useCategories } from "../hooks/useCategories";
 import DailyBriefingPanel from "../components/ai/DailyBriefingPanel";
 import ReplanButton from "../components/ai/ReplanButton";
+import TaskSuggestions from "../components/ai/TaskSuggestions";
 import AdBanner from "../components/ads/AdBanner";
 import OverdueBanner from "../components/tasks/OverdueBanner";
 
@@ -141,6 +142,11 @@ export default function DashboardPage() {
       setTaskFormInit({});
       setShowTaskForm(true);
     };
+    const onPrefillTaskForm = (e: Event) => {
+      const detail = (e as CustomEvent<Partial<ParsedTask>>).detail;
+      setTaskFormInit(detail ?? {});
+      setShowTaskForm(true);
+    };
     const onCloseOverlays = () => {
       setQuickAddVisible(false);
       setQuickAddText("");
@@ -157,6 +163,7 @@ export default function DashboardPage() {
     const onSetFilterOverdue = () => setFilterStatus("overdue");
 
     window.addEventListener("open-task-form", onOpenTaskForm);
+    window.addEventListener("prefill-task-form", onPrefillTaskForm);
     window.addEventListener("close-overlays", onCloseOverlays);
     window.addEventListener("focus-filter", onFocusFilter);
     window.addEventListener("set-filter:all", onSetFilterAll);
@@ -167,6 +174,7 @@ export default function DashboardPage() {
 
     return () => {
       window.removeEventListener("open-task-form", onOpenTaskForm);
+      window.removeEventListener("prefill-task-form", onPrefillTaskForm);
       window.removeEventListener("close-overlays", onCloseOverlays);
       window.removeEventListener("focus-filter", onFocusFilter);
       window.removeEventListener("set-filter:all", onSetFilterAll);
@@ -763,6 +771,9 @@ export default function DashboardPage() {
       )}
 
       <ExportModal isOpen={showExportModal} onClose={() => setShowExportModal(false)} />
+
+      {/* AI task suggestions based on past patterns */}
+      <TaskSuggestions />
 
       {/* Ad slot for free plan users — shown at the bottom of the dashboard */}
       <AdBanner slot="1234567890" format="auto" className="mt-4 min-h-[90px]" />
