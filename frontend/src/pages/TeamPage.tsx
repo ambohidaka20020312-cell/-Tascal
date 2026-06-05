@@ -9,6 +9,9 @@ import {
   useInviteMember,
   useRemoveMember,
 } from "../hooks/useOrg";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import api from "../utils/api";
+import type { Department } from "../types/team";
 
 const MAX_MEMBERS = 5;
 
@@ -96,45 +99,196 @@ function CreateOrgForm() {
   );
 }
 
-export default function TeamPage() {
+// ── Department tab ────────────────────────────────────────────────────────────
+
+function useDepartments(orgId: number) {
+  return useQuery<Department[]>({
+    queryKey: ["departments", orgId],
+    queryFn: async () => {
+      const res = await api.get(`/org/${orgId}/departments`);
+      return (res.data as { data: Department[] }).data ?? [];
+    },
+    enabled: orgId > 0,
+  });
+}
+
+function useCreateDepartment(orgId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) =>
+      api.post(`/org/${orgId}/departments`, { name }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["departments", orgId] }),
+  });
+}
+
+function useDeleteDepartment(orgId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (deptId: number) =>
+      api.delete(`/org/${orgId}/departments/${deptId}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["departments", orgId] }),
+  });
+}
+
+interface DepartmentsTabProps {
+  orgId: number;
+}
+
+function DepartmentsTab({ orgId }: DepartmentsTabProps) {
+  const { data: departments = [], isLoading } = useDepartments(orgId);
+  const { data: members = [] } = useOrgMembers(orgId);
+  const createDept = useCreateDepartment(orgId);
+  const deleteDept = useDeleteDepartment(orgId);
+  const { toast } = useToast();
+
+  const [newName, setNewName] = useState("");
+  const [assignModalDept, setAssignModalDept] = useState<Department | null>(null);
+  const [selectedMemberId, setSelectedMemberId] = useState<number | "">("");
+
+  const handleCreate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    try {
+      await createDept.mutateAsync(newName.trim());
+      setNewName("");
+    } catch {
+      toast("部署の作成に失敗しました", "error");
+    }
+  };
+
+  const handleAssign = async () => {
+    if (!assignModalDept || selectedMemberId === "") return;
+    try {
+      await api.post(
+        `/org/${orgId}/departments/${assignModalDept.id}/members`,
+        { user_id: selectedMemberId }
+      );
+      toast("メンバーを割り当てました", "success");
+      setAssignModalDept(null);
+      setSelectedMemberId("");
+    } catch {
+      toast("割り当てに失敗しました", "error");
+    }
+  };
+
+  if (isLoading) return <SkeletonCard />;
+
+  return (
+    <div className="space-y-4">
+      {/* Create department */}
+      <section className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-5 space-y-4">
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">部署を作成</h2>
+        <form onSubmit={handleCreate} className="flex gap-2">
+          <input
+            type="text"
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="部署名を入力"
+            className="flex-1 px-3 py-2 text-sm bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] focus:outline-none focus:border-[var(--text-muted)]"
+          />
+          <button
+            type="submit"
+            disabled={!newName.trim() || createDept.isPending}
+            className="px-4 py-2 text-sm font-medium border border-[var(--border)] rounded-lg text-[var(--text-primary)] bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {createDept.isPending ? "作成中..." : "作成"}
+          </button>
+        </form>
+      </section>
+
+      {/* Department list */}
+      {departments.length > 0 && (
+        <section className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-5 space-y-3">
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">部署一覧</h2>
+          <ul className="space-y-2">
+            {departments.map((dept) => (
+              <li
+                key={dept.id}
+                className="flex items-center gap-3 py-1.5"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-[var(--text-primary)] truncate">{dept.name}</p>
+                </div>
+                <button
+                  onClick={() => setAssignModalDept(dept)}
+                  className="text-xs px-2 py-1 border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+                >
+                  メンバー割り当て
+                </button>
+                <button
+                  onClick={() => deleteDept.mutate(dept.id)}
+                  disabled={deleteDept.isPending}
+                  className="text-[var(--text-subtle)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40"
+                  aria-label={`${dept.name} を削除`}
+                >
+                  <TrashIcon />
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* Assign member modal */}
+      {assignModalDept && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center" aria-modal="true" role="dialog">
+          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setAssignModalDept(null)} />
+          <div className="relative z-10 w-full max-w-sm mx-4 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-2xl shadow-2xl p-5 space-y-4">
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+              {assignModalDept.name} にメンバーを割り当て
+            </h3>
+            <select
+              value={selectedMemberId}
+              onChange={(e) =>
+                setSelectedMemberId(e.target.value === "" ? "" : Number(e.target.value))
+              }
+              className="w-full px-3 py-2 text-sm bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] focus:outline-none focus:border-[var(--text-muted)]"
+            >
+              <option value="">メンバーを選択</option>
+              {members.map((m) => (
+                <option key={m.id} value={m.id}>{m.name}</option>
+              ))}
+            </select>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setAssignModalDept(null)}
+                className="flex-1 py-2 text-sm border border-[var(--border)] rounded-lg text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+              >
+                キャンセル
+              </button>
+              <button
+                onClick={handleAssign}
+                disabled={selectedMemberId === ""}
+                className="flex-1 py-2 text-sm rounded-lg bg-[var(--accent)] text-white hover:opacity-80 transition-opacity disabled:opacity-40"
+              >
+                割り当て
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Members tab ───────────────────────────────────────────────────────────────
+
+interface MembersTabProps {
+  orgId: number;
+  ownerId: number;
+}
+
+function MembersTab({ orgId, ownerId }: MembersTabProps) {
   const { t } = useTranslation();
   const { toast } = useToast();
   const user = useAuthStore((s) => s.user);
-  const { data: org, isLoading, isError, refetch } = useOrg();
-  const { data: members = [], isLoading: membersLoading } = useOrgMembers(org?.id ?? 0);
-  const inviteMember = useInviteMember(org?.id ?? 0);
-  const removeMember = useRemoveMember(org?.id ?? 0);
+  const { data: members = [] } = useOrgMembers(orgId);
+  const inviteMember = useInviteMember(orgId);
+  const removeMember = useRemoveMember(orgId);
 
   const [inviteEmail, setInviteEmail] = useState("");
 
-  if (isLoading || (org && membersLoading)) {
-    return (
-      <div className="max-w-xl mx-auto space-y-6 py-6">
-        <div className="h-6 w-32 bg-[var(--bg-tertiary)] rounded animate-pulse" />
-        <SkeletonCard />
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <div className="max-w-xl mx-auto py-12 text-center space-y-4">
-        <p className="text-sm text-[var(--text-muted)]">{t("team.load_error")}</p>
-        <button
-          onClick={() => refetch()}
-          className="px-4 py-2 text-sm font-medium border border-[var(--border)] rounded-lg text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
-        >
-          {t("team.retry")}
-        </button>
-      </div>
-    );
-  }
-
-  if (!org) {
-    return <CreateOrgForm />;
-  }
-
-  const isOwner = org.owner_id === user?.id;
+  const isOwner = ownerId === user?.id;
   const memberCount = members.length;
   const atLimit = memberCount >= MAX_MEMBERS;
 
@@ -173,11 +327,7 @@ export default function TeamPage() {
   };
 
   return (
-    <div className="max-w-xl mx-auto space-y-6 py-6">
-      <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-wide">
-        {org.name}
-      </h1>
-
+    <div className="space-y-4">
       {/* Member list */}
       <section className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
@@ -260,6 +410,82 @@ export default function TeamPage() {
             {removeMember.isPending ? t("team.leaving") : t("team.leave_btn")}
           </button>
         </section>
+      )}
+    </div>
+  );
+}
+
+// ── Page ──────────────────────────────────────────────────────────────────────
+
+type Tab = "members" | "departments";
+
+export default function TeamPage() {
+  const { t } = useTranslation();
+  const { data: org, isLoading, isError, refetch } = useOrg();
+  const { data: members = [], isLoading: membersLoading } = useOrgMembers(org?.id ?? 0);
+
+  const [tab, setTab] = useState<Tab>("members");
+
+  if (isLoading || (org && membersLoading)) {
+    return (
+      <div className="max-w-xl mx-auto space-y-6 py-6">
+        <div className="h-6 w-32 bg-[var(--bg-tertiary)] rounded animate-pulse" />
+        <SkeletonCard />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="max-w-xl mx-auto py-12 text-center space-y-4">
+        <p className="text-sm text-[var(--text-muted)]">{t("team.load_error")}</p>
+        <button
+          onClick={() => refetch()}
+          className="px-4 py-2 text-sm font-medium border border-[var(--border)] rounded-lg text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
+        >
+          {t("team.retry")}
+        </button>
+      </div>
+    );
+  }
+
+  if (!org) {
+    return <CreateOrgForm />;
+  }
+
+  return (
+    <div className="max-w-xl mx-auto space-y-6 py-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-wide">
+          {org.name}
+        </h1>
+        <span className="text-xs text-[var(--text-muted)]">
+          {members.length} / {MAX_MEMBERS} 名
+        </span>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 border-b border-[var(--border)]">
+        {(["members", "departments"] as Tab[]).map((t_) => (
+          <button
+            key={t_}
+            onClick={() => setTab(t_)}
+            className={[
+              "px-4 py-2 text-sm font-medium -mb-px border-b-2 transition-colors",
+              tab === t_
+                ? "border-[var(--text-primary)] text-[var(--text-primary)]"
+                : "border-transparent text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+            ].join(" ")}
+          >
+            {t_ === "members" ? "メンバー" : "部署"}
+          </button>
+        ))}
+      </div>
+
+      {tab === "members" ? (
+        <MembersTab orgId={org.id} ownerId={org.owner_id} />
+      ) : (
+        <DepartmentsTab orgId={org.id} />
       )}
     </div>
   );

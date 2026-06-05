@@ -11,6 +11,7 @@ import DashboardPage from "./pages/DashboardPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import AccountPage from "./pages/AccountPage";
 import TeamPage from "./pages/TeamPage";
+import ChatPage from "./pages/ChatPage";
 import CookieConsent from "./components/legal/CookieConsent";
 import OnboardingWizard from "./components/onboarding/OnboardingWizard";
 import UpgradePrompt from "./components/subscription/UpgradePrompt";
@@ -197,6 +198,18 @@ export default function App() {
               <AppLayout>
                 <ErrorBoundary>
                   <TeamPage />
+                </ErrorBoundary>
+              </AppLayout>
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/chat"
+          element={
+            <PrivateRoute>
+              <AppLayout>
+                <ErrorBoundary>
+                  <ChatPage />
                 </ErrorBoundary>
               </AppLayout>
             </PrivateRoute>
