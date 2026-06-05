@@ -44,24 +44,43 @@ const statusConfig: Record<Task["status"], { labelKey: string; className: string
 /** Returns due date state relative to today */
 function getDueDateState(dueDatetime: string | null): "overdue" | "today" | "soon" | "none" {
   if (!dueDatetime) return "none";
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const now = new Date();
   const due = new Date(dueDatetime);
-  due.setHours(0, 0, 0, 0);
-  const diffMs = due.getTime() - today.getTime();
-  const diffDays = Math.round(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays < 0) return "overdue";
-  if (diffDays === 0) return "today";
-  if (diffDays <= 3) return "soon";
+  if (due < now) return "overdue";
+  const todayEnd = new Date(); todayEnd.setHours(23, 59, 59, 999);
+  if (due <= todayEnd) return "today";
+  const soonEnd = new Date(); soonEnd.setDate(soonEnd.getDate() + 3); soonEnd.setHours(23, 59, 59, 999);
+  if (due <= soonEnd) return "soon";
   return "none";
 }
 
 function getDaysUntilDue(dueDatetime: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const due = new Date(dueDatetime);
-  due.setHours(0, 0, 0, 0);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const due = new Date(dueDatetime); due.setHours(0, 0, 0, 0);
   return Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+/** "今日15:30" or "6/10 15:30" or "6/10" */
+function formatDueLabel(dueDatetime: string): string {
+  const due = new Date(dueDatetime);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const dueDay = new Date(due); dueDay.setHours(0, 0, 0, 0);
+  const hasTime = due.getHours() !== 23 || due.getMinutes() !== 59;
+  const timeStr = hasTime
+    ? ` ${String(due.getHours()).padStart(2, "0")}:${String(due.getMinutes()).padStart(2, "0")}`
+    : "";
+  if (dueDay.getTime() === today.getTime()) return `今日${timeStr}`;
+  return `${due.getMonth() + 1}/${due.getDate()}${timeStr}`;
+}
+
+/** "あと2h30m" style countdown for same-day deadlines */
+function getCountdown(dueDatetime: string): string | null {
+  const due = new Date(dueDatetime);
+  const diffMs = due.getTime() - Date.now();
+  if (diffMs <= 0 || diffMs > 24 * 60 * 60 * 1000) return null;
+  const h = Math.floor(diffMs / 3600000);
+  const m = Math.floor((diffMs % 3600000) / 60000);
+  return h > 0 ? `あと${h}h${m}m` : `あと${m}分`;
 }
 
 export default function TaskCard({ task, selectable, selected, onSelect, categoryName, isDragging, draggedId, isDropTarget, onKeyDown: _onKeyDown }: TaskCardProps) {
@@ -191,34 +210,58 @@ export default function TaskCard({ task, selectable, selected, onSelect, categor
                   · {t(status.labelKey)}
                 </span>
 
-                {/* Due date badges — monochrome, opacity-only emphasis */}
-                {dueDateState === "overdue" && (
+                {/* Fixed-time badge (meetings / appointments) */}
+                {task.is_fixed && (
                   <span
-                    className={`${isPhoneSmall ? "text-[10px]" : "text-xs"} tracking-wide font-semibold`}
-                    style={{ color: "var(--text-primary)", opacity: 0.9 }}
+                    className={`${isPhoneSmall ? "text-[10px]" : "text-xs"} tracking-wide text-[var(--text-muted)] border border-[var(--border)] rounded px-1 py-0`}
+                    aria-label="時間固定タスク"
+                  >
+                    🔒 {task.fixed_start_time ? `${task.fixed_start_time}〜` : "固定"}
+                  </span>
+                )}
+
+                {/* Hard deadline badges */}
+                {task.due_datetime && dueDateState === "overdue" && (
+                  <span
+                    className={`${isPhoneSmall ? "text-[10px]" : "text-xs"} tracking-wide font-semibold text-[var(--text-primary)]`}
                     aria-label="期限超過"
                   >
-                    · 期限超過
+                    · ⚑ 期限超過 {formatDueLabel(task.due_datetime)}
                   </span>
                 )}
-                {dueDateState === "today" && (
+                {task.due_datetime && dueDateState === "today" && (
                   <span
-                    className={`${isPhoneSmall ? "text-[10px]" : "text-xs"} tracking-wide font-medium`}
-                    style={{ color: "var(--text-primary)", opacity: 0.75 }}
+                    className={`${isPhoneSmall ? "text-[10px]" : "text-xs"} tracking-wide font-medium text-[var(--text-primary)]`}
+                    style={{ opacity: 0.85 }}
                     aria-label="今日締切"
                   >
-                    · 今日締切
+                    · ⚑ {formatDueLabel(task.due_datetime)}
+                    {getCountdown(task.due_datetime) && (
+                      <span className="ml-1 text-[var(--text-subtle)]">({getCountdown(task.due_datetime)})</span>
+                    )}
                   </span>
                 )}
-                {dueDateState === "soon" && task.due_datetime && (
+                {task.due_datetime && dueDateState === "soon" && (
                   <span
-                    className={`${isPhoneSmall ? "text-[10px]" : "text-xs"} tracking-wide`}
-                    style={{ color: "var(--text-muted)", opacity: 0.85 }}
+                    className={`${isPhoneSmall ? "text-[10px]" : "text-xs"} tracking-wide text-[var(--text-muted)]`}
                     aria-label={`あと${getDaysUntilDue(task.due_datetime)}日`}
                   >
-                    · あと{getDaysUntilDue(task.due_datetime)}日
+                    · ⚑ {formatDueLabel(task.due_datetime)}（あと{getDaysUntilDue(task.due_datetime)}日）
                   </span>
                 )}
+
+                {/* Deadline type badge — only for flexible/someday with no hard deadline */}
+                {!task.due_datetime && task.deadline_type === "flexible" && (
+                  <span className={`${isPhoneSmall ? "text-[10px]" : "text-xs"} text-[var(--text-subtle)] tracking-wide`}>
+                    · 別日OK
+                  </span>
+                )}
+                {!task.due_datetime && task.deadline_type === "someday" && (
+                  <span className={`${isPhoneSmall ? "text-[10px]" : "text-xs"} text-[var(--text-subtle)] tracking-wide`}>
+                    · いつでも
+                  </span>
+                )}
+
                 {categoryName && <CategoryBadge name={categoryName} />}
               </div>
 
@@ -326,10 +369,8 @@ export default function TaskCard({ task, selectable, selected, onSelect, categor
                           {task.actual_minutes != null && ` / ${t('task.actual_time')}: ${task.actual_minutes}${t('common.minutes')}`}
                         </p>
                       )}
-                      {isTabletOrAbove && task.due_datetime && (
-                        <p className="text-xs text-[var(--text-subtle)] mt-0.5">
-                          {t('task.due_date')}: {task.due_datetime.split("T")[0]}
-                        </p>
+                      {isTabletOrAbove && task.estimated_minutes == null && !task.due_datetime && task.deadline_type === "today" && (
+                        <p className="text-[10px] text-[var(--text-subtle)] mt-0.5">目標時間未設定</p>
                       )}
                     </>
                   )}
