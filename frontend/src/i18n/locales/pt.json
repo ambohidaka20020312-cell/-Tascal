@@ -124,6 +124,78 @@
     "hours": "h",
     "offline": "Sem conexão"
   },
+  "category": {
+    "filter_all": "Todas"
+  },
+  "notes": {
+    "title": "Notas",
+    "close": "Fechar notas",
+    "delete": "Excluir nota",
+    "empty": "Nenhuma nota ainda",
+    "placeholder": "Adicionar nota… (Ctrl+Enter para salvar)",
+    "add": "Adicionar"
+  },
+  "search": {
+    "placeholder": "Pesquisar tarefas...",
+    "clear": "Limpar pesquisa"
+  },
+  "export": {
+    "title": "Exportar",
+    "format": "Formato",
+    "date_range": "Intervalo de datas (opcional)",
+    "all_tasks": "Deixe em branco para exportar todas as tarefas",
+    "button": "Exportar",
+    "close": "Fechar"
+  },
+  "team": {
+    "title": "Gerenciamento de equipe",
+    "create_title": "Criar uma equipe",
+    "create_desc": "Insira um nome de equipe para criá-la. Você pode convidar até 5 membros.",
+    "create_placeholder": "Nome da equipe",
+    "creating": "Criando...",
+    "create_btn": "Criar",
+    "create_error": "Falha ao criar. Por favor, tente novamente.",
+    "members": "Gerenciamento de membros",
+    "invite": "Convidar membros",
+    "at_limit": "Limite de membros atingido (máx. {{max}})",
+    "email_placeholder": "Endereço de e-mail",
+    "sending": "Enviando...",
+    "invite_btn": "Convidar",
+    "leave": "Sair da equipe",
+    "leave_desc": "Você sairá desta equipe. Esta ação não pode ser desfeita.",
+    "leaving": "Processando...",
+    "leave_btn": "Sair da equipe",
+    "role_owner": "Proprietário",
+    "role_member": "Membro",
+    "load_error": "Falha ao carregar informações da equipe",
+    "retry": "Tentar novamente",
+    "toast_invited": "Convite enviado",
+    "toast_not_found": "Usuário não encontrado",
+    "toast_invite_fail": "Falha ao convidar",
+    "toast_left": "Você saiu da equipe",
+    "toast_remove_fail": "Operação falhou",
+    "remove_label": "Remover {{name}}"
+  },
+  "shortcuts": {
+    "title": "Atalhos de teclado",
+    "close": "Fechar",
+    "new_task": "Adicionar nova tarefa",
+    "show_shortcuts": "Mostrar atalhos",
+    "escape": "Fechar",
+    "filter_focus": "Focar filtro",
+    "filter_all": "Mostrar tudo",
+    "filter_pending": "Somente pendentes",
+    "filter_active": "Somente ativas",
+    "filter_done": "Somente concluídas"
+  },
+  "notifications": {
+    "title": "Configurações de notificação",
+    "digest_title": "E-mail de resumo semanal",
+    "digest_desc": "Receba um resumo semanal de progresso por e-mail",
+    "push_title": "Notificações push",
+    "push_desc": "Ativar notificações push do navegador",
+    "fetch_error": "Falha ao carregar"
+  },
   "insights": {
     "title": "Insights semanais",
     "completion_rate": "Taxa de conclusão",

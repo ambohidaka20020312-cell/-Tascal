@@ -124,6 +124,78 @@
     "hours": "ساعة",
     "offline": "غير متصل"
   },
+  "category": {
+    "filter_all": "الكل"
+  },
+  "notes": {
+    "title": "ملاحظات",
+    "close": "إغلاق الملاحظات",
+    "delete": "حذف الملاحظة",
+    "empty": "لا توجد ملاحظات بعد",
+    "placeholder": "أضف ملاحظة… (Ctrl+Enter للحفظ)",
+    "add": "إضافة"
+  },
+  "search": {
+    "placeholder": "البحث في المهام...",
+    "clear": "مسح البحث"
+  },
+  "export": {
+    "title": "تصدير",
+    "format": "الصيغة",
+    "date_range": "نطاق التاريخ (اختياري)",
+    "all_tasks": "اتركه فارغاً لتصدير جميع المهام",
+    "button": "تصدير",
+    "close": "إغلاق"
+  },
+  "team": {
+    "title": "إدارة الفريق",
+    "create_title": "إنشاء فريق",
+    "create_desc": "أدخل اسم الفريق لإنشائه. يمكنك دعوة ما يصل إلى 5 أعضاء.",
+    "create_placeholder": "اسم الفريق",
+    "creating": "جارٍ الإنشاء...",
+    "create_btn": "إنشاء",
+    "create_error": "فشل الإنشاء. يرجى المحاولة مرة أخرى.",
+    "members": "إدارة الأعضاء",
+    "invite": "دعوة أعضاء",
+    "at_limit": "تم الوصول إلى الحد الأقصى للأعضاء (الحد {{max}})",
+    "email_placeholder": "عنوان البريد الإلكتروني",
+    "sending": "جارٍ الإرسال...",
+    "invite_btn": "دعوة",
+    "leave": "مغادرة الفريق",
+    "leave_desc": "ستغادر هذا الفريق. لا يمكن التراجع عن هذا الإجراء.",
+    "leaving": "جارٍ المعالجة...",
+    "leave_btn": "مغادرة الفريق",
+    "role_owner": "المالك",
+    "role_member": "عضو",
+    "load_error": "فشل تحميل معلومات الفريق",
+    "retry": "إعادة المحاولة",
+    "toast_invited": "تم إرسال الدعوة",
+    "toast_not_found": "المستخدم غير موجود",
+    "toast_invite_fail": "فشل إرسال الدعوة",
+    "toast_left": "لقد غادرت الفريق",
+    "toast_remove_fail": "فشلت العملية",
+    "remove_label": "إزالة {{name}}"
+  },
+  "shortcuts": {
+    "title": "اختصارات لوحة المفاتيح",
+    "close": "إغلاق",
+    "new_task": "إضافة مهمة جديدة",
+    "show_shortcuts": "عرض الاختصارات",
+    "escape": "إغلاق",
+    "filter_focus": "التركيز على المرشح",
+    "filter_all": "عرض الكل",
+    "filter_pending": "المعلقة فقط",
+    "filter_active": "النشطة فقط",
+    "filter_done": "المكتملة فقط"
+  },
+  "notifications": {
+    "title": "إعدادات الإشعارات",
+    "digest_title": "بريد الملخص الأسبوعي",
+    "digest_desc": "استلم ملخصاً أسبوعياً للتقدم عبر البريد الإلكتروني",
+    "push_title": "إشعارات الدفع",
+    "push_desc": "تفعيل إشعارات الدفع على المتصفح",
+    "fetch_error": "فشل التحميل"
+  },
   "insights": {
     "title": "إحصاءات الأسبوع",
     "completion_rate": "معدل الإنجاز",

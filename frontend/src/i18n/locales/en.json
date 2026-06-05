@@ -124,6 +124,78 @@
     "hours": "hr",
     "offline": "Offline"
   },
+  "category": {
+    "filter_all": "All"
+  },
+  "notes": {
+    "title": "Notes",
+    "close": "Close notes",
+    "delete": "Delete note",
+    "empty": "No notes yet",
+    "placeholder": "Add a note… (Ctrl+Enter to save)",
+    "add": "Add"
+  },
+  "search": {
+    "placeholder": "Search tasks...",
+    "clear": "Clear search"
+  },
+  "export": {
+    "title": "Export",
+    "format": "Format",
+    "date_range": "Date range (optional)",
+    "all_tasks": "Leave blank to export all tasks",
+    "button": "Export",
+    "close": "Close"
+  },
+  "team": {
+    "title": "Team Management",
+    "create_title": "Create a Team",
+    "create_desc": "Enter a team name to create your team. You can invite up to 5 members.",
+    "create_placeholder": "Team name",
+    "creating": "Creating...",
+    "create_btn": "Create",
+    "create_error": "Failed to create. Please try again.",
+    "members": "Member Management",
+    "invite": "Invite Members",
+    "at_limit": "Member limit reached ({{max}} max)",
+    "email_placeholder": "Email address",
+    "sending": "Sending...",
+    "invite_btn": "Invite",
+    "leave": "Leave Team",
+    "leave_desc": "You will leave this team. This cannot be undone.",
+    "leaving": "Processing...",
+    "leave_btn": "Leave Team",
+    "role_owner": "Owner",
+    "role_member": "Member",
+    "load_error": "Failed to load team information",
+    "retry": "Retry",
+    "toast_invited": "Invitation sent",
+    "toast_not_found": "User not found",
+    "toast_invite_fail": "Failed to invite",
+    "toast_left": "You have left the team",
+    "toast_remove_fail": "Operation failed",
+    "remove_label": "Remove {{name}}"
+  },
+  "shortcuts": {
+    "title": "Keyboard Shortcuts",
+    "close": "Close",
+    "new_task": "Add new task",
+    "show_shortcuts": "Show shortcuts",
+    "escape": "Close",
+    "filter_focus": "Focus filter",
+    "filter_all": "Show all",
+    "filter_pending": "Pending only",
+    "filter_active": "Active only",
+    "filter_done": "Done only"
+  },
+  "notifications": {
+    "title": "Notification Settings",
+    "digest_title": "Weekly Digest Email",
+    "digest_desc": "Receive a weekly progress summary by email",
+    "push_title": "Push Notifications",
+    "push_desc": "Enable browser push notifications",
+    "fetch_error": "Failed to load"
+  },
   "insights": {
     "title": "Weekly Insights",
     "completion_rate": "Completion Rate",

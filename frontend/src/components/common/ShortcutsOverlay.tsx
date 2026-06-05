@@ -1,18 +1,20 @@
 import { useState, useEffect } from "react";
-
-const SHORTCUTS = [
-  { key: "n", desc: "新しいタスクを追加" },
-  { key: "?", desc: "ショートカット一覧を表示" },
-  { key: "Esc", desc: "閉じる" },
-  { key: "f", desc: "フィルターにフォーカス" },
-  { key: "1", desc: "すべて表示" },
-  { key: "2", desc: "未着手のみ" },
-  { key: "3", desc: "進行中のみ" },
-  { key: "4", desc: "完了のみ" },
-];
+import { useTranslation } from "react-i18next";
 
 export default function ShortcutsOverlay() {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
+
+  const SHORTCUTS = [
+    { key: "n", desc: t("shortcuts.new_task") },
+    { key: "?", desc: t("shortcuts.show_shortcuts") },
+    { key: "Esc", desc: t("shortcuts.escape") },
+    { key: "f", desc: t("shortcuts.filter_focus") },
+    { key: "1", desc: t("shortcuts.filter_all") },
+    { key: "2", desc: t("shortcuts.filter_pending") },
+    { key: "3", desc: t("shortcuts.filter_active") },
+    { key: "4", desc: t("shortcuts.filter_done") },
+  ];
 
   useEffect(() => {
     const toggle = () => setOpen((v) => !v);
@@ -39,12 +41,12 @@ export default function ShortcutsOverlay() {
       >
         <div className="flex items-center justify-between mb-5">
           <h2 className="text-xs tracking-[0.2em] uppercase text-[var(--text-subtle)] font-medium">
-            キーボードショートカット
+            {t("shortcuts.title")}
           </h2>
           <button
             onClick={() => setOpen(false)}
             className="text-[var(--text-subtle)] hover:text-[var(--text-muted)] transition-colors text-lg leading-none"
-            aria-label="閉じる"
+            aria-label={t("shortcuts.close")}
           >
             ×
           </button>

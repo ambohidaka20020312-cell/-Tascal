@@ -124,6 +124,78 @@
     "hours": "時間",
     "offline": "オフライン"
   },
+  "category": {
+    "filter_all": "すべて"
+  },
+  "notes": {
+    "title": "メモ",
+    "close": "メモを閉じる",
+    "delete": "メモを削除",
+    "empty": "メモはありません",
+    "placeholder": "メモを入力… (Ctrl+Enter で追加)",
+    "add": "追加"
+  },
+  "search": {
+    "placeholder": "タスクを検索...",
+    "clear": "検索をクリア"
+  },
+  "export": {
+    "title": "エクスポート",
+    "format": "フォーマット",
+    "date_range": "期間（任意）",
+    "all_tasks": "未指定の場合はすべてのタスクを出力",
+    "button": "エクスポート",
+    "close": "閉じる"
+  },
+  "team": {
+    "title": "チーム管理",
+    "create_title": "チームを作成",
+    "create_desc": "チーム名を入力してチームを作成してください。最大5名のメンバーを招待できます。",
+    "create_placeholder": "チーム名",
+    "creating": "作成中...",
+    "create_btn": "作成",
+    "create_error": "作成に失敗しました。再度お試しください。",
+    "members": "メンバー管理",
+    "invite": "メンバーを招待",
+    "at_limit": "メンバーが上限に達しています（{{max}}名）",
+    "email_placeholder": "メールアドレス",
+    "sending": "送信中...",
+    "invite_btn": "招待",
+    "leave": "チームを退出",
+    "leave_desc": "チームから退出します。この操作は取り消せません。",
+    "leaving": "処理中...",
+    "leave_btn": "チームを退出",
+    "role_owner": "オーナー",
+    "role_member": "メンバー",
+    "load_error": "チーム情報を取得できませんでした",
+    "retry": "再試行",
+    "toast_invited": "招待しました",
+    "toast_not_found": "ユーザーが見つかりません",
+    "toast_invite_fail": "招待に失敗しました",
+    "toast_left": "チームを退出しました",
+    "toast_remove_fail": "操作に失敗しました",
+    "remove_label": "{{name}}を削除"
+  },
+  "shortcuts": {
+    "title": "キーボードショートカット",
+    "close": "閉じる",
+    "new_task": "新しいタスクを追加",
+    "show_shortcuts": "ショートカット一覧を表示",
+    "escape": "閉じる",
+    "filter_focus": "フィルターにフォーカス",
+    "filter_all": "すべて表示",
+    "filter_pending": "未着手のみ",
+    "filter_active": "進行中のみ",
+    "filter_done": "完了のみ"
+  },
+  "notifications": {
+    "title": "通知設定",
+    "digest_title": "週次ダイジェストメール",
+    "digest_desc": "毎週の進捗サマリーをメールでお届けします",
+    "push_title": "プッシュ通知",
+    "push_desc": "ブラウザのプッシュ通知を有効にします",
+    "fetch_error": "取得失敗"
+  },
   "insights": {
     "title": "週次インサイト",
     "completion_rate": "完了率",

@@ -124,6 +124,78 @@
     "hours": "小时",
     "offline": "离线"
   },
+  "category": {
+    "filter_all": "全部"
+  },
+  "notes": {
+    "title": "备注",
+    "close": "关闭备注",
+    "delete": "删除备注",
+    "empty": "暂无备注",
+    "placeholder": "输入备注… (Ctrl+Enter 保存)",
+    "add": "添加"
+  },
+  "search": {
+    "placeholder": "搜索任务...",
+    "clear": "清除搜索"
+  },
+  "export": {
+    "title": "导出",
+    "format": "格式",
+    "date_range": "日期范围（可选）",
+    "all_tasks": "不填则导出所有任务",
+    "button": "导出",
+    "close": "关闭"
+  },
+  "team": {
+    "title": "团队管理",
+    "create_title": "创建团队",
+    "create_desc": "输入团队名称以创建团队。最多可邀请5名成员。",
+    "create_placeholder": "团队名称",
+    "creating": "创建中...",
+    "create_btn": "创建",
+    "create_error": "创建失败，请重试。",
+    "members": "成员管理",
+    "invite": "邀请成员",
+    "at_limit": "成员人数已达上限（最多 {{max}} 人）",
+    "email_placeholder": "电子邮件地址",
+    "sending": "发送中...",
+    "invite_btn": "邀请",
+    "leave": "退出团队",
+    "leave_desc": "您将退出该团队，此操作无法撤销。",
+    "leaving": "处理中...",
+    "leave_btn": "退出团队",
+    "role_owner": "所有者",
+    "role_member": "成员",
+    "load_error": "无法加载团队信息",
+    "retry": "重试",
+    "toast_invited": "邀请已发送",
+    "toast_not_found": "未找到用户",
+    "toast_invite_fail": "邀请失败",
+    "toast_left": "您已退出团队",
+    "toast_remove_fail": "操作失败",
+    "remove_label": "移除 {{name}}"
+  },
+  "shortcuts": {
+    "title": "键盘快捷键",
+    "close": "关闭",
+    "new_task": "添加新任务",
+    "show_shortcuts": "显示快捷键",
+    "escape": "关闭",
+    "filter_focus": "聚焦筛选器",
+    "filter_all": "显示全部",
+    "filter_pending": "仅未开始",
+    "filter_active": "仅进行中",
+    "filter_done": "仅已完成"
+  },
+  "notifications": {
+    "title": "通知设置",
+    "digest_title": "每周摘要邮件",
+    "digest_desc": "每周通过邮件接收进度摘要",
+    "push_title": "推送通知",
+    "push_desc": "启用浏览器推送通知",
+    "fetch_error": "加载失败"
+  },
   "insights": {
     "title": "每周洞察",
     "completion_rate": "完成率",

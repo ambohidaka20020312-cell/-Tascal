@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import { authApi } from "../../utils/api";
 import PushNotificationToggle from "./PushNotificationToggle";
 
@@ -33,6 +34,7 @@ function Toggle({
 }
 
 export default function NotificationSettings() {
+  const { t } = useTranslation();
   const [digestSubscribed, setDigestSubscribed] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState(false);
@@ -66,22 +68,22 @@ export default function NotificationSettings() {
   return (
     <div className="bg-[var(--bg-secondary)] rounded-xl p-5 mb-4 border border-[var(--border)]">
       <h2 className="text-xs font-semibold tracking-widest uppercase text-[var(--text-subtle)] mb-3">
-        通知設定
+        {t("notifications.title")}
       </h2>
 
       <div className="flex items-center justify-between py-2">
         <div>
           <span className="text-sm text-[var(--text-primary)] tracking-wide">
-            週次ダイジェストメール
+            {t("notifications.digest_title")}
           </span>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            毎週の進捗サマリーをメールでお届けします
+            {t("notifications.digest_desc")}
           </p>
         </div>
         {fetchError ? (
-          <span className="text-xs text-[var(--text-muted)]">取得失敗</span>
+          <span className="text-xs text-[var(--text-muted)]">{t("notifications.fetch_error")}</span>
         ) : digestSubscribed === null ? (
-          <span className="text-xs text-[var(--text-muted)]">読み込み中…</span>
+          <span className="text-xs text-[var(--text-muted)]">{t("common.loading")}</span>
         ) : (
           <Toggle
             checked={digestSubscribed}
@@ -94,10 +96,10 @@ export default function NotificationSettings() {
       <div className="flex items-center justify-between py-2">
         <div>
           <span className="text-sm text-[var(--text-primary)] tracking-wide">
-            プッシュ通知
+            {t("notifications.push_title")}
           </span>
           <p className="text-xs text-[var(--text-muted)] mt-0.5">
-            ブラウザのプッシュ通知を有効にします
+            {t("notifications.push_desc")}
           </p>
         </div>
         <PushNotificationToggle />

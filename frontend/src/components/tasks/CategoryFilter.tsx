@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Category } from "../../hooks/useCategories";
 
 interface CategoryFilterProps {
@@ -7,6 +8,7 @@ interface CategoryFilterProps {
 }
 
 export default function CategoryFilter({ categories, selected, onSelect }: CategoryFilterProps) {
+  const { t } = useTranslation();
   if (categories.length === 0) return null;
 
   return (
@@ -20,7 +22,7 @@ export default function CategoryFilter({ categories, selected, onSelect }: Categ
             : "border border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--text-muted)]",
         ].join(" ")}
       >
-        すべて
+        {t("category.filter_all")}
       </button>
       {categories.map((cat) => (
         <button

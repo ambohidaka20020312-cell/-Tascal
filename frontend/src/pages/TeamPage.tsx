@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/authStore";
 import { useToast } from "../components/common/Toast";
 import {
@@ -53,6 +54,7 @@ function SkeletonCard() {
 }
 
 function CreateOrgForm() {
+  const { t } = useTranslation();
   const [name, setName] = useState("");
   const createOrg = useCreateOrg();
 
@@ -64,18 +66,18 @@ function CreateOrgForm() {
 
   return (
     <div className="max-w-md mx-auto space-y-6 py-6">
-      <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-wide">チーム管理</h1>
+      <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-wide">{t("team.title")}</h1>
       <section className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-[var(--text-primary)]">チームを作成</h2>
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">{t("team.create_title")}</h2>
         <p className="text-xs text-[var(--text-muted)]">
-          チーム名を入力してチームを作成してください。最大5名のメンバーを招待できます。
+          {t("team.create_desc")}
         </p>
         <form onSubmit={handleSubmit} className="flex gap-2">
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="チーム名"
+            placeholder={t("team.create_placeholder")}
             className="flex-1 px-3 py-2 text-sm bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] focus:outline-none focus:border-[var(--text-muted)]"
           />
           <button
@@ -83,11 +85,11 @@ function CreateOrgForm() {
             disabled={!name.trim() || createOrg.isPending}
             className="px-4 py-2 text-sm font-medium border border-[var(--border)] rounded-lg text-[var(--text-primary)] bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {createOrg.isPending ? "作成中..." : "作成"}
+            {createOrg.isPending ? t("team.creating") : t("team.create_btn")}
           </button>
         </form>
         {createOrg.isError && (
-          <p className="text-xs text-[var(--color-danger,#e53e3e)]">作成に失敗しました。再度お試しください。</p>
+          <p className="text-xs text-[var(--color-danger,#e53e3e)]">{t("team.create_error")}</p>
         )}
       </section>
     </div>
@@ -95,6 +97,7 @@ function CreateOrgForm() {
 }
 
 export default function TeamPage() {
+  const { t } = useTranslation();
   const { toast } = useToast();
   const user = useAuthStore((s) => s.user);
   const { data: org, isLoading, isError, refetch } = useOrg();
@@ -116,12 +119,12 @@ export default function TeamPage() {
   if (isError) {
     return (
       <div className="max-w-xl mx-auto py-12 text-center space-y-4">
-        <p className="text-sm text-[var(--text-muted)]">チーム情報を取得できませんでした</p>
+        <p className="text-sm text-[var(--text-muted)]">{t("team.load_error")}</p>
         <button
           onClick={() => refetch()}
           className="px-4 py-2 text-sm font-medium border border-[var(--border)] rounded-lg text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
         >
-          再試行
+          {t("team.retry")}
         </button>
       </div>
     );
@@ -139,21 +142,21 @@ export default function TeamPage() {
     e.preventDefault();
     if (!inviteEmail.trim()) return;
     if (atLimit) {
-      toast(`メンバーが上限に達しています（${MAX_MEMBERS}名）`, "error");
+      toast(t("team.at_limit", { max: MAX_MEMBERS }), "error");
       return;
     }
     try {
       await inviteMember.mutateAsync(inviteEmail.trim());
-      toast("招待しました", "success");
+      toast(t("team.toast_invited"), "success");
       setInviteEmail("");
     } catch (err: unknown) {
       const e = err as { response?: { status?: number } };
       if (e?.response?.status === 404) {
-        toast("ユーザーが見つかりません", "error");
+        toast(t("team.toast_not_found"), "error");
       } else if (e?.response?.status === 400) {
-        toast(`メンバーが上限に達しています（${MAX_MEMBERS}名）`, "error");
+        toast(t("team.at_limit", { max: MAX_MEMBERS }), "error");
       } else {
-        toast("招待に失敗しました", "error");
+        toast(t("team.toast_invite_fail"), "error");
       }
     }
   };
@@ -162,10 +165,10 @@ export default function TeamPage() {
     try {
       await removeMember.mutateAsync(userId);
       if (userId === user?.id) {
-        toast("チームを退出しました", "success");
+        toast(t("team.toast_left"), "success");
       }
     } catch {
-      toast("操作に失敗しました", "error");
+      toast(t("team.toast_remove_fail"), "error");
     }
   };
 
@@ -178,9 +181,9 @@ export default function TeamPage() {
       {/* Member list */}
       <section className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-[var(--text-primary)]">メンバー管理</h2>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">{t("team.members")}</h2>
           <span className="text-xs text-[var(--text-muted)]">
-            {memberCount} / {MAX_MEMBERS} 名
+            {memberCount} / {MAX_MEMBERS}
           </span>
         </div>
 
@@ -198,13 +201,13 @@ export default function TeamPage() {
                   ? "border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg-tertiary)]"
                   : "border-[var(--border)] text-[var(--text-muted)]",
               ].join(" ")}>
-                {m.role === "owner" ? "オーナー" : "メンバー"}
+                {m.role === "owner" ? t("team.role_owner") : t("team.role_member")}
               </span>
               {isOwner && m.id !== user?.id && (
                 <button
                   onClick={() => handleRemove(m.id)}
                   disabled={removeMember.isPending}
-                  aria-label={`${m.name}を削除`}
+                  aria-label={t("team.remove_label", { name: m.name })}
                   className="text-[var(--text-subtle)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40"
                 >
                   <TrashIcon />
@@ -218,10 +221,10 @@ export default function TeamPage() {
       {/* Invite section (owner only) */}
       {isOwner && (
         <section className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-[var(--text-primary)]">メンバーを招待</h2>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">{t("team.invite")}</h2>
           {atLimit && (
             <p className="text-xs text-[var(--text-muted)]">
-              メンバーが上限に達しています（{MAX_MEMBERS}名）
+              {t("team.at_limit", { max: MAX_MEMBERS })}
             </p>
           )}
           <form onSubmit={handleInvite} className="flex gap-2">
@@ -229,7 +232,7 @@ export default function TeamPage() {
               type="email"
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder="メールアドレス"
+              placeholder={t("team.email_placeholder")}
               disabled={atLimit}
               className="flex-1 px-3 py-2 text-sm bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] focus:outline-none focus:border-[var(--text-muted)] disabled:opacity-40"
             />
@@ -238,7 +241,7 @@ export default function TeamPage() {
               disabled={!inviteEmail.trim() || inviteMember.isPending || atLimit}
               className="px-4 py-2 text-sm font-medium border border-[var(--border)] rounded-lg text-[var(--text-primary)] bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {inviteMember.isPending ? "送信中..." : "招待"}
+              {inviteMember.isPending ? t("team.sending") : t("team.invite_btn")}
             </button>
           </form>
         </section>
@@ -247,14 +250,14 @@ export default function TeamPage() {
       {/* Leave team (member only) */}
       {!isOwner && user && (
         <section className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-5 space-y-3">
-          <h2 className="text-sm font-semibold text-[var(--text-primary)]">チームを退出</h2>
-          <p className="text-xs text-[var(--text-muted)]">チームから退出します。この操作は取り消せません。</p>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">{t("team.leave")}</h2>
+          <p className="text-xs text-[var(--text-muted)]">{t("team.leave_desc")}</p>
           <button
             onClick={() => handleRemove(user.id)}
             disabled={removeMember.isPending}
             className="px-4 py-2 text-sm font-medium border border-[var(--border)] rounded-lg text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {removeMember.isPending ? "処理中..." : "チームを退出"}
+            {removeMember.isPending ? t("team.leaving") : t("team.leave_btn")}
           </button>
         </section>
       )}

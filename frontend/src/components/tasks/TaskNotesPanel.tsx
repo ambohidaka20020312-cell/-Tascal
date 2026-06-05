@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useTaskNotes, useAddNote, useDeleteNote } from "../../hooks/useTaskNotes";
 
 interface TaskNotesPanelProps {
@@ -10,6 +11,7 @@ export default function TaskNotesPanel({ taskId, onClose }: TaskNotesPanelProps)
   const { data: notes, isLoading } = useTaskNotes(taskId);
   const addNote = useAddNote(taskId);
   const deleteNote = useDeleteNote(taskId);
+  const { t } = useTranslation();
   const [content, setContent] = useState("");
 
   const handleAdd = () => {
@@ -32,10 +34,10 @@ export default function TaskNotesPanel({ taskId, onClose }: TaskNotesPanelProps)
       style={{ marginLeft: "-1rem", marginRight: "-1rem" }}
     >
       <div className="flex items-center justify-between mb-2">
-        <span className="text-xs font-medium text-[var(--text-muted)] tracking-wide">メモ</span>
+        <span className="text-xs font-medium text-[var(--text-muted)] tracking-wide">{t("notes.title")}</span>
         <button
           onClick={onClose}
-          aria-label="メモを閉じる"
+          aria-label={t("notes.close")}
           className="text-[var(--text-subtle)] hover:text-[var(--text-muted)] text-xs transition-opacity"
         >
           ✕
@@ -72,7 +74,7 @@ export default function TaskNotesPanel({ taskId, onClose }: TaskNotesPanelProps)
               <button
                 onClick={() => deleteNote.mutate(note.id)}
                 disabled={deleteNote.isPending}
-                aria-label="メモを削除"
+                aria-label={t("notes.delete")}
                 className="opacity-0 group-hover/note:opacity-100 transition-opacity shrink-0 text-[var(--text-subtle)] hover:text-[var(--text-muted)] disabled:opacity-30 mt-0.5"
               >
                 <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -82,7 +84,7 @@ export default function TaskNotesPanel({ taskId, onClose }: TaskNotesPanelProps)
             </div>
           ))
         ) : (
-          <p className="text-xs text-[var(--text-subtle)] italic">メモはありません</p>
+          <p className="text-xs text-[var(--text-subtle)] italic">{t("notes.empty")}</p>
         )}
       </div>
 
@@ -92,7 +94,7 @@ export default function TaskNotesPanel({ taskId, onClose }: TaskNotesPanelProps)
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="メモを入力… (Ctrl+Enter で追加)"
+          placeholder={t("notes.placeholder")}
           rows={2}
           className="flex-1 text-xs text-[var(--text-primary)] bg-[var(--bg-primary)] border border-[var(--border)] rounded px-2 py-1.5 resize-none focus:outline-none focus:border-[var(--accent)] placeholder:text-[var(--text-subtle)] tracking-wide"
         />
@@ -101,7 +103,7 @@ export default function TaskNotesPanel({ taskId, onClose }: TaskNotesPanelProps)
           disabled={addNote.isPending || !content.trim()}
           className="text-xs text-[var(--text-primary)] border border-[var(--border)] rounded px-2 py-1.5 hover:bg-[var(--bg-primary)] disabled:opacity-30 transition-colors shrink-0 tracking-wide"
         >
-          {addNote.isPending ? "…" : "追加"}
+          {addNote.isPending ? "…" : t("notes.add")}
         </button>
       </div>
     </div>

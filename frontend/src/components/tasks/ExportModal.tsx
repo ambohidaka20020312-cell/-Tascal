@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { taskApi } from "../../utils/api";
 
 interface ExportModalProps {
@@ -7,6 +8,7 @@ interface ExportModalProps {
 }
 
 export default function ExportModal({ isOpen, onClose }: ExportModalProps) {
+  const { t } = useTranslation();
   const [format, setFormat] = useState<"csv" | "json">("csv");
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
@@ -61,11 +63,11 @@ export default function ExportModal({ isOpen, onClose }: ExportModalProps) {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold tracking-[0.15em] uppercase text-[var(--text-primary)]">
-            エクスポート
+            {t("export.title")}
           </h2>
           <button
             onClick={onClose}
-            aria-label="閉じる"
+            aria-label={t("export.close")}
             className="text-[var(--text-subtle)] hover:text-[var(--text-muted)] transition-colors text-lg leading-none"
           >
             ×
@@ -75,7 +77,7 @@ export default function ExportModal({ isOpen, onClose }: ExportModalProps) {
         {/* Format selector */}
         <div>
           <p className="text-[10px] tracking-[0.2em] uppercase text-[var(--text-subtle)] mb-2">
-            フォーマット
+            {t("export.format")}
           </p>
           <div className="flex gap-2">
             {(["csv", "json"] as const).map((f) => (
@@ -98,7 +100,7 @@ export default function ExportModal({ isOpen, onClose }: ExportModalProps) {
         {/* Date range */}
         <div>
           <p className="text-[10px] tracking-[0.2em] uppercase text-[var(--text-subtle)] mb-2">
-            期間（任意）
+            {t("export.date_range")}
           </p>
           <div className="flex items-center gap-2">
             <input
@@ -116,7 +118,7 @@ export default function ExportModal({ isOpen, onClose }: ExportModalProps) {
             />
           </div>
           <p className="text-[10px] text-[var(--text-subtle)] mt-1.5">
-            未指定の場合はすべてのタスクを出力
+            {t("export.all_tasks")}
           </p>
         </div>
 
@@ -126,7 +128,7 @@ export default function ExportModal({ isOpen, onClose }: ExportModalProps) {
           disabled={loading}
           className="w-full py-2.5 text-sm tracking-[0.15em] uppercase border border-[var(--text-primary)] text-[var(--text-primary)] rounded-lg hover:bg-[var(--text-primary)] hover:text-[var(--bg-primary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {loading ? "…" : "エクスポート"}
+          {loading ? "…" : t("export.button")}
         </button>
       </div>
     </div>

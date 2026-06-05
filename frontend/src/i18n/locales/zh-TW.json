@@ -124,6 +124,78 @@
     "hours": "小時",
     "offline": "離線"
   },
+  "category": {
+    "filter_all": "全部"
+  },
+  "notes": {
+    "title": "備註",
+    "close": "關閉備註",
+    "delete": "刪除備註",
+    "empty": "尚無備註",
+    "placeholder": "輸入備註… (Ctrl+Enter 儲存)",
+    "add": "新增"
+  },
+  "search": {
+    "placeholder": "搜尋任務...",
+    "clear": "清除搜尋"
+  },
+  "export": {
+    "title": "匯出",
+    "format": "格式",
+    "date_range": "日期範圍（選填）",
+    "all_tasks": "不填則匯出所有任務",
+    "button": "匯出",
+    "close": "關閉"
+  },
+  "team": {
+    "title": "團隊管理",
+    "create_title": "建立團隊",
+    "create_desc": "輸入團隊名稱以建立團隊。最多可邀請5名成員。",
+    "create_placeholder": "團隊名稱",
+    "creating": "建立中...",
+    "create_btn": "建立",
+    "create_error": "建立失敗，請重試。",
+    "members": "成員管理",
+    "invite": "邀請成員",
+    "at_limit": "成員人數已達上限（最多 {{max}} 人）",
+    "email_placeholder": "電子郵件地址",
+    "sending": "傳送中...",
+    "invite_btn": "邀請",
+    "leave": "退出團隊",
+    "leave_desc": "您將退出該團隊，此操作無法復原。",
+    "leaving": "處理中...",
+    "leave_btn": "退出團隊",
+    "role_owner": "擁有者",
+    "role_member": "成員",
+    "load_error": "無法載入團隊資訊",
+    "retry": "重試",
+    "toast_invited": "邀請已傳送",
+    "toast_not_found": "找不到使用者",
+    "toast_invite_fail": "邀請失敗",
+    "toast_left": "您已退出團隊",
+    "toast_remove_fail": "操作失敗",
+    "remove_label": "移除 {{name}}"
+  },
+  "shortcuts": {
+    "title": "鍵盤快捷鍵",
+    "close": "關閉",
+    "new_task": "新增任務",
+    "show_shortcuts": "顯示快捷鍵",
+    "escape": "關閉",
+    "filter_focus": "聚焦篩選器",
+    "filter_all": "顯示全部",
+    "filter_pending": "僅未開始",
+    "filter_active": "僅進行中",
+    "filter_done": "僅已完成"
+  },
+  "notifications": {
+    "title": "通知設定",
+    "digest_title": "每週摘要郵件",
+    "digest_desc": "每週透過郵件接收進度摘要",
+    "push_title": "推播通知",
+    "push_desc": "啟用瀏覽器推播通知",
+    "fetch_error": "載入失敗"
+  },
   "insights": {
     "title": "每週洞察",
     "completion_rate": "完成率",

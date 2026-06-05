@@ -124,6 +124,78 @@
     "hours": "Std.",
     "offline": "Offline"
   },
+  "category": {
+    "filter_all": "Alle"
+  },
+  "notes": {
+    "title": "Notizen",
+    "close": "Notizen schließen",
+    "delete": "Notiz löschen",
+    "empty": "Noch keine Notizen",
+    "placeholder": "Notiz hinzufügen… (Strg+Eingabe zum Speichern)",
+    "add": "Hinzufügen"
+  },
+  "search": {
+    "placeholder": "Aufgaben suchen...",
+    "clear": "Suche löschen"
+  },
+  "export": {
+    "title": "Exportieren",
+    "format": "Format",
+    "date_range": "Datumsbereich (optional)",
+    "all_tasks": "Leer lassen, um alle Aufgaben zu exportieren",
+    "button": "Exportieren",
+    "close": "Schließen"
+  },
+  "team": {
+    "title": "Teamverwaltung",
+    "create_title": "Team erstellen",
+    "create_desc": "Geben Sie einen Teamnamen ein, um ein Team zu erstellen. Sie können bis zu 5 Mitglieder einladen.",
+    "create_placeholder": "Teamname",
+    "creating": "Wird erstellt...",
+    "create_btn": "Erstellen",
+    "create_error": "Erstellung fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    "members": "Mitgliederverwaltung",
+    "invite": "Mitglieder einladen",
+    "at_limit": "Mitgliederlimit erreicht (max. {{max}})",
+    "email_placeholder": "E-Mail-Adresse",
+    "sending": "Wird gesendet...",
+    "invite_btn": "Einladen",
+    "leave": "Team verlassen",
+    "leave_desc": "Sie verlassen dieses Team. Diese Aktion kann nicht rückgängig gemacht werden.",
+    "leaving": "Wird verarbeitet...",
+    "leave_btn": "Team verlassen",
+    "role_owner": "Eigentümer",
+    "role_member": "Mitglied",
+    "load_error": "Teaminformationen konnten nicht geladen werden",
+    "retry": "Erneut versuchen",
+    "toast_invited": "Einladung gesendet",
+    "toast_not_found": "Benutzer nicht gefunden",
+    "toast_invite_fail": "Einladung fehlgeschlagen",
+    "toast_left": "Sie haben das Team verlassen",
+    "toast_remove_fail": "Vorgang fehlgeschlagen",
+    "remove_label": "{{name}} entfernen"
+  },
+  "shortcuts": {
+    "title": "Tastaturkürzel",
+    "close": "Schließen",
+    "new_task": "Neue Aufgabe hinzufügen",
+    "show_shortcuts": "Kürzel anzeigen",
+    "escape": "Schließen",
+    "filter_focus": "Filter fokussieren",
+    "filter_all": "Alle anzeigen",
+    "filter_pending": "Nur ausstehende",
+    "filter_active": "Nur aktive",
+    "filter_done": "Nur erledigte"
+  },
+  "notifications": {
+    "title": "Benachrichtigungseinstellungen",
+    "digest_title": "Wöchentliche Zusammenfassungs-E-Mail",
+    "digest_desc": "Wöchentliche Fortschrittszusammenfassung per E-Mail erhalten",
+    "push_title": "Push-Benachrichtigungen",
+    "push_desc": "Browser-Push-Benachrichtigungen aktivieren",
+    "fetch_error": "Laden fehlgeschlagen"
+  },
   "insights": {
     "title": "Wöchentliche Einblicke",
     "completion_rate": "Abschlussquote",

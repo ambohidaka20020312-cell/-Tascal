@@ -124,6 +124,78 @@
     "hours": "h",
     "offline": "Hors ligne"
   },
+  "category": {
+    "filter_all": "Toutes"
+  },
+  "notes": {
+    "title": "Notes",
+    "close": "Fermer les notes",
+    "delete": "Supprimer la note",
+    "empty": "Aucune note pour l'instant",
+    "placeholder": "Ajouter une note… (Ctrl+Entrée pour enregistrer)",
+    "add": "Ajouter"
+  },
+  "search": {
+    "placeholder": "Rechercher des tâches...",
+    "clear": "Effacer la recherche"
+  },
+  "export": {
+    "title": "Exporter",
+    "format": "Format",
+    "date_range": "Plage de dates (optionnel)",
+    "all_tasks": "Laisser vide pour exporter toutes les tâches",
+    "button": "Exporter",
+    "close": "Fermer"
+  },
+  "team": {
+    "title": "Gestion de l'équipe",
+    "create_title": "Créer une équipe",
+    "create_desc": "Entrez un nom d'équipe pour la créer. Vous pouvez inviter jusqu'à 5 membres.",
+    "create_placeholder": "Nom de l'équipe",
+    "creating": "Création en cours...",
+    "create_btn": "Créer",
+    "create_error": "Échec de la création. Veuillez réessayer.",
+    "members": "Gestion des membres",
+    "invite": "Inviter des membres",
+    "at_limit": "Limite de membres atteinte (max. {{max}})",
+    "email_placeholder": "Adresse e-mail",
+    "sending": "Envoi en cours...",
+    "invite_btn": "Inviter",
+    "leave": "Quitter l'équipe",
+    "leave_desc": "Vous quitterez cette équipe. Cette action est irréversible.",
+    "leaving": "Traitement...",
+    "leave_btn": "Quitter l'équipe",
+    "role_owner": "Propriétaire",
+    "role_member": "Membre",
+    "load_error": "Impossible de charger les informations de l'équipe",
+    "retry": "Réessayer",
+    "toast_invited": "Invitation envoyée",
+    "toast_not_found": "Utilisateur introuvable",
+    "toast_invite_fail": "Échec de l'invitation",
+    "toast_left": "Vous avez quitté l'équipe",
+    "toast_remove_fail": "Opération échouée",
+    "remove_label": "Supprimer {{name}}"
+  },
+  "shortcuts": {
+    "title": "Raccourcis clavier",
+    "close": "Fermer",
+    "new_task": "Ajouter une nouvelle tâche",
+    "show_shortcuts": "Afficher les raccourcis",
+    "escape": "Fermer",
+    "filter_focus": "Mettre le filtre en focus",
+    "filter_all": "Tout afficher",
+    "filter_pending": "En attente uniquement",
+    "filter_active": "Actives uniquement",
+    "filter_done": "Terminées uniquement"
+  },
+  "notifications": {
+    "title": "Paramètres de notification",
+    "digest_title": "Résumé hebdomadaire par e-mail",
+    "digest_desc": "Recevez un résumé hebdomadaire de vos progrès par e-mail",
+    "push_title": "Notifications push",
+    "push_desc": "Activer les notifications push du navigateur",
+    "fetch_error": "Échec du chargement"
+  },
   "insights": {
     "title": "Statistiques hebdomadaires",
     "completion_rate": "Taux de complétion",
