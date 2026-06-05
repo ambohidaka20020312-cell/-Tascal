@@ -1,5 +1,81 @@
 # Tascal デプロイ手順書
 
+## Quick Start (Docker)
+
+### Development
+
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+# Edit backend/.env with your API keys
+docker-compose up -d
+```
+
+App runs at http://localhost:5173 (frontend) and http://localhost:5000 (backend API).
+
+Run database migrations after first start:
+
+```bash
+docker-compose exec backend flask db upgrade
+```
+
+### Production (self-hosted)
+
+```bash
+cp backend/.env.example .env.prod
+# Edit .env.prod — set all Required variables below, change FLASK_ENV=production
+cp frontend/.env.example frontend/.env
+# Edit frontend/.env — set VITE_API_BASE_URL=https://api.yourdomain.com/api/v1
+
+docker-compose -f docker-compose.prod.yml up -d --build
+docker-compose -f docker-compose.prod.yml exec backend flask db upgrade
+```
+
+Services started: backend (gunicorn), celery worker, celery-beat scheduler, frontend (nginx), postgres, redis, nginx reverse proxy.
+
+### Required Environment Variables (Backend `.env.prod`)
+
+| Key | Description |
+|-----|-------------|
+| `DATABASE_URL` | PostgreSQL connection string |
+| `SECRET_KEY` | Flask secret key (32+ random chars) |
+| `JWT_SECRET_KEY` | JWT signing key (32+ random chars) |
+| `POSTGRES_PASSWORD` | Postgres password (used by docker-compose) |
+| `ANTHROPIC_API_KEY` | Claude API key |
+| `STRIPE_SECRET_KEY` | Stripe secret key (`sk_live_...`) |
+| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
+| `STRIPE_PRICE_ID_PRO` | Stripe price ID for Pro plan |
+| `STRIPE_PRICE_ID_TEAM` | Stripe price ID for Team plan |
+
+### Optional Environment Variables (Backend)
+
+| Key | Description |
+|-----|-------------|
+| `REDIS_URL` | Redis URL (default: `redis://redis:6379/0`) |
+| `CELERY_BROKER_URL` | Celery broker (default: same as REDIS_URL) |
+| `ALLOWED_ORIGINS` | CORS whitelist (comma-separated) |
+| `VAPID_PUBLIC_KEY` | VAPID public key for push notifications |
+| `VAPID_PRIVATE_KEY` | VAPID private key for push notifications |
+| `VAPID_CLAIMS_EMAIL` | Email for VAPID claims |
+
+### Frontend Environment Variables (`.env`)
+
+| Key | Description |
+|-----|-------------|
+| `VITE_API_BASE_URL` | Backend API URL |
+| `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key (`pk_live_...`) |
+| `VITE_ADSENSE_CLIENT_ID` | Google AdSense client ID (optional) |
+| `VITE_VAPID_PUBLIC_KEY` | VAPID public key for push notifications |
+
+### Generate VAPID Keys (Push Notifications)
+
+```bash
+pip install py-vapid
+python -c "from py_vapid import Vapid; v=Vapid(); v.generate_keys(); print('Public:', v.public_key); print('Private:', v.private_key)"
+```
+
+---
+
 ## Railway デプロイ手順
 
 1. **Railwayプロジェクト作成**
