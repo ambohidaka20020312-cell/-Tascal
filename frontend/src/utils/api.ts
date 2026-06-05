@@ -152,4 +152,25 @@ export const categoryApi = {
   delete: (id: number) => api.delete(`/categories/${id}`),
 };
 
+export const chatApi = {
+  getChannels: () => api.get("/channels"),
+  getMessages: (channelId: number) => api.get(`/channels/${channelId}/messages`),
+  sendMessage: (channelId: number, body: string) =>
+    api.post(`/channels/${channelId}/messages`, { body }),
+  messageToTask: (
+    channelId: number,
+    messageId: number,
+    data: { title: string; assignee_id?: number; due_date?: string }
+  ) => api.post(`/channels/${channelId}/messages/${messageId}/to-task`, data),
+  createChannel: (name: string, channel_type: "group" | "dm", department_id?: number) =>
+    api.post("/channels", { name, channel_type, department_id }),
+  getDepartments: (orgId: number) => api.get(`/org/${orgId}/departments`),
+  createDepartment: (orgId: number, name: string) =>
+    api.post(`/org/${orgId}/departments`, { name }),
+  deleteDepartment: (orgId: number, deptId: number) =>
+    api.delete(`/org/${orgId}/departments/${deptId}`),
+  assignMemberToDepartment: (orgId: number, deptId: number, userId: number) =>
+    api.post(`/org/${orgId}/departments/${deptId}/members`, { user_id: userId }),
+};
+
 export default api;

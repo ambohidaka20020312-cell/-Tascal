@@ -79,6 +79,14 @@ function ProfileIcon({ active }: { active: boolean }) {
   );
 }
 
+function ChatIcon({ active }: { active: boolean }) {
+  return (
+    <svg className={`w-6 h-6 ${active ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]"}`} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg>
+  );
+}
+
 export default function AppLayout({ children }: AppLayoutProps) {
   const { t } = useTranslation();
   const focusActive = useFocusStore((s) => s.isActive);
@@ -102,12 +110,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
     to === "/" ? pathname === "/" : pathname.startsWith(to);
 
   const isTeamPlan = plan === "team";
+  const effectivePlan = user?.effective_plan ?? plan;
+  const hasTeamChat = isTeamPlan || effectivePlan === "business" || effectivePlan === "enterprise";
 
   const SIDEBAR_NAV = [
     { label: t('nav.today'), to: "/", Icon: HomeIcon },
     { label: t('nav.calendar'), to: "/calendar", Icon: CalendarIcon },
     { label: t('subscription.title'), to: "/plans", Icon: PlansIcon },
     ...(isTeamPlan ? [{ label: "チーム", to: "/team", Icon: TeamIcon, dimmed: false }] : []),
+    ...(hasTeamChat ? [{ label: "チャット", to: "/chat", Icon: ChatIcon, dimmed: false }] : []),
   ];
 
   return (
@@ -363,6 +374,23 @@ export default function AppLayout({ children }: AppLayoutProps) {
               >
                 <TeamIcon active={isActive("/team")} />
                 <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>チーム</span>
+              </Link>
+            )}
+
+            {/* Chat — only shown to team/enterprise plan users */}
+            {hasTeamChat && (
+              <Link
+                to="/chat"
+                role="tab"
+                aria-selected={isActive("/chat")}
+                aria-current={isActive("/chat") ? "page" : undefined}
+                className={[
+                  "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
+                  isActive("/chat") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
+                ].join(" ")}
+              >
+                <ChatIcon active={isActive("/chat")} />
+                <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>チャット</span>
               </Link>
             )}
 
