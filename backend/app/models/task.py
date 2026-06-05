@@ -31,6 +31,16 @@ class Task(db.Model):
 
     category_id = db.Column(db.Integer, db.ForeignKey("categories.id"), nullable=True)
 
+    # Fixed-time tasks (meetings, appointments) — AI will not reschedule these
+    is_fixed = db.Column(db.Boolean, nullable=False, default=False)
+    fixed_start_time = db.Column(db.String(5), nullable=True)  # "HH:MM" e.g. "14:00"
+
+    # Deadline urgency — tells AI how strictly to prioritize this task today
+    # "today"   = must finish today, do not defer
+    # "flexible" = can be moved to another day if needed
+    # "someday" = no hard deadline, low urgency
+    deadline_type = db.Column(db.String(10), nullable=False, default="today")
+
     sort_order = db.Column(db.Integer, default=0)
     is_deleted = db.Column(db.Boolean, default=False)
     completed_at = db.Column(db.DateTime, nullable=True)
@@ -60,4 +70,7 @@ class Task(db.Model):
             "delegation_level": self.delegation_level,
             "parent_task_id": self.parent_task_id,
             "category_id": self.category_id,
+            "is_fixed": self.is_fixed,
+            "fixed_start_time": self.fixed_start_time,
+            "deadline_type": self.deadline_type,
         }

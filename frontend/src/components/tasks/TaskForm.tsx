@@ -44,6 +44,9 @@ export default function TaskForm({
   );
   const [recurrence, setRecurrence] = useState<Recurrence>("none");
   const [weekdays, setWeekdays] = useState<string[]>(["MON"]);
+  const [isFixed, setIsFixed] = useState(false);
+  const [fixedStartTime, setFixedStartTime] = useState("");
+  const [deadlineType, setDeadlineType] = useState<"today" | "flexible" | "someday">("today");
   const [showTemplates, setShowTemplates] = useState(false);
   const [error, setError] = useState("");
   const [categoryId, setCategoryId] = useState<number | null>(null);
@@ -117,6 +120,9 @@ export default function TaskForm({
         scheduled_date: scheduledDate || null,
         recurrence: buildRecurrenceRule() ?? null,
         category_id: categoryId,
+        is_fixed: isFixed,
+        fixed_start_time: isFixed && fixedStartTime ? fixedStartTime : null,
+        deadline_type: deadlineType,
       } as Partial<Task>);
       onClose();
     } catch {
@@ -294,6 +300,79 @@ export default function TaskForm({
             <div>
               <label htmlFor="task-scheduled-date" className="block text-[10px] tracking-[0.15em] uppercase text-[var(--text-subtle)] mb-1.5">{t('task.due_date')}</label>
               <input id="task-scheduled-date" type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} className={inputCls} />
+            </div>
+
+            {/* Deadline type */}
+            <div>
+              <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--text-subtle)] mb-1.5">
+                いつまでに？
+              </label>
+              <div className="flex gap-2">
+                {(
+                  [
+                    { value: "today",    label: "今日中",        desc: "必ず今日終わらせる" },
+                    { value: "flexible", label: "別日もOK",      desc: "余裕があれば今日" },
+                    { value: "someday",  label: "いつでもOK",    desc: "期限なし" },
+                  ] as const
+                ).map(({ value, label, desc }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    title={desc}
+                    onClick={() => setDeadlineType(value)}
+                    className={[
+                      "flex-1 py-2 rounded-lg text-[10px] tracking-wide border transition-colors",
+                      deadlineType === value
+                        ? "bg-[var(--text-primary)] text-[var(--bg-primary)] border-transparent"
+                        : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--text-subtle)]",
+                    ].join(" ")}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Fixed-time toggle */}
+            <div className="flex items-start gap-3 py-1">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={isFixed}
+                onClick={() => setIsFixed((v) => !v)}
+                className={[
+                  "relative flex-shrink-0 mt-0.5 w-10 h-5 rounded-full transition-colors",
+                  isFixed
+                    ? "bg-[var(--text-primary)]"
+                    : "bg-[var(--bg-secondary)] border border-[var(--border)]",
+                ].join(" ")}
+              >
+                <span
+                  className={[
+                    "absolute top-0.5 w-4 h-4 rounded-full shadow transition-transform",
+                    isFixed
+                      ? "translate-x-5 bg-[var(--bg-primary)]"
+                      : "translate-x-0.5 bg-[var(--bg-primary)] border border-[var(--border)]",
+                  ].join(" ")}
+                />
+              </button>
+              <div className="flex-1">
+                <p className="text-xs text-[var(--text-primary)] leading-snug">
+                  時間固定（会議・アポなど）
+                </p>
+                <p className="text-[10px] text-[var(--text-subtle)] mt-0.5">
+                  AIはこのタスクをリスケしません
+                </p>
+                {isFixed && (
+                  <input
+                    type="time"
+                    value={fixedStartTime}
+                    onChange={(e) => setFixedStartTime(e.target.value)}
+                    className={`${inputCls} mt-2 w-32`}
+                    placeholder="14:00"
+                  />
+                )}
+              </div>
             </div>
 
             {/* Recurrence */}

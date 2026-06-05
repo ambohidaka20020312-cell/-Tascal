@@ -17,6 +17,9 @@ export interface Task {
   category_id?: number | null;
   parent_task_id?: number | null;
   subtask_count?: number;
+  is_fixed?: boolean;
+  fixed_start_time?: string | null;
+  deadline_type?: "today" | "flexible" | "someday";
 }
 
 interface TaskState {

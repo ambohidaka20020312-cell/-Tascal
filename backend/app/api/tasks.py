@@ -117,6 +117,9 @@ def create_task():
         recurrence_end_date=data.get("recurrence_end_date"),
         category_id=data.get("category_id"),
         parent_task_id=data.get("parent_task_id"),
+        is_fixed=data.get("is_fixed", False),
+        fixed_start_time=data.get("fixed_start_time"),
+        deadline_type=data.get("deadline_type", "today"),
     )
     db.session.add(task)
     db.session.commit()
@@ -141,7 +144,7 @@ def update_task(task_id):
     if "description" in data:
         data["description"] = sanitize_string(data.get("description") or "", max_length=2000)
 
-    for field in ["title", "description", "priority", "estimated_minutes", "scheduled_date", "due_datetime", "sort_order", "status", "recurrence", "recurrence_end_date", "category_id"]:
+    for field in ["title", "description", "priority", "estimated_minutes", "scheduled_date", "due_datetime", "sort_order", "status", "recurrence", "recurrence_end_date", "category_id", "is_fixed", "fixed_start_time", "deadline_type"]:
         if field in data:
             setattr(task, field, data[field])
 

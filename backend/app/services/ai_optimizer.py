@@ -5,6 +5,7 @@ import datetime
 
 
 PRIORITY_WEIGHT = {"urgent": 4, "high": 3, "medium": 2, "low": 1}
+DEADLINE_WEIGHT = {"today": 0, "flexible": 1, "someday": 2}  # lower = more urgent
 
 
 class AIOptimizer:
@@ -21,22 +22,47 @@ class AIOptimizer:
         if not tasks:
             return {"schedule": [], "message": "今日のタスクはありません。"}
 
-        scored = sorted(tasks, key=lambda t: (
+        fixed_tasks = [t for t in tasks if getattr(t, "is_fixed", False)]
+        flex_tasks = [t for t in tasks if not getattr(t, "is_fixed", False)]
+
+        # Fixed tasks: sort by start time, keep their slot locked
+        fixed_sorted = sorted(
+            fixed_tasks,
+            key=lambda t: t.fixed_start_time or "00:00",
+        )
+
+        # Flexible tasks: sort by deadline_type first, then priority / due date
+        flex_sorted = sorted(flex_tasks, key=lambda t: (
+            DEADLINE_WEIGHT.get(getattr(t, "deadline_type", "today"), 0),
             -PRIORITY_WEIGHT.get(t.priority, 2),
             t.due_datetime or datetime.datetime.max,
             t.sort_order,
         ))
 
-        schedule = [{"task": t.to_dict(), "suggested_order": i + 1} for i, t in enumerate(scored)]
+        schedule = []
+        order = 1
+        for t in fixed_sorted:
+            schedule.append({"task": t.to_dict(), "suggested_order": order, "fixed": True})
+            order += 1
+        for t in flex_sorted:
+            schedule.append({"task": t.to_dict(), "suggested_order": order, "fixed": False})
+            order += 1
 
         total_minutes = sum(t.estimated_minutes or 30 for t in tasks)
-        task_list = "\n".join(
-            f"- {t.title}（優先度: {t.priority}, 目標時間: {t.estimated_minutes or '未設定'}分）"
-            for t in scored
+
+        fixed_lines = "\n".join(
+            f"- 【固定】{t.title}（{t.fixed_start_time or '時刻未定'}〜, {t.estimated_minutes or '?'}分）"
+            for t in fixed_sorted
         )
+        flex_lines = "\n".join(
+            f"- {t.title}（優先度: {t.priority}, 目標: {t.estimated_minutes or '未設定'}分）"
+            for t in flex_sorted
+        )
+        task_list = "\n".join(filter(None, [fixed_lines, flex_lines]))
 
         message = self._call_claude(
-            f"以下のタスクリストを最適な順番に並べました。合計予定時間は{total_minutes}分です。\n{task_list}\n\n"
+            f"以下のタスクリストを最適な順番に並べました。合計予定時間は{total_minutes}分です。\n"
+            f"【固定】タスクは時間が決まっているため移動できません。\n{task_list}\n\n"
             "ユーザーへの励ましと今日の取り組み方のアドバイスを2〜3文で日本語で提供してください。"
         )
 
@@ -48,15 +74,34 @@ class AIOptimizer:
         if not remaining_tasks:
             return {"schedule": [], "message": "残りのタスクはありません。お疲れ様でした！"}
 
-        scored = sorted(remaining_tasks, key=lambda t: -PRIORITY_WEIGHT.get(t.priority, 2))
-        schedule = [{"task": t.to_dict(), "suggested_order": i + 1} for i, t in enumerate(scored)]
+        fixed_remaining = [t for t in remaining_tasks if getattr(t, "is_fixed", False)]
+        flex_remaining = [t for t in remaining_tasks if not getattr(t, "is_fixed", False)]
+
+        flex_scored = sorted(flex_remaining, key=lambda t: (
+            DEADLINE_WEIGHT.get(getattr(t, "deadline_type", "today"), 0),
+            -PRIORITY_WEIGHT.get(t.priority, 2),
+        ))
+        fixed_scored = sorted(fixed_remaining, key=lambda t: t.fixed_start_time or "00:00")
+
+        schedule = []
+        order = 1
+        for t in fixed_scored:
+            schedule.append({"task": t.to_dict(), "suggested_order": order, "fixed": True})
+            order += 1
+        for t in flex_scored:
+            schedule.append({"task": t.to_dict(), "suggested_order": order, "fixed": False})
+            order += 1
 
         remaining_total = sum(t.estimated_minutes or 30 for t in remaining_tasks)
-        task_list = "\n".join(f"- {t.title}（目標: {t.estimated_minutes or 30}分）" for t in scored)
+        fixed_warning = (
+            f"なお、{len(fixed_remaining)}件の固定タスク（会議等）は時間変更できません。"
+            if fixed_remaining else ""
+        )
+        task_list = "\n".join(f"- {t.title}（目標: {t.estimated_minutes or 30}分）" for t in flex_scored)
 
         message = self._call_claude(
             f"「{overrun_task.title}」が予定より{overrun_by}分オーバーしました。"
-            f"残りタスク（合計{remaining_total}分）の再計画が必要です：\n{task_list}\n\n"
+            f"残りタスク（合計{remaining_total}分）の再計画が必要です。{fixed_warning}\n{task_list}\n\n"
             "優先度を考慮した残りタスクへの切り替えアドバイスを2〜3文で日本語で提供してください。"
         )
 
