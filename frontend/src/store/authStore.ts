@@ -7,6 +7,9 @@ interface User {
   name: string;
   plan: "free" | "pro" | "team" | "personal_pro" | "business" | "enterprise";
   onboarding_completed?: boolean;
+  trial_active?: boolean;
+  trial_days_left?: number;
+  effective_plan?: string;
 }
 
 interface AuthState {

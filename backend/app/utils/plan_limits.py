@@ -21,7 +21,7 @@ def require_plan(min_plan: str):
         @wraps(fn)
         def wrapper(*args, **kwargs):
             user = User.query.get(get_jwt_identity())
-            if PLAN_ORDER.get(user.plan, 0) < PLAN_ORDER.get(min_plan, 0):
+            if PLAN_ORDER.get(user.effective_plan, 0) < PLAN_ORDER.get(min_plan, 0):
                 return jsonify({
                     "error": {
                         "code": "UPGRADE_REQUIRED",
@@ -45,7 +45,7 @@ def check_task_limit():
     """
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
-    if not user or user.plan != "free":
+    if not user or user.effective_plan != "free":
         return None  # no limit for paid plans
 
     now = datetime.datetime.utcnow()
@@ -74,7 +74,7 @@ def check_ai_limit():
     """
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
-    if not user or user.plan != "free":
+    if not user or user.effective_plan != "free":
         return None  # no limit for paid plans
 
     today = datetime.date.today()

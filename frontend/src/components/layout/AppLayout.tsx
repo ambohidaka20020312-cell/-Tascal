@@ -10,6 +10,7 @@ import TaskForm from "../tasks/TaskForm";
 import FocusOverlay from "../focus/FocusOverlay";
 import { useFocusStore } from "../../store/focusStore";
 import LanguageSwitcher from "../common/LanguageSwitcher";
+import TrialBanner from "../subscription/TrialBanner";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -227,6 +228,9 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 </div>
               </header>
             )}
+
+            {/* Trial Banner — shown for free users (active trial or not-yet-started) */}
+            {isFree && <TrialBanner />}
 
             {/* Page content */}
             <main

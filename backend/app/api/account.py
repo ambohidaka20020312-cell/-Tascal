@@ -1,3 +1,4 @@
+import datetime
 import json
 import logging
 from flask import Blueprint, jsonify, request, Response
@@ -130,3 +131,27 @@ def unsubscribe_via_token():
     user.digest_unsubscribed = True
     db.session.commit()
     return jsonify({"data": None, "message": "週次ダイジェストの配信を停止しました。"})
+
+
+@bp.post("/start-trial")
+@jwt_required()
+def start_trial():
+    user_id = int(get_jwt_identity())
+    user = User.query.get_or_404(user_id)
+
+    if user.trial_used:
+        return jsonify({
+            "error": {
+                "code": "TRIAL_ALREADY_USED",
+                "message": "トライアルは既に使用済みです。1ユーザーにつき1回のみ利用可能です。",
+            }
+        }), 409
+
+    user.trial_started_at = datetime.datetime.utcnow()
+    user.trial_used = True
+    db.session.commit()
+
+    return jsonify({
+        "data": {"user": user.to_dict()},
+        "message": "14日間Proトライアルを開始しました",
+    }), 200
