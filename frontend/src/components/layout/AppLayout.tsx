@@ -106,7 +106,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
     { label: t('nav.today'), to: "/", Icon: HomeIcon },
     { label: t('nav.calendar'), to: "/calendar", Icon: CalendarIcon },
     { label: t('subscription.title'), to: "/plans", Icon: PlansIcon },
-    { label: "チーム", to: isTeamPlan ? "/team" : "/subscription", Icon: TeamIcon, dimmed: !isTeamPlan },
+    ...(isTeamPlan ? [{ label: "チーム", to: "/team", Icon: TeamIcon, dimmed: false }] : []),
   ];
 
   return (
@@ -345,22 +345,22 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>{t('subscription.title')}</span>
             </Link>
 
-            {/* Team */}
-            <Link
-              to={isTeamPlan ? "/team" : "/subscription"}
-              role="tab"
-              aria-selected={isTeamPlan && isActive("/team")}
-              aria-current={isTeamPlan && isActive("/team") ? "page" : undefined}
-              className={[
-                "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
-                !isTeamPlan
-                  ? "opacity-40"
-                  : isActive("/team") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
-              ].join(" ")}
-            >
-              <TeamIcon active={isTeamPlan && isActive("/team")} />
-              <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>チーム</span>
-            </Link>
+            {/* Team — only shown to team plan users */}
+            {isTeamPlan && (
+              <Link
+                to="/team"
+                role="tab"
+                aria-selected={isActive("/team")}
+                aria-current={isActive("/team") ? "page" : undefined}
+                className={[
+                  "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
+                  isActive("/team") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
+                ].join(" ")}
+              >
+                <TeamIcon active={isActive("/team")} />
+                <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>チーム</span>
+              </Link>
+            )}
 
             {/* Profile / Logout */}
             <button

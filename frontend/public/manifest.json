@@ -48,20 +48,4 @@
       "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }]
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshots/mobile-dashboard.png",
-      "sizes": "390x844",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Tascal ダッシュボード（モバイル）"
-    },
-    {
-      "src": "/screenshots/desktop-dashboard.png",
-      "sizes": "1280x800",
-      "type": "image/png",
-      "form_factor": "wide",
-      "label": "Tascal ダッシュボード（デスクトップ）"
-    }
-  ]
 }
