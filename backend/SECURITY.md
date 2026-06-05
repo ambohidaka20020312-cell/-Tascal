@@ -104,3 +104,32 @@ Run this checklist before every major release:
 - [ ] Error logs are centralised and monitored
 - [ ] Unusual login failure spikes trigger alerts
 - [ ] Stripe webhook errors are tracked and alerted
+- [ ] Audit log table (`audit_logs`) is present and being populated
+- [ ] Admin audit log API (`GET /api/v1/admin/audit-logs`) is accessible only to `is_admin=true` users
+
+---
+
+## SOC2 / ISO27001 Technical Controls
+
+The following controls were added as groundwork for compliance certification.
+
+### Audit Logging (`audit_logs` table)
+| Control | Detail |
+|---|---|
+| Model | `backend/app/models/audit_log.py` — stores user_id, action, resource, IP, user-agent, timestamp |
+| Helper | `backend/app/utils/audit.py` — `log_action()` inlined in the same DB transaction as the mutation |
+| Covered actions | `auth.register`, `auth.login`, `auth.login_failed`, `task.create`, `task.delete`, `task.complete`, `member.invite`, `member.remove`, `message.delete` |
+| Admin API | `GET /api/v1/admin/audit-logs` — paginated (100/page), filterable by action, user_id, date range; requires `User.is_admin = True` |
+
+### Rate Limiting (Flask-Limiter)
+| Control | Detail |
+|---|---|
+| Global defaults | 200 req/day, 50 req/hour per IP |
+| Auth endpoints | `POST /auth/login` and `POST /auth/register` additionally limited to 10 req/minute |
+| Library | `Flask-Limiter>=3.5` (see `requirements.txt`) |
+
+### Security Headers
+All responses include: `X-Content-Type-Options`, `X-Frame-Options`, `X-XSS-Protection`,
+`Referrer-Policy`, `Content-Security-Policy`, `Permissions-Policy`,
+`Cross-Origin-Opener-Policy`, `Cross-Origin-Resource-Policy`.
+JSON API responses additionally carry `Cache-Control: no-store`.

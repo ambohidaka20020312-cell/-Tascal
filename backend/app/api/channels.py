@@ -9,6 +9,7 @@ from ..models.task import Task
 from .. import db
 from ..utils.team_auth import require_team_seat, get_user_team
 from ..utils.storage import upload_file, MAX_FILE_SIZE
+from ..utils.audit import log_action
 import datetime
 
 bp = Blueprint("channels", __name__)
@@ -200,6 +201,31 @@ def send_message(channel_id):
     return jsonify({"data": msg.to_dict(), "message": "メッセージを送信しました"}), 201
 
 
+@bp.delete("/<int:channel_id>/messages/<int:mid>")
+@jwt_required()
+def delete_message(channel_id, mid):
+    """Delete a message — placeholder for future moderation. Audit logged for SOC2."""
+    user = _get_current_user()
+    channel = Channel.query.get_or_404(channel_id)
+    err = _assert_channel_access(user, channel)
+    if err:
+        return err
+
+    msg = Message.query.filter_by(id=mid, channel_id=channel_id).first_or_404()
+
+    # Only sender or team owner/admin can delete
+    membership = TeamMember.query.filter_by(team_id=channel.team_id, user_id=user.id).first()
+    is_admin = membership and membership.role in ("owner", "admin")
+    if msg.sender_id != user.id and not is_admin:
+        return jsonify({"error": {"code": "FORBIDDEN", "message": "このメッセージを削除する権限がありません"}}), 403
+
+    db.session.delete(msg)
+    log_action(user.id, "message.delete", resource_type="channel", resource_id=channel_id,
+               extra={"message_id": mid})
+    db.session.commit()
+    return jsonify({"message": "メッセージを削除しました"})
+
+
 @bp.post("/<int:channel_id>/messages/<int:mid>/to-task")
 @jwt_required()
 def message_to_task(channel_id, mid):
@@ -254,6 +280,13 @@ def upload_attachment(channel_id):
         return jsonify({"error": {"code": "FILE_TOO_LARGE", "message": "ファイルサイズは50MB以下にしてください"}}), 413
 
     try:
+    try:
+        from ..utils.storage import upload_file, MAX_FILE_SIZE
+        # Guard against oversized uploads using Content-Length header when available
+        content_length = request.content_length
+        if content_length and content_length > MAX_FILE_SIZE:
+            return jsonify({"error": {"code": "FILE_TOO_LARGE", "message": "ファイルサイズは50MB以下にしてください"}}), 413
+
         attachment = upload_file(file, file.filename, user.id)
     except ValueError as exc:
         return jsonify({"error": {"code": "INVALID_FILE", "message": str(exc)}}), 400

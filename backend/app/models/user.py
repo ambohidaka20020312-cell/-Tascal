@@ -22,6 +22,7 @@ class User(db.Model):
     revenuecat_user_id = db.Column(db.String(200), unique=True, nullable=True, index=True)
     trial_started_at = db.Column(db.DateTime, nullable=True)
     trial_used = db.Column(db.Boolean, nullable=False, default=False)
+    is_admin = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     tasks = db.relationship("Task", foreign_keys="Task.user_id", backref="user", lazy="dynamic")

@@ -4,6 +4,7 @@ from ..models.user import User
 from ..models.team import Team, TeamMember, TeamDepartment, TeamDepartmentMember
 from .. import db
 from ..utils.team_auth import require_team_seat
+from ..utils.audit import log_action
 
 bp = Blueprint("teams", __name__)
 
@@ -85,6 +86,8 @@ def invite_member(team_id):
             return jsonify({"error": {"code": "ALREADY_MEMBER", "message": "すでにチームメンバーです"}}), 409
         new_member = TeamMember(team_id=team_id, user_id=target_user.id, role="member")
         db.session.add(new_member)
+        log_action(user.id, "member.invite", resource_type="team", resource_id=team_id,
+                   extra={"invited_user_id": target_user.id, "email": email})
         db.session.commit()
         return jsonify({"data": new_member.to_dict(), "message": "メンバーを追加しました"}), 201
     else:
@@ -106,6 +109,9 @@ def invite_member(team_id):
         except Exception as exc:
             import flask
             flask.current_app.logger.warning("Invite email failed: %s", exc)
+        log_action(user.id, "member.invite", resource_type="team", resource_id=team_id,
+                   extra={"email": email, "status": "email_sent"})
+        db.session.commit()
         return jsonify({"message": "招待メールを送信しました（未登録ユーザー）"}), 200
 
 
@@ -124,6 +130,8 @@ def remove_member(team_id, uid):
 
     target = TeamMember.query.filter_by(team_id=team_id, user_id=uid).first_or_404()
     db.session.delete(target)
+    log_action(user.id, "member.remove", resource_type="team", resource_id=team_id,
+               extra={"removed_user_id": uid})
     db.session.commit()
     return jsonify({"message": "メンバーを削除しました"})
 
