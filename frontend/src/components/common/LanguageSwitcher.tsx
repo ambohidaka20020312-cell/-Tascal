@@ -4,14 +4,6 @@ import { useTranslation } from 'react-i18next'
 const LANGUAGES = [
   { code: 'ja', label: '日本語', flag: '🇯🇵' },
   { code: 'en', label: 'English', flag: '🇺🇸' },
-  { code: 'ko', label: '한국어', flag: '🇰🇷' },
-  { code: 'zh-CN', label: '中文（简体）', flag: '🇨🇳' },
-  { code: 'zh-TW', label: '中文（繁體）', flag: '🇹🇼' },
-  { code: 'es', label: 'Español', flag: '🇪🇸' },
-  { code: 'fr', label: 'Français', flag: '🇫🇷' },
-  { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
-  { code: 'pt', label: 'Português', flag: '🇧🇷' },
-  { code: 'ar', label: 'العربية', flag: '🇸🇦' },
 ]
 
 export default function LanguageSwitcher() {
@@ -22,7 +14,7 @@ export default function LanguageSwitcher() {
 
   const handleChange = (code: string) => {
     i18n.changeLanguage(code)
-    document.dir = code === 'ar' ? 'rtl' : 'ltr'
+    document.dir = 'ltr'
     setOpen(false)
   }
 

@@ -76,3 +76,6 @@ body {
 .fc .fc-col-header-cell-cushion { color: var(--text-subtle); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 400; }
 .fc-theme-standard td, .fc-theme-standard th { border-color: var(--border); }
 .fc-theme-standard .fc-scrollgrid { border-color: var(--border); }
+
+.fc-day-holiday .fc-daygrid-day-number { color: #ef4444; }
+.fc-day-holiday { background-color: rgba(239,68,68,0.04) !important; }

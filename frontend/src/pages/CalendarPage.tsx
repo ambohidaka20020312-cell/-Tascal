@@ -8,6 +8,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { calendarApi, taskApi } from "../utils/api";
 import { Task } from "../store/taskStore";
 import Modal from "../components/common/Modal";
+import { isJapanHoliday, getHolidayName } from "../utils/japanHolidays";
 
 // FullCalendar v6 bundles its own CSS automatically via the plugins.
 
@@ -200,6 +201,29 @@ export default function CalendarPage() {
             editable={true}
             eventDrop={handleEventDrop}
             eventDidMount={handleEventDidMount}
+            dayCellContent={(arg) => {
+              const dateStr = arg.date.toISOString().slice(0, 10);
+              const holidayName = isJapanHoliday(dateStr) ? getHolidayName(dateStr) : null;
+              return (
+                <div className="fc-daygrid-day-number-wrapper" style={{ width: "100%" }}>
+                  <span className="fc-daygrid-day-number">{arg.dayNumberText}</span>
+                  {holidayName && (
+                    <span style={{ fontSize: "9px", color: "#ef4444", display: "block", lineHeight: 1.2, marginTop: 1 }}>
+                      {holidayName}
+                    </span>
+                  )}
+                  {!holidayName && isJapanHoliday(dateStr) && (
+                    <span style={{ fontSize: "9px", color: "#ef4444", display: "block", lineHeight: 1.2, marginTop: 1 }}>
+                      祝
+                    </span>
+                  )}
+                </div>
+              );
+            }}
+            dayCellClassNames={(arg) => {
+              const dateStr = arg.date.toISOString().slice(0, 10);
+              return isJapanHoliday(dateStr) ? ["fc-day-holiday"] : [];
+            }}
             height="auto"
             eventDisplay="block"
             dayMaxEvents={3}

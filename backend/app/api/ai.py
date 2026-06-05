@@ -182,3 +182,27 @@ def daily_briefing():
             "top_task": top_task,
         }
     })
+
+
+@bp.get("/estimation-patterns")
+@jwt_required()
+def estimation_patterns():
+    from ..services.estimation_engine import get_user_estimation_patterns
+    user_id = get_jwt_identity()
+    patterns = get_user_estimation_patterns(user_id)
+    return jsonify({"data": patterns})
+
+
+@bp.post("/estimation-suggest")
+@jwt_required()
+def estimation_suggest():
+    from ..services.estimation_engine import get_user_estimation_patterns, suggest_minutes
+    user_id = get_jwt_identity()
+    body = request.get_json(silent=True) or {}
+    estimated = int(body.get("estimated_minutes", 0))
+    category_id = body.get("category_id")
+    priority = body.get("priority", "medium")
+
+    patterns = get_user_estimation_patterns(user_id)
+    suggestion = suggest_minutes(estimated, patterns, category_id, priority)
+    return jsonify({"data": suggestion})

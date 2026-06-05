@@ -1,10 +1,11 @@
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import Button from "../common/Button";
 import { useCreateTask } from "../../hooks/useTasks";
 import { useTemplates, useCreateTemplate } from "../../hooks/useTemplates";
 import { Task } from "../../store/taskStore";
 import { useCategories, useCreateCategory } from "../../hooks/useCategories";
+import { useEstimationHint } from "../../hooks/useEstimationHint";
 
 type Priority = Task["priority"];
 
@@ -54,6 +55,12 @@ export default function TaskForm({
   const { data: templates } = useTemplates();
   const { data: categories = [] } = useCategories();
   const createCategory = useCreateCategory();
+
+  const estimatedNum = useMemo(() => {
+    const n = parseInt(estimatedMinutes, 10);
+    return isNaN(n) ? null : n;
+  }, [estimatedMinutes]);
+  const estimationHint = useEstimationHint(estimatedNum, categoryId, priority);
 
   const buildRecurrenceRule = () => {
     if (recurrence === "none") return undefined;
@@ -266,6 +273,21 @@ export default function TaskForm({
               <div>
                 <label htmlFor="task-estimated-minutes" className="block text-[10px] tracking-[0.15em] uppercase text-[var(--text-subtle)] mb-1.5">{t('task.estimated_time')}（分）</label>
                 <input id="task-estimated-minutes" type="number" min={1} value={estimatedMinutes} onChange={(e) => setEstimatedMinutes(e.target.value)} placeholder="60" className={inputCls} />
+                {estimationHint && (
+                  <p className="mt-1 flex items-center gap-1 text-[11px] text-[var(--text-muted)]">
+                    <span className={estimationHint.tendency === "underestimate" ? "text-amber-500" : "text-emerald-500"}>
+                      {estimationHint.tendency === "underestimate" ? "⚠" : "✓"}
+                    </span>
+                    {estimationHint.message}
+                    <button
+                      type="button"
+                      onClick={() => setEstimatedMinutes(String(estimationHint.suggested))}
+                      className="ml-1 underline underline-offset-2 text-[var(--accent)] hover:opacity-80"
+                    >
+                      {estimationHint.suggested}分に修正
+                    </button>
+                  </p>
+                )}
               </div>
             </div>
 
