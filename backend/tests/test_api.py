@@ -75,7 +75,7 @@ class TestPlanLimits:
 
         with patch("app.api.ai.AIOptimizer") as MockOptimizer:
             instance = MockOptimizer.return_value
-            instance.optimize.return_value = {"schedule": [], "message": "ok", "advice": "good"}
+            instance.optimize_daily_tasks.return_value = {"schedule": [], "message": "ok", "advice": "good"}
             res = client.get("/api/v1/ai/optimize", headers=auth_headers)
 
         # Should not be blocked by AI limit (may fail for other reasons, but not 403 AI_LIMIT)
