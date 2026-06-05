@@ -263,3 +263,87 @@ def _handle_subscription_change(subscription):
         _handle_subscription_deleted(subscription)
     else:
         _handle_subscription_upsert(subscription)
+
+
+# ─── Apple IAP / RevenueCat sync ──────────────────────────────────────────────
+
+VALID_IAP_PLANS = {"free", "personal_pro", "pro", "team", "business", "enterprise"}
+
+
+@bp.post("/iap-sync")
+@jwt_required()
+def iap_sync():
+    """
+    Called by the frontend after a successful RevenueCat purchase or restore.
+    Updates the user's plan based on active entitlements reported by RevenueCat.
+    """
+    user_id = int(get_jwt_identity())
+    user = User.query.get_or_404(user_id)
+    data = request.get_json(silent=True) or {}
+
+    plan = data.get("plan", "free")
+    if plan not in VALID_IAP_PLANS:
+        return jsonify({"error": {"code": "INVALID_PLAN", "message": "無効なプランです"}}), 400
+
+    rc_user_id = data.get("original_app_user_id", "")
+
+    user.plan = plan
+    if rc_user_id:
+        user.revenuecat_user_id = rc_user_id
+    db.session.commit()
+
+    current_app.logger.info(
+        "IAP sync: user=%s plan=%s rc_user=%s", user_id, plan, rc_user_id
+    )
+    return jsonify({"data": {"plan": user.plan}, "message": "プランを更新しました"})
+
+
+@bp.post("/revenuecat-webhook")
+def revenuecat_webhook():
+    """
+    RevenueCat server-to-server webhook.
+    Configure in RevenueCat dashboard → Project → Webhooks.
+    Set Authorization header to REVENUECAT_WEBHOOK_SECRET.
+    """
+    auth = request.headers.get("Authorization", "")
+    secret = current_app.config.get("REVENUECAT_WEBHOOK_SECRET", "")
+    if secret and auth != secret:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    event = request.get_json(silent=True) or {}
+    event_type = event.get("event", {}).get("type", "")
+    app_user_id = event.get("event", {}).get("app_user_id", "")
+    aliases = event.get("event", {}).get("aliases", [])
+
+    # Find user by RevenueCat ID or alias
+    user = None
+    for uid in [app_user_id] + aliases:
+        user = User.query.filter_by(revenuecat_user_id=uid).first()
+        if not user:
+            try:
+                user = User.query.get(int(uid))
+            except (ValueError, TypeError):
+                pass
+        if user:
+            break
+
+    if not user:
+        current_app.logger.warning("RevenueCat webhook: user not found for %s", app_user_id)
+        return jsonify({"received": True})
+
+    entitlements = event.get("event", {}).get("entitlement_ids", [])
+
+    if event_type in ("INITIAL_PURCHASE", "RENEWAL", "PRODUCT_CHANGE", "UNCANCELLATION"):
+        if "team" in entitlements or "business" in entitlements:
+            user.plan = "team"
+        elif entitlements:
+            user.plan = "personal_pro"
+        db.session.commit()
+    elif event_type in ("CANCELLATION", "EXPIRATION", "BILLING_ISSUE"):
+        user.plan = "free"
+        db.session.commit()
+
+    current_app.logger.info(
+        "RevenueCat webhook: type=%s user=%s plan=%s", event_type, user.id, user.plan
+    )
+    return jsonify({"received": True})

@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { useSubscription, useCheckout, usePortal } from "../hooks/useBilling";
+import { useIAP } from "../hooks/useIAP";
+import { isWeb } from "../utils/platform";
 
 // ─── Feature rows ─────────────────────────────────────────────────────────────
 interface FeatureRow {
@@ -46,18 +48,23 @@ function normalisePlan(plan: AnyPlan): PlanKey {
 export default function SubscriptionPage() {
   const [searchParams] = useSearchParams();
   const [annual, setAnnual] = useState(false);
+  const [iapError, setIapError] = useState("");
 
   const user = useAuthStore((s) => s.user);
   const { data: subscription, isLoading } = useSubscription();
   const checkout = useCheckout();
   const portal = usePortal();
+  const iap = useIAP();
+
+  const useNativeIAP = !isWeb() && iap.available;
 
   const rawPlan: AnyPlan = ((subscription?.plan ?? user?.plan ?? "free") as AnyPlan);
   const currentPlan: PlanKey = normalisePlan(rawPlan);
   const isPaid = currentPlan !== "free";
 
-  // Feedback on Stripe redirect return
+  // Feedback on Stripe redirect return (web only)
   useEffect(() => {
+    if (!isWeb()) return;
     if (searchParams.get("success") === "true") {
       alert("プランのアップグレードが完了しました！");
     }
@@ -66,12 +73,46 @@ export default function SubscriptionPage() {
     }
   }, [searchParams]);
 
-  function handleUpgrade(plan: "pro" | "team") {
-    checkout.mutate(plan);
+  async function handleUpgrade(plan: "pro" | "team") {
+    if (useNativeIAP) {
+      // Native: use RevenueCat / Apple IAP
+      setIapError("");
+      const pkgId = plan === "pro" ? "$rc_monthly" : "$rc_annual";
+      const offering = iap.offerings[0];
+      const pkg = offering?.packages.find(
+        (p) => p.identifier === pkgId || p.packageType === (plan === "pro" ? "MONTHLY" : "ANNUAL")
+      ) ?? offering?.packages[0];
+      if (!pkg) {
+        setIapError("購入プランが見つかりません。後でもう一度お試しください。");
+        return;
+      }
+      try {
+        await iap.purchase(pkg);
+      } catch {
+        // error is set inside hook
+      }
+    } else {
+      // Web: Stripe checkout
+      checkout.mutate(plan);
+    }
   }
 
   function handlePortal() {
-    portal.mutate();
+    if (useNativeIAP) {
+      // Native: direct to OS subscription settings
+      window.open("https://apps.apple.com/account/subscriptions", "_blank");
+    } else {
+      portal.mutate();
+    }
+  }
+
+  async function handleRestore() {
+    setIapError("");
+    try {
+      await iap.restore();
+    } catch {
+      setIapError("購入の復元に失敗しました。");
+    }
   }
 
   // ─── Prices ───────────────────────────────────────────────────────────────
@@ -313,11 +354,20 @@ export default function SubscriptionPage() {
           </table>
         </div>
 
-        {/* ── Stripe portal for paid users ────────────────────────────────── */}
+        {/* ── IAP error ───────────────────────────────────────────────────── */}
+        {(iapError || iap.error) && (
+          <p className="mt-4 text-center text-xs text-red-500">
+            {iapError || iap.error}
+          </p>
+        )}
+
+        {/* ── Subscription management ─────────────────────────────────────── */}
         {isPaid && (
           <div className="mt-8 flex flex-col items-center gap-3">
             <p className="text-xs text-[var(--text-subtle)] tracking-wide">
-              支払い方法・キャンセルはStripeポータルから管理できます。
+              {useNativeIAP
+                ? "サブスクリプションはiOS設定から管理できます。"
+                : "支払い方法・キャンセルはStripeポータルから管理できます。"}
             </p>
             <button
               disabled={portal.isPending}
@@ -329,8 +379,21 @@ export default function SubscriptionPage() {
           </div>
         )}
 
-        {/* ── Renewal date ────────────────────────────────────────────────── */}
-        {subscription?.current_period_end && (
+        {/* ── Restore purchases (native IAP required by Apple guidelines) ─── */}
+        {useNativeIAP && (
+          <div className="mt-6 flex justify-center">
+            <button
+              onClick={handleRestore}
+              disabled={iap.loading}
+              className="text-xs text-[var(--text-subtle)] underline underline-offset-2 hover:text-[var(--text-muted)] transition-colors disabled:opacity-40"
+            >
+              {iap.loading ? "確認中..." : "購入を復元する"}
+            </button>
+          </div>
+        )}
+
+        {/* ── Renewal date (web / Stripe) ─────────────────────────────────── */}
+        {!useNativeIAP && subscription?.current_period_end && (
           <p className="mt-4 text-center text-xs text-[var(--text-subtle)]">
             次回更新日:{" "}
             {new Date(subscription.current_period_end).toLocaleDateString("ja-JP")}

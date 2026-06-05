@@ -19,6 +19,7 @@ class User(db.Model):
     onboarding_completed = db.Column(db.Boolean, nullable=False, default=False)
     password_reset_token = db.Column(db.String(100), unique=True, nullable=True, index=True)
     password_reset_expires = db.Column(db.DateTime, nullable=True)
+    revenuecat_user_id = db.Column(db.String(200), unique=True, nullable=True, index=True)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     tasks = db.relationship("Task", foreign_keys="Task.user_id", backref="user", lazy="dynamic")

@@ -19,6 +19,7 @@ class BaseConfig:
     STRIPE_PRICE_ID_BUSINESS = os.getenv("STRIPE_PRICE_ID_BUSINESS")
     STRIPE_PRICE_ID_ENTERPRISE = os.getenv("STRIPE_PRICE_ID_ENTERPRISE")
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+    REVENUECAT_WEBHOOK_SECRET = os.getenv("REVENUECAT_WEBHOOK_SECRET", "")
 
     # Mail settings (Flask-Mail / Gmail SMTP)
     MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com")
