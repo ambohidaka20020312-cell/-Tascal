@@ -258,16 +258,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <div className="px-4 py-4 sm:px-6 lg:px-8">
                   <div className="flex flex-col items-center justify-between gap-2 sm:flex-row">
                     <p className="text-xs text-[var(--text-subtle)] tracking-wide">
-                      &copy; {new Date().getFullYear()} Tascal. All rights reserved.
+                      &copy; {new Date().getFullYear()} Tascal / NutriAI. All rights reserved.
                     </p>
-                    {isFree && (
-                      <p className="text-xs text-[var(--text-subtle)]">
-                        広告を非表示にするには{" "}
-                        <Link to="/plans" className="text-[var(--text-primary)] underline hover:opacity-70">
-                          Proプランにアップグレード
+                    <div className="flex items-center gap-3 flex-wrap justify-center">
+                      <Link to="/privacy" className="text-xs text-[var(--text-subtle)] hover:text-[var(--text-muted)]">プライバシーポリシー</Link>
+                      <Link to="/terms" className="text-xs text-[var(--text-subtle)] hover:text-[var(--text-muted)]">利用規約</Link>
+                      <Link to="/tokusho" className="text-xs text-[var(--text-subtle)] hover:text-[var(--text-muted)]">特定商取引法</Link>
+                      {isFree && (
+                        <Link to="/plans" className="text-xs text-[var(--text-primary)] underline hover:opacity-70">
+                          広告を非表示にする
                         </Link>
-                      </p>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               </footer>

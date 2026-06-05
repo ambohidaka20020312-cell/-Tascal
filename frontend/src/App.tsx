@@ -14,6 +14,7 @@ import UpgradePrompt from "./components/subscription/UpgradePrompt";
 import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/legal/TermsOfServicePage";
 import CookiePolicyPage from "./pages/legal/CookiePolicyPage";
+import SpecifiedCommercialTransactionsPage from "./pages/legal/SpecifiedCommercialTransactionsPage";
 import { OfflineIndicator } from "./components/common/OfflineIndicator";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { ToastProvider } from "./components/common/Toast";
@@ -199,6 +200,7 @@ export default function App() {
         <Route path="/privacy" element={<PrivacyPolicyPage />} />
         <Route path="/terms" element={<TermsOfServicePage />} />
         <Route path="/cookies" element={<CookiePolicyPage />} />
+        <Route path="/tokusho" element={<SpecifiedCommercialTransactionsPage />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
       </AppShell>
