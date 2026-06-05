@@ -1,9 +1,10 @@
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt
 from ..models.user import User
-from .. import db
+from .. import db, limiter
 from ..utils.rate_limit import is_locked, lockout_remaining, record_failure, record_success
 from ..utils.validators import validate_password
+from ..utils.audit import log_action
 
 bp = Blueprint("auth", __name__)
 
@@ -38,6 +39,7 @@ def _get_client_ip() -> str:
 
 
 @bp.post("/register")
+@limiter.limit("10 per minute")
 def register():
     data = request.get_json() or {}
     if not data.get("email") or not data.get("password"):
@@ -63,6 +65,8 @@ def register():
     user = User(email=data["email"], name=data.get("name", ""))
     user.set_password(data["password"])
     db.session.add(user)
+    db.session.flush()  # get user.id before commit
+    log_action(user.id, "auth.register", extra={"email": user.email})
     db.session.commit()
 
     return jsonify({
@@ -72,6 +76,7 @@ def register():
 
 
 @bp.post("/login")
+@limiter.limit("10 per minute")
 def login():
     ip = _get_client_ip()
 
@@ -93,9 +98,13 @@ def login():
 
     if not user or not user.check_password(data["password"]):
         record_failure(ip)
+        log_action(None, "auth.login_failed", extra={"email": data.get("email"), "ip": ip})
+        db.session.commit()
         return jsonify({"error": {"code": "INVALID_CREDENTIALS", "message": "メールアドレスまたはパスワードが正しくありません"}}), 401
 
     record_success(ip)
+    log_action(user.id, "auth.login", extra={"ip": ip})
+    db.session.commit()
     return jsonify({
         "data": {
             "access_token": create_access_token(identity=str(user.id)),

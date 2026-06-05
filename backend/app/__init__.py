@@ -8,11 +8,14 @@ from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from flask_mail import Mail
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
 mail = Mail()
+limiter = Limiter(get_remote_address, default_limits=["200 per day", "50 per hour"])
 
 # Content-Security-Policy that allows AdSense and Stripe resources
 _CSP = (
@@ -52,6 +55,7 @@ def create_app(config_name: str = "development"):
     migrate.init_app(app, db)
     jwt.init_app(app)
     mail.init_app(app)
+    limiter.init_app(app)
 
     allowed_origins = os.getenv("ALLOWED_ORIGINS", ",".join(app.config["CORS_ORIGINS"])).split(",")
     CORS(app, resources={r"/api/*": {"origins": allowed_origins}}, supports_credentials=True)
