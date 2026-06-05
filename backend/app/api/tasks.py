@@ -99,6 +99,7 @@ def create_task():
         recurrence=data.get("recurrence"),
         recurrence_end_date=data.get("recurrence_end_date"),
         category_id=data.get("category_id"),
+        parent_task_id=data.get("parent_task_id"),
     )
     db.session.add(task)
     db.session.commit()
@@ -339,6 +340,15 @@ def export_tasks():
                 "Content-Disposition": f'attachment; filename="tascal_tasks_{today_str}.json"',
             },
         )
+
+
+@bp.get("/<int:task_id>/subtasks")
+@jwt_required()
+def list_subtasks(task_id):
+    user_id = get_jwt_identity()
+    Task.query.filter_by(id=task_id, user_id=user_id, is_deleted=False).first_or_404()
+    subtasks = Task.query.filter_by(parent_task_id=task_id, user_id=user_id, is_deleted=False).order_by(Task.created_at.asc()).all()
+    return jsonify({"data": [t.to_dict() for t in subtasks]})
 
 
 @bp.get("/<int:task_id>/notes")

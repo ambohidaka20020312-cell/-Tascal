@@ -2,12 +2,13 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { Task } from "../../store/taskStore";
 import Button from "../common/Button";
-import { useCompleteTask, useDeleteTask, useUpdateTask } from "../../hooks/useTasks";
+import { useCompleteTask, useDeleteTask, useUpdateTask, useSubtasks } from "../../hooks/useTasks";
 import { useViewport } from "../../hooks/useViewport";
 import OverrunAlert from "../ai/OverrunAlert";
 import { useFocusStore } from "../../store/focusStore";
 import CategoryBadge from "./CategoryBadge";
 import TaskNotesPanel from "./TaskNotesPanel";
+import SubtaskList from "./SubtaskList";
 
 interface TaskCardProps {
   task: Task;
@@ -68,6 +69,7 @@ export default function TaskCard({ task, selectable, selected, onSelect, categor
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
+  const [showSubtasks, setShowSubtasks] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(task.title);
   const [editEstimatedMinutes, setEditEstimatedMinutes] = useState(
@@ -78,6 +80,11 @@ export default function TaskCard({ task, selectable, selected, onSelect, categor
   const deleteTask = useDeleteTask();
   const updateTask = useUpdateTask();
   const startFocus = useFocusStore((s) => s.startFocus);
+
+  // Only fetch subtasks for parent tasks (parent_task_id == null)
+  const isParentTask = task.parent_task_id == null;
+  const { data: subtasks } = useSubtasks(task.id, isParentTask && showSubtasks);
+  const subtaskCount = subtasks?.length ?? 0;
 
   const { deviceType } = useViewport();
   const isPhoneSmall = deviceType === "phone-small";
@@ -361,6 +368,17 @@ export default function TaskCard({ task, selectable, selected, onSelect, categor
               >
                 📝
               </Button>
+              {isParentTask && (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => setShowSubtasks((v) => !v)}
+                  aria-label={`${task.title}のサブタスク`}
+                  aria-expanded={showSubtasks}
+                >
+                  ↳{subtaskCount > 0 ? ` ${subtaskCount}` : ""}
+                </Button>
+              )}
               <Button
                 size="sm"
                 variant="danger"
@@ -385,6 +403,10 @@ export default function TaskCard({ task, selectable, selected, onSelect, categor
 
       {showNotes && (
         <TaskNotesPanel taskId={task.id} onClose={() => setShowNotes(false)} />
+      )}
+
+      {isParentTask && showSubtasks && (
+        <SubtaskList parentId={task.id} parentTitle={task.title} />
       )}
 
       {showCompleteModal && (

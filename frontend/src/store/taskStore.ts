@@ -15,6 +15,8 @@ export interface Task {
   created_at: string;
   recurrence?: string | null;
   category_id?: number | null;
+  parent_task_id?: number | null;
+  subtask_count?: number;
 }
 
 interface TaskState {

@@ -76,6 +76,7 @@ export const taskApi = {
   getNotes: (taskId: number) => api.get(`/tasks/${taskId}/notes`),
   addNote: (taskId: number, content: string) => api.post(`/tasks/${taskId}/notes`, { content }),
   deleteNote: (taskId: number, noteId: number) => api.delete(`/tasks/${taskId}/notes/${noteId}`),
+  getSubtasks: (id: number) => api.get(`/tasks/${id}/subtasks`),
 };
 
 export const aiApi = {

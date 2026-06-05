@@ -85,6 +85,30 @@ export function useBulkDelete() {
   });
 }
 
+export function useSubtasks(taskId: number, enabled = true) {
+  return useQuery({
+    queryKey: ["subtasks", taskId],
+    queryFn: async () => {
+      const res = await taskApi.getSubtasks(taskId);
+      const tasks: Task[] = res.data.data ?? res.data;
+      return tasks;
+    },
+    enabled: enabled && taskId > 0,
+  });
+}
+
+export function useCreateSubtask(parentId: number) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: Partial<Task>) =>
+      taskApi.create({ ...data, parent_task_id: parentId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["subtasks", parentId] });
+    },
+  });
+}
+
 export function useUpdateTask() {
   const queryClient = useQueryClient();
   const updateTask = useTaskStore((s) => s.updateTask);
