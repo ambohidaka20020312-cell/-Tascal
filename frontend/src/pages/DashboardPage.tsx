@@ -19,6 +19,7 @@ import ExportModal from "../components/tasks/ExportModal";
 import { useCategories } from "../hooks/useCategories";
 import DailyBriefingPanel from "../components/ai/DailyBriefingPanel";
 import ReplanButton from "../components/ai/ReplanButton";
+import AdBanner from "../components/ads/AdBanner";
 
 type FilterStatus = "all" | "pending" | "in_progress" | "completed" | "overrun";
 
@@ -723,6 +724,9 @@ export default function DashboardPage() {
       )}
 
       <ExportModal isOpen={showExportModal} onClose={() => setShowExportModal(false)} />
+
+      {/* Ad slot for free plan users — shown at the bottom of the dashboard */}
+      <AdBanner slot="1234567890" format="auto" className="mt-4 min-h-[90px]" />
     </div>
   );
 }

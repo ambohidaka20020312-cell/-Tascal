@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { aiApi } from "../utils/api";
+import AdBanner from "../components/ads/AdBanner";
 
 interface WeekStats {
   completion_rate: number;
@@ -357,6 +358,9 @@ export default function InsightsPage() {
         </p>
         <DailyBarChart data={data.daily_completion} />
       </div>
+
+      {/* Ad slot for free plan users — between chart sections */}
+      <AdBanner slot="INSIGHTS_SLOT" format="rectangle" className="my-4 min-h-[250px]" />
 
       {/* Priority breakdown */}
       <div className="border border-[var(--border)] rounded-xl p-5">
