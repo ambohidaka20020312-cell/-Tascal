@@ -1,4 +1,6 @@
-from flask import Blueprint, request, jsonify
+import os
+
+from flask import Blueprint, request, jsonify, send_from_directory
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..models.user import User
 from ..models.team import TeamMember
@@ -6,6 +8,7 @@ from ..models.channel import Channel, ChannelMember, Message
 from ..models.task import Task
 from .. import db
 from ..utils.team_auth import require_team_seat, get_user_team
+from ..utils.storage import upload_file, MAX_FILE_SIZE
 import datetime
 
 bp = Blueprint("channels", __name__)
@@ -207,3 +210,62 @@ def message_to_task(channel_id, mid):
     db.session.commit()
 
     return jsonify({"data": task.to_dict(), "message": "メッセージからタスクを作成しました"}), 201
+
+
+@bp.post("/<int:channel_id>/upload")
+@jwt_required()
+def upload_attachment(channel_id):
+    user = _get_current_user()
+    channel = Channel.query.get_or_404(channel_id)
+    err = _assert_channel_access(user, channel)
+    if err:
+        return err
+
+    if "file" not in request.files:
+        return jsonify({"error": {"code": "MISSING_FILE", "message": "ファイルが添付されていません"}}), 400
+
+    file = request.files["file"]
+    if not file.filename:
+        return jsonify({"error": {"code": "MISSING_FILE", "message": "ファイル名が空です"}}), 400
+
+    # Guard against oversized uploads using Content-Length header when available
+    content_length = request.content_length
+    if content_length and content_length > MAX_FILE_SIZE:
+        return jsonify({"error": {"code": "FILE_TOO_LARGE", "message": "ファイルサイズは50MB以下にしてください"}}), 413
+
+    try:
+        attachment = upload_file(file, file.filename, user.id)
+    except ValueError as exc:
+        return jsonify({"error": {"code": "INVALID_FILE", "message": str(exc)}}), 400
+
+    body = request.form.get("body", "").strip()
+    msg = Message(
+        channel_id=channel_id,
+        sender_id=user.id,
+        body=body,
+        attachments=[attachment],
+    )
+    db.session.add(msg)
+    db.session.commit()
+
+    try:
+        from .. import socketio
+        socketio.emit("new_message", msg.to_dict(), room=f"channel_{channel_id}")
+    except Exception:
+        pass
+
+    return jsonify({"data": {"message": msg.to_dict()}}), 201
+
+
+# ---------------------------------------------------------------------------
+# Local development: serve uploaded files from backend/uploads/
+# ---------------------------------------------------------------------------
+
+@bp.get("/static-uploads/<path:filename>")
+def serve_upload(filename):
+    """Serve locally stored uploads (development fallback)."""
+    upload_root = os.path.join(
+        os.path.dirname(os.path.dirname(os.path.dirname(__file__))),
+        "uploads",
+    )
+    return send_from_directory(upload_root, filename)
