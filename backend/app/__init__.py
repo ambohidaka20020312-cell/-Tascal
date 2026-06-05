@@ -8,11 +8,13 @@ from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from flask_mail import Mail
+from flask_socketio import SocketIO
 
 db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
 mail = Mail()
+socketio = SocketIO()
 
 # Content-Security-Policy that allows AdSense and Stripe resources
 _CSP = (
@@ -52,6 +54,12 @@ def create_app(config_name: str = "development"):
     migrate.init_app(app, db)
     jwt.init_app(app)
     mail.init_app(app)
+    socketio.init_app(
+        app,
+        cors_allowed_origins="*",
+        async_mode="threading",
+        message_queue=os.getenv("REDIS_URL"),
+    )
 
     allowed_origins = os.getenv("ALLOWED_ORIGINS", ",".join(app.config["CORS_ORIGINS"])).split(",")
     CORS(app, resources={r"/api/*": {"origins": allowed_origins}}, supports_credentials=True)
@@ -65,6 +73,62 @@ def create_app(config_name: str = "development"):
 
     from .api import register_blueprints
     register_blueprints(app)
+
+    # ------------------------------------------------------------------ #
+    # SocketIO events                                                       #
+    # ------------------------------------------------------------------ #
+    from flask_socketio import join_room, leave_room
+    from flask_jwt_extended import decode_token
+
+    @socketio.on("join_channel")
+    def on_join_channel(data):
+        token = data.get("token")
+        channel_id = data.get("channel_id")
+        if not token or not channel_id:
+            return
+        try:
+            decoded = decode_token(token)
+            user_id = decoded["sub"]
+        except Exception:
+            return
+        room = f"channel_{channel_id}"
+        join_room(room)
+
+    @socketio.on("leave_channel")
+    def on_leave_channel(data):
+        channel_id = data.get("channel_id")
+        if channel_id:
+            leave_room(f"channel_{channel_id}")
+
+    @socketio.on("send_message")
+    def on_send_message(data):
+        token = data.get("token")
+        channel_id = data.get("channel_id")
+        body = (data.get("body") or "").strip()
+        if not token or not channel_id or not body:
+            return
+        try:
+            decoded = decode_token(token)
+            user_id = decoded["sub"]
+        except Exception:
+            return
+        with app.app_context():
+            from .models.channel import Channel, ChannelMember, Message as Msg
+            from .utils.team_auth import require_team_seat
+            from .models.user import User
+            channel = Channel.query.get(channel_id)
+            if not channel:
+                return
+            cm = ChannelMember.query.filter_by(channel_id=channel_id, user_id=user_id).first()
+            if not cm:
+                return
+            tm_check = require_team_seat(User.query.get(user_id), channel.team_id)
+            if tm_check is not None:
+                return
+            msg = Msg(channel_id=channel_id, sender_id=user_id, body=body)
+            db.session.add(msg)
+            db.session.commit()
+            socketio.emit("new_message", msg.to_dict(), room=f"channel_{channel_id}")
 
     @app.route("/api/v1/docs/openapi.yaml")
     def openapi_spec():
