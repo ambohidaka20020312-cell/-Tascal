@@ -110,6 +110,8 @@ export const authApi = {
   getProfile: () => api.get("/auth/profile"),
   unsubscribeDigest: () => api.post("/account/unsubscribe-digest"),
   resubscribeDigest: () => api.post("/account/resubscribe-digest"),
+  startTrial: () => api.post("/account/start-trial"),
+  getMe: () => api.get("/auth/me"),
 };
 
 export const billingApi = {

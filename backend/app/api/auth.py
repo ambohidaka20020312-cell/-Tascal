@@ -11,6 +11,16 @@ bp = Blueprint("auth", __name__)
 _token_blacklist: set = set()
 
 
+@bp.get("/me")
+@jwt_required()
+def me():
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": {"code": "NOT_FOUND", "message": "ユーザーが見つかりません"}}), 404
+    return jsonify({"data": {"user": user.to_dict()}})
+
+
 @bp.post("/logout")
 @jwt_required()
 def logout():
@@ -100,6 +110,16 @@ def login():
 def refresh():
     user_id = get_jwt_identity()
     return jsonify({"data": {"access_token": create_access_token(identity=user_id)}})
+
+
+@bp.get("/me")
+@jwt_required()
+def get_me():
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"error": {"code": "NOT_FOUND", "message": "ユーザーが見つかりません"}}), 404
+    return jsonify({"data": user.to_dict()})
 
 
 @bp.get("/profile")
