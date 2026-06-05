@@ -109,6 +109,18 @@ export function useCreateSubtask(parentId: number) {
   });
 }
 
+export function useOverdueTasks() {
+  return useQuery({
+    queryKey: ["tasks", "overdue"],
+    queryFn: async () => {
+      const res = await taskApi.overdue();
+      const tasks: Task[] = res.data.data ?? [];
+      return tasks;
+    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
 export function useUpdateTask() {
   const queryClient = useQueryClient();
   const updateTask = useTaskStore((s) => s.updateTask);

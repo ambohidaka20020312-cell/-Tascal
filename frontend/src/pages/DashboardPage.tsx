@@ -3,7 +3,7 @@ import { format, addDays, subDays } from "date-fns";
 import { ja } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 import { useTaskStore } from "../store/taskStore";
-import { useTasksQuery, useBulkComplete, useBulkDelete } from "../hooks/useTasks";
+import { useTasksQuery, useBulkComplete, useBulkDelete, useOverdueTasks } from "../hooks/useTasks";
 import { aiApi, taskApi } from "../utils/api";
 import { useViewport } from "../hooks/useViewport";
 import { useDailyBriefing } from "../hooks/useDailyBriefing";
@@ -20,8 +20,9 @@ import { useCategories } from "../hooks/useCategories";
 import DailyBriefingPanel from "../components/ai/DailyBriefingPanel";
 import ReplanButton from "../components/ai/ReplanButton";
 import AdBanner from "../components/ads/AdBanner";
+import OverdueBanner from "../components/tasks/OverdueBanner";
 
-type FilterStatus = "all" | "pending" | "in_progress" | "completed" | "overrun";
+type FilterStatus = "all" | "pending" | "in_progress" | "completed" | "overrun" | "overdue";
 
 interface AiOptimizeResult {
   message?: string;
@@ -115,6 +116,7 @@ export default function DashboardPage() {
     deviceType === "tablet" || deviceType === "desktop" || deviceType === "ultrawide";
 
   const { isLoading, isError } = useTasksQuery(selectedDate, filterCategoryId);
+  const { data: overdueTasks = [] } = useOverdueTasks();
 
   const { handlers: dragHandlers, dragIndex, overIndex, isDragging, draggedId, onKeyDown: dragKeyDown } = useDragSort(tasks, (reordered) => {
     reorderTasks(reordered);
@@ -152,6 +154,7 @@ export default function DashboardPage() {
     const onSetFilterTodo = () => setFilterStatus("pending");
     const onSetFilterInProgress = () => setFilterStatus("in_progress");
     const onSetFilterDone = () => setFilterStatus("completed");
+    const onSetFilterOverdue = () => setFilterStatus("overdue");
 
     window.addEventListener("open-task-form", onOpenTaskForm);
     window.addEventListener("close-overlays", onCloseOverlays);
@@ -160,6 +163,7 @@ export default function DashboardPage() {
     window.addEventListener("set-filter:todo", onSetFilterTodo);
     window.addEventListener("set-filter:in_progress", onSetFilterInProgress);
     window.addEventListener("set-filter:done", onSetFilterDone);
+    window.addEventListener("set-filter:overdue", onSetFilterOverdue);
 
     return () => {
       window.removeEventListener("open-task-form", onOpenTaskForm);
@@ -169,6 +173,7 @@ export default function DashboardPage() {
       window.removeEventListener("set-filter:todo", onSetFilterTodo);
       window.removeEventListener("set-filter:in_progress", onSetFilterInProgress);
       window.removeEventListener("set-filter:done", onSetFilterDone);
+      window.removeEventListener("set-filter:overdue", onSetFilterOverdue);
     };
   }, []);
 
@@ -252,17 +257,27 @@ export default function DashboardPage() {
     in_progress: tasks.filter((t) => t.status === "in_progress").length,
     completed: tasks.filter((t) => t.status === "completed").length,
     overrun: tasks.filter((t) => t.status === "overrun").length,
+    overdue: overdueTasks.length,
   };
 
-  const filteredTasks = tasks.filter((t) => {
-    const matchesStatus = filterStatus === "all" || t.status === filterStatus;
-    const q = searchQuery.toLowerCase();
-    const matchesSearch =
-      !q ||
-      t.title.toLowerCase().includes(q) ||
-      (t.description?.toLowerCase().includes(q) ?? false);
-    return matchesStatus && matchesSearch;
-  });
+  const filteredTasks = filterStatus === "overdue"
+    ? overdueTasks.filter((t) => {
+        const q = searchQuery.toLowerCase();
+        return (
+          !q ||
+          t.title.toLowerCase().includes(q) ||
+          (t.description?.toLowerCase().includes(q) ?? false)
+        );
+      })
+    : tasks.filter((t) => {
+        const matchesStatus = filterStatus === "all" || t.status === filterStatus;
+        const q = searchQuery.toLowerCase();
+        const matchesSearch =
+          !q ||
+          t.title.toLowerCase().includes(q) ||
+          (t.description?.toLowerCase().includes(q) ?? false);
+        return matchesStatus && matchesSearch;
+      });
 
   const today = new Date().toISOString().split("T")[0];
   const dateChips = getDateChips(selectedDate);
@@ -279,6 +294,9 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-5 mb-16 md:mb-0">
+      {/* Overdue tasks banner */}
+      <OverdueBanner />
+
       {/* Daily briefing banner */}
       {briefing && !briefingDismissed && briefingText && (
         <div className="flex items-start gap-3 bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-4 py-3">
@@ -465,6 +483,7 @@ export default function DashboardPage() {
                   { key: "in_progress", label: "進行中" },
                   { key: "completed", label: "完了" },
                   { key: "overrun", label: "期限超過" },
+                  { key: "overdue", label: "期日超過" },
                 ] as { key: FilterStatus; label: string }[]
               ).map(({ key, label }, idx) => {
                 const count = chipCounts[key];

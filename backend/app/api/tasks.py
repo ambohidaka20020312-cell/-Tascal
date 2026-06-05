@@ -51,6 +51,20 @@ def list_tasks():
     return jsonify({"data": [t.to_dict() for t in tasks]})
 
 
+@bp.get("/overdue")
+@jwt_required()
+def overdue_tasks():
+    user_id = get_jwt_identity()
+    today = datetime.date.today()
+    tasks = Task.query.filter(
+        Task.user_id == user_id,
+        Task.scheduled_date < today,
+        Task.status.notin_(["completed", "done"]),
+        Task.is_deleted == False,
+    ).order_by(Task.scheduled_date.asc()).all()
+    return jsonify({"data": [t.to_dict() for t in tasks], "count": len(tasks)})
+
+
 @bp.patch("/reorder")
 @jwt_required()
 def reorder_tasks():

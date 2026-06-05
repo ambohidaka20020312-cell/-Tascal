@@ -23,6 +23,10 @@ def make_celery(app):
             "task": "app.tasks.recurring.generate_recurring_tasks",
             "schedule": crontab(hour=0, minute=5),
         },
+        "send-due-reminders": {
+            "task": "app.tasks.reminders.send_due_reminders",
+            "schedule": crontab(hour=8, minute=0),  # 8am daily
+        },
     }
 
     class ContextTask(celery.Task):
