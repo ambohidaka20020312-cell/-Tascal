@@ -8,6 +8,29 @@ PRIORITY_WEIGHT = {"urgent": 4, "high": 3, "medium": 2, "low": 1}
 DEADLINE_WEIGHT = {"today": 0, "flexible": 1, "someday": 2}  # lower = more urgent
 
 
+def _minutes_until(dt: datetime.datetime) -> float:
+    """Minutes from now until the given datetime. Negative means already past."""
+    return (dt - datetime.datetime.now()).total_seconds() / 60
+
+
+def _deadline_score(task) -> tuple:
+    """
+    Sort key for a task's urgency.
+    Tasks with hard due_datetime come first, sorted by time remaining.
+    Then deadline_type, then priority.
+    """
+    due: datetime.datetime | None = task.due_datetime
+    if due:
+        # Hard deadline: minutes remaining (smaller = more urgent)
+        mins_left = _minutes_until(due)
+        est = task.estimated_minutes or 30
+        slack = mins_left - est  # negative slack = already at risk
+        return (0, slack, -PRIORITY_WEIGHT.get(task.priority, 2))
+    # No hard deadline — use deadline_type + priority
+    dtype_score = DEADLINE_WEIGHT.get(getattr(task, "deadline_type", "today"), 0)
+    return (1, dtype_score, -PRIORITY_WEIGHT.get(task.priority, 2))
+
+
 class AIOptimizer:
     def __init__(self):
         self._client = None
@@ -31,13 +54,8 @@ class AIOptimizer:
             key=lambda t: t.fixed_start_time or "00:00",
         )
 
-        # Flexible tasks: sort by deadline_type first, then priority / due date
-        flex_sorted = sorted(flex_tasks, key=lambda t: (
-            DEADLINE_WEIGHT.get(getattr(t, "deadline_type", "today"), 0),
-            -PRIORITY_WEIGHT.get(t.priority, 2),
-            t.due_datetime or datetime.datetime.max,
-            t.sort_order,
-        ))
+        # Flexible tasks: hard deadlines first (by slack), then deadline_type + priority
+        flex_sorted = sorted(flex_tasks, key=_deadline_score)
 
         schedule = []
         order = 1
@@ -50,23 +68,58 @@ class AIOptimizer:
 
         total_minutes = sum(t.estimated_minutes or 30 for t in tasks)
 
+        # Detect tasks at risk of missing their deadline
+        at_risk = []
+        cumulative = 0
+        now = datetime.datetime.now()
+        for entry in schedule:
+            td = entry["task"]
+            est = td.get("estimated_minutes") or 30
+            cumulative += est
+            due_str = td.get("due_datetime")
+            if due_str:
+                try:
+                    due_dt = datetime.datetime.fromisoformat(due_str)
+                    finish_at = now + datetime.timedelta(minutes=cumulative)
+                    if finish_at > due_dt:
+                        over_min = int((finish_at - due_dt).total_seconds() / 60)
+                        at_risk.append(f"「{td['title']}」（締め切り {due_dt.strftime('%m/%d %H:%M')} を約{over_min}分オーバーの見込み）")
+                except ValueError:
+                    pass
+
         fixed_lines = "\n".join(
             f"- 【固定】{t.title}（{t.fixed_start_time or '時刻未定'}〜, {t.estimated_minutes or '?'}分）"
             for t in fixed_sorted
         )
         flex_lines = "\n".join(
-            f"- {t.title}（優先度: {t.priority}, 目標: {t.estimated_minutes or '未設定'}分）"
+            "- {title}（{deadline}優先度: {priority}, 目標: {est}分）".format(
+                title=t.title,
+                deadline=f"締切 {t.due_datetime.strftime('%m/%d %H:%M')} / " if t.due_datetime else "",
+                priority=t.priority,
+                est=t.estimated_minutes or "未設定",
+            )
             for t in flex_sorted
         )
         task_list = "\n".join(filter(None, [fixed_lines, flex_lines]))
+        risk_section = (
+            "\n\n⚠️ 以下のタスクは現在のペースでは締め切りに間に合わない可能性があります：\n"
+            + "\n".join(f"  - {r}" for r in at_risk)
+            if at_risk else ""
+        )
 
         message = self._call_claude(
             f"以下のタスクリストを最適な順番に並べました。合計予定時間は{total_minutes}分です。\n"
-            f"【固定】タスクは時間が決まっているため移動できません。\n{task_list}\n\n"
+            f"【固定】タスクは時間が決まっているため移動できません。{risk_section}\n{task_list}\n\n"
             "ユーザーへの励ましと今日の取り組み方のアドバイスを2〜3文で日本語で提供してください。"
+            + ("締め切りリスクについても一言触れてください。" if at_risk else "")
         )
 
-        return {"schedule": schedule, "total_estimated_minutes": total_minutes, "message": message}
+        return {
+            "schedule": schedule,
+            "total_estimated_minutes": total_minutes,
+            "message": message,
+            "at_risk_deadlines": at_risk,
+        }
 
     def replan_after_overrun(self, overrun_task, actual_minutes: int, remaining_tasks: List) -> dict:
         overrun_by = actual_minutes - (overrun_task.estimated_minutes or 30)
@@ -77,10 +130,7 @@ class AIOptimizer:
         fixed_remaining = [t for t in remaining_tasks if getattr(t, "is_fixed", False)]
         flex_remaining = [t for t in remaining_tasks if not getattr(t, "is_fixed", False)]
 
-        flex_scored = sorted(flex_remaining, key=lambda t: (
-            DEADLINE_WEIGHT.get(getattr(t, "deadline_type", "today"), 0),
-            -PRIORITY_WEIGHT.get(t.priority, 2),
-        ))
+        flex_scored = sorted(flex_remaining, key=_deadline_score)
         fixed_scored = sorted(fixed_remaining, key=lambda t: t.fixed_start_time or "00:00")
 
         schedule = []

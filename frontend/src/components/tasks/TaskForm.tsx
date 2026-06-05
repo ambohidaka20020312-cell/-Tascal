@@ -47,6 +47,8 @@ export default function TaskForm({
   const [isFixed, setIsFixed] = useState(false);
   const [fixedStartTime, setFixedStartTime] = useState("");
   const [deadlineType, setDeadlineType] = useState<"today" | "flexible" | "someday">("today");
+  const [dueDate, setDueDate] = useState("");
+  const [dueTime, setDueTime] = useState("");
   const [showTemplates, setShowTemplates] = useState(false);
   const [error, setError] = useState("");
   const [categoryId, setCategoryId] = useState<number | null>(null);
@@ -111,6 +113,18 @@ export default function TaskForm({
       return;
     }
     setError("");
+
+    // Build due_datetime from date + time inputs
+    let dueDatetime: string | null = null;
+    if (dueDate) {
+      dueDatetime = dueTime
+        ? `${dueDate}T${dueTime}:00`
+        : `${dueDate}T23:59:00`;
+    }
+
+    // If hard deadline is set, treat as today-level urgency
+    const effectiveDeadlineType = dueDatetime ? "today" : deadlineType;
+
     try {
       await createTask.mutateAsync({
         title: title.trim(),
@@ -118,11 +132,12 @@ export default function TaskForm({
         priority,
         estimated_minutes: estimatedMinutes ? parseInt(estimatedMinutes, 10) : null,
         scheduled_date: scheduledDate || null,
+        due_datetime: dueDatetime,
         recurrence: buildRecurrenceRule() ?? null,
         category_id: categoryId,
         is_fixed: isFixed,
         fixed_start_time: isFixed && fixedStartTime ? fixedStartTime : null,
-        deadline_type: deadlineType,
+        deadline_type: effectiveDeadlineType,
       } as Partial<Task>);
       onClose();
     } catch {
@@ -298,39 +313,72 @@ export default function TaskForm({
             </div>
 
             <div>
-              <label htmlFor="task-scheduled-date" className="block text-[10px] tracking-[0.15em] uppercase text-[var(--text-subtle)] mb-1.5">{t('task.due_date')}</label>
+              <label htmlFor="task-scheduled-date" className="block text-[10px] tracking-[0.15em] uppercase text-[var(--text-subtle)] mb-1.5">作業予定日</label>
               <input id="task-scheduled-date" type="date" value={scheduledDate} onChange={(e) => setScheduledDate(e.target.value)} className={inputCls} />
             </div>
 
-            {/* Deadline type */}
-            <div>
-              <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--text-subtle)] mb-1.5">
-                いつまでに？
+            {/* Deadline — date + optional time */}
+            <div className="space-y-2">
+              <label className="block text-[10px] tracking-[0.15em] uppercase text-[var(--text-subtle)]">
+                締め切り
               </label>
+
+              {/* Date + time row */}
               <div className="flex gap-2">
-                {(
-                  [
-                    { value: "today",    label: "今日中",        desc: "必ず今日終わらせる" },
-                    { value: "flexible", label: "別日もOK",      desc: "余裕があれば今日" },
-                    { value: "someday",  label: "いつでもOK",    desc: "期限なし" },
-                  ] as const
-                ).map(({ value, label, desc }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    title={desc}
-                    onClick={() => setDeadlineType(value)}
-                    className={[
-                      "flex-1 py-2 rounded-lg text-[10px] tracking-wide border transition-colors",
-                      deadlineType === value
-                        ? "bg-[var(--text-primary)] text-[var(--bg-primary)] border-transparent"
-                        : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--text-subtle)]",
-                    ].join(" ")}
-                  >
-                    {label}
-                  </button>
-                ))}
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className={`${inputCls} flex-1`}
+                  placeholder="日付"
+                />
+                <input
+                  type="time"
+                  value={dueTime}
+                  onChange={(e) => setDueTime(e.target.value)}
+                  disabled={!dueDate}
+                  className={`${inputCls} w-28 disabled:opacity-40`}
+                  placeholder="時刻"
+                />
               </div>
+
+              {/* Deadline context label */}
+              {dueDate && (
+                <p className="text-[10px] text-[var(--accent)] flex items-center gap-1">
+                  <span>⚑</span>
+                  {dueTime
+                    ? `${dueDate} ${dueTime} までに完了 — AIが厳守スケジュールを組みます`
+                    : `${dueDate} 中に完了 — AIが厳守スケジュールを組みます`}
+                </p>
+              )}
+
+              {/* Urgency selector (only shown when no hard deadline) */}
+              {!dueDate && (
+                <div className="flex gap-2">
+                  {(
+                    [
+                      { value: "today",    label: "今日中",     desc: "今日必ず終わらせる" },
+                      { value: "flexible", label: "別日もOK",   desc: "余裕があれば今日" },
+                      { value: "someday",  label: "いつでも",   desc: "期限なし" },
+                    ] as const
+                  ).map(({ value, label, desc }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      title={desc}
+                      onClick={() => setDeadlineType(value)}
+                      className={[
+                        "flex-1 py-1.5 rounded-lg text-[10px] tracking-wide border transition-colors",
+                        deadlineType === value
+                          ? "bg-[var(--text-primary)] text-[var(--bg-primary)] border-transparent"
+                          : "border-[var(--border)] text-[var(--text-muted)] hover:border-[var(--text-subtle)]",
+                      ].join(" ")}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Fixed-time toggle */}
