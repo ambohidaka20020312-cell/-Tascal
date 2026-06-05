@@ -15,6 +15,10 @@ interface TaskCardProps {
   selected?: boolean;
   onSelect?: (id: number, checked: boolean) => void;
   categoryName?: string;
+  isDragging?: boolean;
+  draggedId?: number | null;
+  isDropTarget?: boolean;
+  onKeyDown?: (id: number, e: KeyboardEvent) => void;
 }
 
 // Monochrome priority dots — color by shade, not hue
@@ -58,7 +62,7 @@ function getDaysUntilDue(dueDatetime: string): number {
   return Math.round((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-export default function TaskCard({ task, selectable, selected, onSelect, categoryName }: TaskCardProps) {
+export default function TaskCard({ task, selectable, selected, onSelect, categoryName, isDragging, draggedId, isDropTarget, onKeyDown: _onKeyDown }: TaskCardProps) {
   const { t } = useTranslation();
   const [actualMinutes, setActualMinutes] = useState<string>("");
   const [showCompleteModal, setShowCompleteModal] = useState(false);
@@ -126,10 +130,12 @@ export default function TaskCard({ task, selectable, selected, onSelect, categor
     <>
       <article
         aria-label={task.title}
+        style={{ opacity: isDragging && draggedId === task.id ? 0.5 : 1 }}
         className={[
           "group border-b border-[var(--border)] -mx-4 px-4 transition-colors hover:bg-[var(--bg-secondary)]",
           task.status === "completed" ? "opacity-40" : "",
           selectable && selected ? "bg-[var(--bg-secondary)]" : "",
+          isDropTarget ? "border-t-2 border-t-[var(--text-muted)]" : "",
         ].join(" ")}
       >
         <div className={`flex items-start gap-3 ${isPhoneSmall ? "py-3" : "py-4"}`}>

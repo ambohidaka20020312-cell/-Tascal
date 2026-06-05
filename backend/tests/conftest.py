@@ -31,7 +31,7 @@ def clean_db(app):
 # ---------------------------------------------------------------------------
 
 def register(client, email="test@example.com", password="pass1234", name="Test User"):
-    return client.post("/api/v1/auth/register", json={"email": email, "password": password, "name": name})
+    return client.post("/api/v1/auth/register", json={"email": email, "password": password, "name": name, "age_confirmed": True})
 
 
 def login(client, email="test@example.com", password="pass1234"):

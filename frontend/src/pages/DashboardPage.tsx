@@ -114,7 +114,7 @@ export default function DashboardPage() {
 
   const { isLoading, isError } = useTasksQuery(selectedDate, filterCategoryId);
 
-  const { handlers: dragHandlers, dragIndex, overIndex } = useDragSort(tasks, (reordered) => {
+  const { handlers: dragHandlers, dragIndex, overIndex, isDragging, draggedId, onKeyDown: dragKeyDown } = useDragSort(tasks, (reordered) => {
     reorderTasks(reordered);
     taskApi.reorder(reordered.map((t) => t.id)).catch(() => {
       // silently ignore reorder persistence errors
@@ -612,9 +612,7 @@ export default function DashboardPage() {
                   className={[
                     "group/drag relative transition-opacity",
                     !bulkMode && dragIndex === index ? "opacity-50 cursor-grabbing" : !bulkMode ? "cursor-grab" : "",
-                    !bulkMode && overIndex === index && dragIndex !== index
-                      ? "border-t-2 border-[var(--accent)]"
-                      : "",
+                    "",
                   ].join(" ")}
                 >
                   {/* Drag handle — hidden in bulk mode */}
@@ -633,6 +631,10 @@ export default function DashboardPage() {
                     selected={selectedIds.has(task.id)}
                     onSelect={handleSelectTask}
                     categoryName={task.category_id != null ? categories.find((c) => c.id === task.category_id)?.name : undefined}
+                    isDragging={isDragging}
+                    draggedId={draggedId}
+                    isDropTarget={!bulkMode && overIndex === index && dragIndex !== index}
+                    onKeyDown={bulkMode ? undefined : dragKeyDown}
                   />
                   {!bulkMode && task.status === "in_progress" && task.estimated_minutes != null && task.estimated_minutes > 0 && (
                     <div className="flex justify-end px-1 -mt-1 mb-1">

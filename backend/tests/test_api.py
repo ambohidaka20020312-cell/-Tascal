@@ -301,3 +301,110 @@ class TestPushSubscribe:
             headers=auth_headers,
         )
         assert res.status_code == 200
+
+
+# ---------------------------------------------------------------------------
+# Categories (/categories)
+# ---------------------------------------------------------------------------
+
+class TestCategories:
+
+    def test_create_category(self, client, auth_headers):
+        res = client.post("/api/v1/categories", json={"name": "Work"}, headers=auth_headers)
+        assert res.status_code == 201
+        body = res.get_json()
+        assert body["data"]["name"] == "Work"
+        assert "id" in body["data"]
+
+    def test_list_categories(self, client, auth_headers):
+        client.post("/api/v1/categories", json={"name": "Work"}, headers=auth_headers)
+        client.post("/api/v1/categories", json={"name": "Personal"}, headers=auth_headers)
+        res = client.get("/api/v1/categories", headers=auth_headers)
+        assert res.status_code == 200
+        assert len(res.get_json()["data"]) == 2
+
+    def test_category_unique_per_user(self, client, auth_headers):
+        client.post("/api/v1/categories", json={"name": "Work"}, headers=auth_headers)
+        res = client.post("/api/v1/categories", json={"name": "Work"}, headers=auth_headers)
+        assert res.status_code == 409
+
+    def test_filter_tasks_by_category(self, client, auth_headers):
+        cat_res = client.post("/api/v1/categories", json={"name": "Work"}, headers=auth_headers)
+        cat_id = cat_res.get_json()["data"]["id"]
+        client.post("/api/v1/tasks", json={"title": "Task A", "category_id": cat_id}, headers=auth_headers)
+        client.post("/api/v1/tasks", json={"title": "Task B"}, headers=auth_headers)
+        res = client.get(f"/api/v1/tasks?category_id={cat_id}", headers=auth_headers)
+        assert res.status_code == 200
+        data = res.get_json()["data"]
+        assert len(data) == 1
+        assert data[0]["title"] == "Task A"
+
+
+# ---------------------------------------------------------------------------
+# Task notes (/tasks/<id>/notes)
+# ---------------------------------------------------------------------------
+
+class TestTaskNotes:
+
+    def test_add_note(self, client, auth_headers):
+        task_res = client.post("/api/v1/tasks", json={"title": "Note Task"}, headers=auth_headers)
+        task_id = task_res.get_json()["data"]["id"]
+        res = client.post(f"/api/v1/tasks/{task_id}/notes", json={"content": "hello"}, headers=auth_headers)
+        assert res.status_code == 201
+        assert res.get_json()["data"]["content"] == "hello"
+
+    def test_list_notes(self, client, auth_headers):
+        task_res = client.post("/api/v1/tasks", json={"title": "Note Task"}, headers=auth_headers)
+        task_id = task_res.get_json()["data"]["id"]
+        client.post(f"/api/v1/tasks/{task_id}/notes", json={"content": "note 1"}, headers=auth_headers)
+        client.post(f"/api/v1/tasks/{task_id}/notes", json={"content": "note 2"}, headers=auth_headers)
+        res = client.get(f"/api/v1/tasks/{task_id}/notes", headers=auth_headers)
+        assert res.status_code == 200
+        assert len(res.get_json()["data"]) == 2
+
+    def test_delete_note(self, client, auth_headers):
+        task_res = client.post("/api/v1/tasks", json={"title": "Note Task"}, headers=auth_headers)
+        task_id = task_res.get_json()["data"]["id"]
+        note_res = client.post(f"/api/v1/tasks/{task_id}/notes", json={"content": "bye"}, headers=auth_headers)
+        note_id = note_res.get_json()["data"]["id"]
+        del_res = client.delete(f"/api/v1/tasks/{task_id}/notes/{note_id}", headers=auth_headers)
+        assert del_res.status_code == 200
+        list_res = client.get(f"/api/v1/tasks/{task_id}/notes", headers=auth_headers)
+        assert len(list_res.get_json()["data"]) == 0
+
+
+# ---------------------------------------------------------------------------
+# Task export (/tasks/export)
+# ---------------------------------------------------------------------------
+
+class TestTaskExport:
+
+    def test_export_json(self, client, auth_headers):
+        client.post("/api/v1/tasks", json={"title": "Export Me"}, headers=auth_headers)
+        res = client.get("/api/v1/tasks/export?format=json", headers=auth_headers)
+        assert res.status_code == 200
+        assert res.content_type.startswith("application/json")
+        data = res.get_json()
+        assert isinstance(data, list)
+        assert any(t["title"] == "Export Me" for t in data)
+
+    def test_export_csv(self, client, auth_headers):
+        client.post("/api/v1/tasks", json={"title": "CSV Task"}, headers=auth_headers)
+        res = client.get("/api/v1/tasks/export?format=csv", headers=auth_headers)
+        assert res.status_code == 200
+        assert "text/csv" in res.content_type
+        assert b"CSV Task" in res.data
+
+
+# ---------------------------------------------------------------------------
+# Health check (/health)
+# ---------------------------------------------------------------------------
+
+class TestHealth:
+
+    def test_health_endpoint(self, client):
+        res = client.get("/api/v1/health")
+        assert res.status_code == 200
+        body = res.get_json()
+        assert body["status"] == "ok"
+        assert "version" in body

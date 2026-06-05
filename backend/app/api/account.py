@@ -91,7 +91,7 @@ def opt_out_analytics():
     return jsonify({"data": {"analytics_opt_out": True}, "message": "アナリティクスをオプトアウトしました"}), 200
 
 
-@account_bp.route("/unsubscribe-digest", methods=["POST"])
+@bp.route("/unsubscribe-digest", methods=["POST"])
 @jwt_required()
 def unsubscribe_digest():
     from flask_jwt_extended import get_jwt_identity
@@ -102,7 +102,7 @@ def unsubscribe_digest():
     return jsonify({"data": None, "message": "週次ダイジェストの配信を停止しました。"})
 
 
-@account_bp.route("/resubscribe-digest", methods=["POST"])
+@bp.route("/resubscribe-digest", methods=["POST"])
 @jwt_required()
 def resubscribe_digest():
     from flask_jwt_extended import get_jwt_identity
@@ -113,7 +113,7 @@ def resubscribe_digest():
     return jsonify({"data": None, "message": "週次ダイジェストの配信を再開しました。"})
 
 
-@account_bp.route("/unsubscribe", methods=["GET"])
+@bp.route("/unsubscribe", methods=["GET"])
 def unsubscribe_via_token():
     from flask_jwt_extended import decode_token
     token = request.args.get("token")

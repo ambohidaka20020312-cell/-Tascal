@@ -59,3 +59,44 @@ def rate_limit(max_requests: int, window_seconds: int, key_prefix: str = "rl"):
 login_rate_limit = rate_limit(max_requests=5, window_seconds=900, key_prefix="login")
 # 一般API用
 api_rate_limit = rate_limit(max_requests=100, window_seconds=60, key_prefix="api")
+
+
+def is_locked(key: str) -> bool:
+    """Check if a key is locked out (too many failures)."""
+    try:
+        r = _get_redis()
+        return bool(r.get(f"lockout:{key}"))
+    except Exception:
+        return False
+
+
+def lockout_remaining(key: str) -> int:
+    """Return remaining lockout seconds, or 0 if not locked."""
+    try:
+        r = _get_redis()
+        ttl = r.ttl(f"lockout:{key}")
+        return max(ttl, 0)
+    except Exception:
+        return 0
+
+
+def record_failure(key: str, max_failures: int = 5, lockout_seconds: int = 900) -> None:
+    """Record a failed attempt; lock out after max_failures."""
+    try:
+        r = _get_redis()
+        failure_key = f"failures:{key}"
+        count = r.incr(failure_key)
+        r.expire(failure_key, lockout_seconds)
+        if count >= max_failures:
+            r.setex(f"lockout:{key}", lockout_seconds, "1")
+    except Exception:
+        pass
+
+
+def record_success(key: str) -> None:
+    """Clear failure counter on successful auth."""
+    try:
+        r = _get_redis()
+        r.delete(f"failures:{key}", f"lockout:{key}")
+    except Exception:
+        pass

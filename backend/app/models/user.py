@@ -18,7 +18,7 @@ class User(db.Model):
     onboarding_completed = db.Column(db.Boolean, nullable=False, default=False)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
-    tasks = db.relationship("Task", backref="user", lazy="dynamic")
+    tasks = db.relationship("Task", foreign_keys="Task.user_id", backref="user", lazy="dynamic")
 
     def set_password(self, password: str):
         self.password_hash = generate_password_hash(password)
