@@ -1,194 +1,76 @@
 # Tascal デプロイ手順書
 
-## Quick Start (Docker)
+## Render（本番環境）へのデプロイ
 
-### Development
+### 初回デプロイ手順
+
+1. [render.com](https://render.com) にログイン
+2. 「New → Blueprint」を選択
+3. GitHubリポジトリを連携して選択
+4. `render.yaml` が自動検出されるので「Apply」をクリック
+5. **tascal-api の Environment タブ** で手動設定：
+
+| 変数名 | 値 |
+|--------|-----|
+| `ANTHROPIC_API_KEY` | `sk-ant-...` |
+| `STRIPE_SECRET_KEY` | `sk_live_...` |
+| `STRIPE_WEBHOOK_SECRET` | `whsec_...` |
+| `STRIPE_PRICE_ID_PRO` | `price_...` |
+| `MAIL_PASSWORD` | Gmailアプリパスワード（16桁） |
+| `ALLOWED_ORIGINS` | `https://tascal-frontend.onrender.com` |
+| `FRONTEND_URL` | `https://tascal-frontend.onrender.com` |
+
+6. **tascal-frontend の Environment タブ** で設定：
+
+| 変数名 | 値 |
+|--------|-----|
+| `VITE_API_BASE_URL` | `https://tascal-api.onrender.com/api/v1` |
+| `VITE_STRIPE_PUBLISHABLE_KEY` | `pk_live_...` |
+
+---
+
+### Gmail アプリパスワードの取得
+
+1. [myaccount.google.com/security](https://myaccount.google.com/security) で2段階認証を有効化
+2. [myaccount.google.com/apppasswords](https://myaccount.google.com/apppasswords) を開く
+3. アプリ名「Tascal」で作成 → 16桁のパスワードをコピー
+4. Render の `MAIL_PASSWORD` に設定（スペースなし）
+
+---
+
+### Stripe Webhook 設定
+
+1. Stripe → Webhooks → 「Add endpoint」
+2. URL: `https://tascal-api.onrender.com/api/v1/billing/webhook`
+3. イベント: `customer.subscription.*`, `invoice.payment_succeeded`, `invoice.payment_failed`
+4. Signing secret を `STRIPE_WEBHOOK_SECRET` に設定
+
+---
+
+### デプロイ後の確認
+
+```bash
+curl https://tascal-api.onrender.com/api/v1/health
+# 期待レスポンス: {"status":"ok"}
+```
+
+---
+
+## ローカル開発環境（Docker）
 
 ```bash
 cp backend/.env.example backend/.env
-cp frontend/.env.example frontend/.env
-# Edit backend/.env with your API keys
 docker-compose up -d
-```
-
-App runs at http://localhost:5173 (frontend) and http://localhost:5000 (backend API).
-
-Run database migrations after first start:
-
-```bash
 docker-compose exec backend flask db upgrade
 ```
 
-### Production (self-hosted)
-
-```bash
-cp backend/.env.example .env.prod
-# Edit .env.prod — set all Required variables below, change FLASK_ENV=production
-cp frontend/.env.example frontend/.env
-# Edit frontend/.env — set VITE_API_BASE_URL=https://api.yourdomain.com/api/v1
-
-docker-compose -f docker-compose.prod.yml up -d --build
-docker-compose -f docker-compose.prod.yml exec backend flask db upgrade
-```
-
-Services started: backend (gunicorn), celery worker, celery-beat scheduler, frontend (nginx), postgres, redis, nginx reverse proxy.
-
-### Required Environment Variables (Backend `.env.prod`)
-
-| Key | Description |
-|-----|-------------|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `SECRET_KEY` | Flask secret key (32+ random chars) |
-| `JWT_SECRET_KEY` | JWT signing key (32+ random chars) |
-| `POSTGRES_PASSWORD` | Postgres password (used by docker-compose) |
-| `ANTHROPIC_API_KEY` | Claude API key |
-| `STRIPE_SECRET_KEY` | Stripe secret key (`sk_live_...`) |
-| `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
-| `STRIPE_PRICE_ID_PRO` | Stripe price ID for Pro plan |
-| `STRIPE_PRICE_ID_TEAM` | Stripe price ID for Team plan |
-
-### Optional Environment Variables (Backend)
-
-| Key | Description |
-|-----|-------------|
-| `REDIS_URL` | Redis URL (default: `redis://redis:6379/0`) |
-| `CELERY_BROKER_URL` | Celery broker (default: same as REDIS_URL) |
-| `ALLOWED_ORIGINS` | CORS whitelist (comma-separated) |
-| `VAPID_PUBLIC_KEY` | VAPID public key for push notifications |
-| `VAPID_PRIVATE_KEY` | VAPID private key for push notifications |
-| `VAPID_CLAIMS_EMAIL` | Email for VAPID claims |
-
-### Frontend Environment Variables (`.env`)
-
-| Key | Description |
-|-----|-------------|
-| `VITE_API_BASE_URL` | Backend API URL |
-| `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key (`pk_live_...`) |
-| `VITE_ADSENSE_CLIENT_ID` | Google AdSense client ID (optional) |
-| `VITE_VAPID_PUBLIC_KEY` | VAPID public key for push notifications |
-
-### Generate VAPID Keys (Push Notifications)
-
-```bash
-pip install py-vapid
-python -c "from py_vapid import Vapid; v=Vapid(); v.generate_keys(); print('Public:', v.public_key); print('Private:', v.private_key)"
-```
+- フロントエンド: http://localhost:5173
+- バックエンドAPI: http://localhost:5000
 
 ---
 
-## Railway デプロイ手順
+## 注意事項
 
-1. **Railwayプロジェクト作成**
-   - [Railway](https://railway.app) にログインし、「New Project」→「Deploy from GitHub repo」を選択。
-   - `Tascal` リポジトリを連携し、`main` ブランチをデプロイ対象に設定する。
-
-2. **PostgreSQL サービスを追加**
-   - プロジェクト画面で「Add Service」→「Database」→「PostgreSQL」を追加。
-   - 自動的に `DATABASE_URL` 環境変数がバックエンドサービスに注入される。
-
-3. **環境変数を設定**
-   - バックエンドサービスの「Variables」タブで下記「環境変数設定一覧」を入力する。
-   - `railway.json` に従い Dockerfile ビルドが自動で走る。
-
-4. **マイグレーションを実行**
-   - Railway の「Shell」タブで以下を実行する:
-     ```bash
-     cd backend && flask db upgrade
-     ```
-   - または `wsgi.py` の `db.create_all()` により初回起動時に自動作成される。
-
-5. **デプロイ確認**
-   - サービスのログを確認し、`Running on 0.0.0.0` が表示されればOK。
-   - `/health` エンドポイントにアクセスして `200 OK` を確認する。
-
----
-
-## Render デプロイ手順
-
-1. **Renderアカウントと連携**
-   - [Render](https://render.com) にログインし、「New」→「Blueprint」を選択。
-   - `render.yaml` を含むリポジトリを選択すると、バックエンド・フロントエンド・DBが一括作成される。
-
-2. **DBの起動を確認**
-   - `tascal-db` (PostgreSQL) サービスが起動するまで待つ（通常1〜2分）。
-   - 接続文字列はバックエンドに自動で注入される。
-
-3. **環境変数を設定**
-   - `tascal-api` サービスの「Environment」から下記「環境変数設定一覧」を入力する。
-   - `SECRET_KEY` / `JWT_SECRET_KEY` は `render.yaml` の `generateValue: true` で自動生成される。
-
-4. **マイグレーションを実行**
-   - Render の「Shell」タブで以下を実行する:
-     ```bash
-     cd backend && flask db upgrade
-     ```
-
-5. **フロントエンドのビルド確認**
-   - `tascal-frontend` サービスの「Events」でビルドログを確認する。
-   - ビルド完了後に発行されるURLにアクセスして動作を確認する。
-
----
-
-## 環境変数設定一覧
-
-### バックエンド (tascal-api)
-
-| キー | 説明 | 必須 |
-|------|------|------|
-| `FLASK_ENV` | `production` 固定 | 必須 |
-| `DATABASE_URL` | PostgreSQL接続文字列 | 必須（自動注入） |
-| `SECRET_KEY` | Flaskセッション秘密鍵 | 必須 |
-| `JWT_SECRET_KEY` | JWT署名鍵 | 必須 |
-| `ANTHROPIC_API_KEY` | Claude API キー | 必須 |
-| `STRIPE_SECRET_KEY` | Stripe秘密キー (`sk_live_...`) | 必須 |
-| `STRIPE_WEBHOOK_SECRET` | Stripeウェブフック署名シークレット | 必須 |
-| `STRIPE_PRICE_ID_PRO` | ProプランのStripe価格ID | 必須 |
-| `STRIPE_PRICE_ID_TEAM` | TeamプランのStripe価格ID | 必須 |
-| `REDIS_URL` | Redis接続URL（Celery用） | 任意 |
-
-### フロントエンド (tascal-frontend)
-
-| キー | 説明 | 必須 |
-|------|------|------|
-| `VITE_API_BASE_URL` | バックエンドAPIのURL | 必須 |
-| `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe公開キー (`pk_live_...`) | 必須 |
-| `VITE_ADSENSE_CLIENT_ID` | AdSenseクライアントID | 任意 |
-
----
-
-## Stripeウェブフック設定手順
-
-1. [Stripe ダッシュボード](https://dashboard.stripe.com) →「開発者」→「Webhook」→「エンドポイントを追加」をクリック。
-2. エンドポイントURL に本番URLを設定する:
-   - Railway: `https://<サービス名>.up.railway.app/api/v1/billing/webhook`
-   - Render: `https://tascal-api.onrender.com/api/v1/billing/webhook`
-3. リッスンするイベントを選択:
-   - `checkout.session.completed`
-   - `customer.subscription.updated`
-   - `customer.subscription.deleted`
-   - `invoice.payment_failed`
-4. 「エンドポイントを追加」をクリックし、表示された「署名シークレット」(`whsec_...`) をコピー。
-5. バックエンドの環境変数 `STRIPE_WEBHOOK_SECRET` に設定する。
-
----
-
-## カスタムドメイン設定
-
-### Railway
-1. サービスの「Settings」→「Domains」→「Custom Domain」をクリック。
-2. 使用するドメイン（例: `api.tascal.app`）を入力。
-3. 表示されるCNAMEレコードをDNSプロバイダーに追加する。
-4. SSL証明書はRailwayが自動発行する。
-
-### Render
-1. サービスの「Settings」→「Custom Domains」→「Add Custom Domain」をクリック。
-2. ドメインを入力し、表示されるCNAMEレコードをDNSに追加する。
-3. フロントエンド（`tascal-frontend`）にはSPAルーティング用のリライトルールが `render.yaml` に設定済み。
-
-### DNS設定例
-
-| タイプ | ホスト名 | 値 |
-|--------|----------|-----|
-| CNAME | `api` | `<railway/render が発行するCNAME>` |
-| CNAME | `www` | `<frontend サービスのCNAME>` |
-| A / CNAME | `@` | `<apex ドメイン用レコード>` |
+- Renderの**無料プラン**はアクセスがないとスリープ（コールドスタート約30秒）。有料プラン$7/月で常時起動
+- Gmailは1日500通上限。ユーザーが増えたらResendまたはSendGridへ移行
+- PostgreSQL無料プランは90日間放置で自動削除

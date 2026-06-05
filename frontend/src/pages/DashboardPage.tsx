@@ -58,6 +58,8 @@ export default function DashboardPage() {
   const [aiAdvice, setAiAdvice] = useState<string | null>(null);
   const [aiLoading, setAiLoading] = useState(false);
   const [briefingDismissed, setBriefingDismissed] = useState(false);
+  const [replanLoading, setReplanLoading] = useState(false);
+  const [replanMessage, setReplanMessage] = useState<string | null>(null);
   const { briefing } = useDailyBriefing();
 
   // Search state
@@ -248,6 +250,22 @@ export default function DashboardPage() {
     }
   };
 
+  const handleReplan = async () => {
+    const overrunTask = tasks.find((t) => t.status === "overrun");
+    if (!overrunTask) return;
+    setReplanLoading(true);
+    setReplanMessage(null);
+    try {
+      const res = await aiApi.replan(overrunTask.id, overrunTask.actual_minutes ?? overrunTask.estimated_minutes ?? 0);
+      const data = res.data.data ?? res.data;
+      setReplanMessage(data.message ?? data.advice ?? "再計画が完了しました。");
+    } catch {
+      setReplanMessage("再計画に失敗しました。再度お試しください。");
+    } finally {
+      setReplanLoading(false);
+    }
+  };
+
   const todayLabel = format(new Date(selectedDate + "T00:00:00"), "M月d日 (E)", {
     locale: ja,
   });
@@ -402,6 +420,71 @@ export default function DashboardPage() {
           })}
         </div>
       </div>
+
+      {/* 今日の進捗ヒーローストリップ */}
+      {!isLoading && totalCount > 0 && (() => {
+        const overrunTasks = tasks.filter((t) => t.status === "overrun");
+        const hasOverrun = overrunTasks.length > 0;
+        const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+        const overrunMinutes = overrunTasks.reduce((sum, t) => {
+          if (t.estimated_minutes && t.actual_minutes && t.actual_minutes > t.estimated_minutes) {
+            return sum + (t.actual_minutes - t.estimated_minutes);
+          }
+          return sum + (t.estimated_minutes ?? 0);
+        }, 0);
+
+        return (
+          <div className={`rounded-xl border-l-4 px-4 py-3 ${hasOverrun ? "border-l-amber-400 bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800/40" : "border-l-green-400 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800/40"}`}>
+            <div className="flex items-center justify-between gap-4 mb-2">
+              <div className="flex items-center gap-2">
+                {hasOverrun ? (
+                  <span className="text-amber-500 text-base">⚠</span>
+                ) : (
+                  <span className="text-green-500 text-base">✓</span>
+                )}
+                <span className={`text-sm font-medium ${hasOverrun ? "text-amber-700 dark:text-amber-400" : "text-green-700 dark:text-green-400"}`}>
+                  {hasOverrun ? "狂わない一日モード" : "順調です"}
+                </span>
+              </div>
+              <span className="text-xs text-[var(--text-subtle)]">
+                {completedCount} / {totalCount} 完了
+              </span>
+            </div>
+            {/* Mini progress bar */}
+            <div className="w-full h-1.5 bg-[var(--bg-secondary)] rounded-full overflow-hidden mb-2">
+              <div
+                className={`h-full rounded-full transition-all ${hasOverrun ? "bg-amber-400" : "bg-green-400"}`}
+                style={{ width: `${progressPct}%` }}
+              />
+            </div>
+            {hasOverrun && (
+              <div className="mt-3">
+                <p className="text-xs text-amber-700 dark:text-amber-400 mb-2">
+                  {overrunMinutes > 0 ? `${overrunMinutes}分超過しています` : `${overrunTasks.length}件のタスクが超過中です`}
+                </p>
+                {replanMessage ? (
+                  <p className="text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)] border border-[var(--border)] rounded-lg px-3 py-2 leading-relaxed">{replanMessage}</p>
+                ) : (
+                  <button
+                    onClick={handleReplan}
+                    disabled={replanLoading}
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-400 hover:bg-amber-500 disabled:opacity-60 text-white rounded-lg text-xs font-medium tracking-wide transition-colors"
+                  >
+                    {replanLoading ? (
+                      <span className="w-3 h-3 border border-white/50 border-t-white rounded-full animate-spin" />
+                    ) : (
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                    )}
+                    残りタスクを再計画する
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })()}
 
       {/* Two-column layout on tablet+ or landscape mobile */}
       <div className={`grid gap-5 items-start ${isTabletOrAbove || isLandscape ? "grid-cols-2" : "grid-cols-1"}`}>
@@ -622,28 +705,60 @@ export default function DashboardPage() {
               タスクの取得に失敗しました
             </div>
           ) : filteredTasks.length === 0 ? (
-            <div className="text-center py-14 flex flex-col items-center">
-              <div className="w-16 h-16 border border-[var(--border)] rounded-2xl flex items-center justify-center mx-auto mb-5">
-                <svg className="w-8 h-8 text-[var(--text-subtle)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                </svg>
+            /* New-user / empty state */
+            tasks.length === 0 && !searchQuery && filterStatus === "all" && filterCategoryId == null ? (
+              <div className="text-center py-12 flex flex-col items-center">
+                <div className="w-20 h-20 border border-[var(--border)] rounded-3xl flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-10 h-10 text-[var(--text-subtle)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+                <p className="text-[var(--text-primary)] text-lg font-light tracking-wide mb-2">
+                  今日のタスクはまだありません
+                </p>
+                <p className="text-[var(--text-subtle)] text-sm mb-7 leading-relaxed max-w-xs">
+                  最初のタスクを追加して、AIに1日を最適化してもらいましょう
+                </p>
+                <button
+                  onClick={openTaskForm}
+                  className="flex items-center gap-2 px-6 py-3 bg-[var(--accent)] text-white dark:text-[#0f0f0f] rounded-xl text-sm font-medium tracking-wide hover:opacity-90 transition-opacity mb-8"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                  </svg>
+                  タスクを追加
+                </button>
+                <div className="flex flex-wrap justify-center gap-2">
+                  {[
+                    { icon: "🤖", label: "AIが優先順位を提案" },
+                    { icon: "⏱", label: "見積もり時間を学習" },
+                    { icon: "🔄", label: "超過したら自動再計画" },
+                  ].map(({ icon, label }) => (
+                    <span
+                      key={label}
+                      className="flex items-center gap-1.5 px-3 py-1.5 border border-[var(--border)] rounded-full text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)]"
+                    >
+                      <span>{icon}</span>
+                      <span>{label}</span>
+                    </span>
+                  ))}
+                </div>
               </div>
-              <p className="text-[var(--text-primary)] text-base font-light tracking-wide mb-1">
-                今日のタスクはまだありません
-              </p>
-              <p className="text-[var(--text-subtle)] text-xs mb-6 leading-relaxed">
-                新しいタスクを追加して、<br />生産的な1日を始めましょう
-              </p>
-              <button
-                onClick={() => setQuickAddVisible(true)}
-                className="flex items-center gap-2 px-5 py-2.5 border border-[var(--border)] text-[var(--text-muted)] text-sm tracking-wide hover:border-[var(--text-muted)] hover:text-[var(--text-primary)] transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
-                </svg>
-                タスクを追加
-              </button>
-            </div>
+            ) : (
+              <div className="text-center py-14 flex flex-col items-center">
+                <div className="w-16 h-16 border border-[var(--border)] rounded-2xl flex items-center justify-center mx-auto mb-5">
+                  <svg className="w-8 h-8 text-[var(--text-subtle)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                </div>
+                <p className="text-[var(--text-primary)] text-base font-light tracking-wide mb-1">
+                  タスクが見つかりません
+                </p>
+                <p className="text-[var(--text-subtle)] text-xs leading-relaxed">
+                  フィルターを変更するか、新しいタスクを追加してください
+                </p>
+              </div>
+            )
           ) : (
             <div className="space-y-2 pb-24 sm:pb-4">
               {filteredTasks.map((task, index) => (
