@@ -22,6 +22,7 @@ import ReplanButton from "../components/ai/ReplanButton";
 import TaskSuggestions from "../components/ai/TaskSuggestions";
 import AdBanner from "../components/ads/AdBanner";
 import OverdueBanner from "../components/tasks/OverdueBanner";
+import StatsBar from "../components/dashboard/StatsBar";
 
 type FilterStatus = "all" | "pending" | "in_progress" | "completed" | "overrun" | "overdue";
 
@@ -469,6 +470,9 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+
+          {/* Stats bar */}
+          <StatsBar />
 
           {/* Search input */}
           <TaskSearch value={searchQuery} onChange={setSearchQuery} inputRef={searchRef} />

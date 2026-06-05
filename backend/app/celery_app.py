@@ -27,6 +27,10 @@ def make_celery(app):
             "task": "app.tasks.reminders.send_due_reminders",
             "schedule": crontab(hour=8, minute=0),  # 8am daily
         },
+        "escalate-stale-tasks": {
+            "task": "app.tasks.escalation.escalate_stale_tasks",
+            "schedule": crontab(hour=6, minute=0),  # 6am daily
+        },
     }
 
     class ContextTask(celery.Task):

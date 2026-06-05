@@ -294,6 +294,21 @@ def task_stats():
     else:
         time_accuracy = 0.0
 
+    total = Task.query.filter_by(user_id=user_id, is_deleted=False).count()
+    completed_today = Task.query.filter(
+        Task.user_id == user_id,
+        Task.status == "completed",
+        Task.updated_at >= today.isoformat(),
+        Task.is_deleted == False,
+    ).count()
+    overdue = Task.query.filter(
+        Task.user_id == user_id,
+        Task.scheduled_date < today.isoformat(),
+        Task.status.in_(["pending", "in_progress"]),
+        Task.is_deleted == False,
+    ).count()
+    pending = Task.query.filter_by(user_id=user_id, status="pending", is_deleted=False).count()
+
     return jsonify({
         "data": {
             "weekly_completion_rate": weekly_completion_rate,
@@ -301,6 +316,10 @@ def task_stats():
             "current_streak": streak,
             "time_accuracy": time_accuracy,
             "total_completed": total_completed,
+            "total": total,
+            "completed_today": completed_today,
+            "overdue": overdue,
+            "pending": pending,
         }
     })
 
