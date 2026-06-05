@@ -64,7 +64,7 @@ def create_app(config_name: str = "development"):
     allowed_origins = os.getenv("ALLOWED_ORIGINS", ",".join(app.config["CORS_ORIGINS"])).split(",")
     CORS(app, resources={r"/api/*": {"origins": allowed_origins}}, supports_credentials=True)
 
-    app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024  # 1MB max request size
+    app.config["MAX_CONTENT_LENGTH"] = 52 * 1024 * 1024  # 52MB — allows up to 50MB file uploads
 
     @jwt.token_in_blocklist_loader
     def check_if_token_revoked(jwt_header, jwt_payload):
@@ -129,6 +129,18 @@ def create_app(config_name: str = "development"):
             db.session.add(msg)
             db.session.commit()
             socketio.emit("new_message", msg.to_dict(), room=f"channel_{channel_id}")
+
+    # ------------------------------------------------------------------ #
+    # Local-development static file serving for uploaded attachments      #
+    # (When S3_ENDPOINT_URL is set this route is never used in practice.) #
+    # ------------------------------------------------------------------ #
+    from flask import send_from_directory as _send_from_directory
+
+    @app.route("/uploads/<path:filename>")
+    def serve_upload(filename):
+        upload_root = os.path.join(os.path.dirname(__file__), "..", "uploads")
+        upload_root = os.path.abspath(upload_root)
+        return _send_from_directory(upload_root, filename)
 
     @app.route("/api/v1/docs/openapi.yaml")
     def openapi_spec():

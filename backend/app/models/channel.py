@@ -56,6 +56,8 @@ class Message(db.Model):
     channel_id = db.Column(db.Integer, db.ForeignKey("channels.id"), nullable=False)
     sender_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     body = db.Column(db.Text, nullable=False)
+    attachments = db.Column(db.JSON, nullable=True)
+    # e.g. [{"url": "...", "filename": "photo.jpg", "size": 12345, "mime_type": "image/jpeg"}]
     task_id = db.Column(db.Integer, db.ForeignKey("tasks.id"), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
@@ -69,6 +71,7 @@ class Message(db.Model):
             "channel_id": self.channel_id,
             "sender_id": self.sender_id,
             "body": self.body,
+            "attachments": self.attachments or [],
             "task_id": self.task_id,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
