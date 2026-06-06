@@ -8,6 +8,7 @@ import { aiApi, taskApi } from "../utils/api";
 import { useViewport } from "../hooks/useViewport";
 import { useDailyBriefing } from "../hooks/useDailyBriefing";
 import { useDragSort } from "../hooks/useDragSort";
+import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useSpeechInput } from "../hooks/useSpeechInput";
 import { parseNaturalLanguageTask, ParsedTask } from "../utils/nlpTaskParser";
 import TaskCard from "../components/tasks/TaskCard";
@@ -119,7 +120,14 @@ export default function DashboardPage() {
   const isTabletOrAbove =
     deviceType === "tablet" || deviceType === "desktop" || deviceType === "ultrawide";
 
-  const { isLoading, isError } = useTasksQuery(selectedDate, filterCategoryId);
+  const { isLoading, isError, refetch: refetchTasks } = useTasksQuery(selectedDate, filterCategoryId);
+
+  // Pull-to-refresh (mobile)
+  const pageRef = useRef<HTMLDivElement>(null);
+  const { refreshing, pulling, pullDistance } = usePullToRefresh(pageRef, {
+    onRefresh: async () => { await refetchTasks(); },
+    threshold: 50,
+  });
   const { data: overdueTasks = [] } = useOverdueTasks();
 
   const { handlers: dragHandlers, dragIndex, overIndex, isDragging, draggedId, onKeyDown: dragKeyDown } = useDragSort(tasks, (reordered) => {
@@ -320,7 +328,23 @@ export default function DashboardPage() {
     : null;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5 mb-16 md:mb-0">
+    <div ref={pageRef} className="max-w-2xl mx-auto space-y-5 mb-16 md:mb-0">
+      {/* Pull-to-refresh indicator */}
+      {(pulling || refreshing) && (
+        <div
+          className="flex items-center justify-center text-[var(--text-muted)] transition-all"
+          style={{ height: pulling ? Math.min(pullDistance, 50) : 0, overflow: "hidden" }}
+        >
+          {refreshing ? (
+            <div className="w-5 h-5 border-2 border-[var(--border)] border-t-[var(--text-muted)] rounded-full animate-spin" />
+          ) : (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          )}
+        </div>
+      )}
+
       {/* Overdue tasks banner */}
       <OverdueBanner />
 
