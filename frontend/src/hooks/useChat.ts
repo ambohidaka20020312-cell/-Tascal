@@ -2,7 +2,6 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { io, Socket } from "socket.io-client";
 import api from "../utils/api";
-import api, { chatApi } from "../utils/api";
 import type { Channel, Message } from "../types/team";
 
 // ── Channel list ──────────────────────────────────────────────────────────────
@@ -110,43 +109,4 @@ export function useChat(channelId: number | null) {
   );
 
   return { messages, sendMessage, isConnected };
-  const uploadFile = useCallback(
-    async (file: File): Promise<void> => {
-      if (!channelId) return;
-      const formData = new FormData();
-      formData.append("file", file);
-
-      // Optimistic placeholder while uploading
-      const tempMsg: Message = {
-        id: -Date.now(),
-        channel_id: channelId,
-        sender_id: 0,
-        sender_name: "送信中...",
-        body: `📎 ${file.name}`,
-        task_id: null,
-        created_at: new Date().toISOString(),
-      };
-
-      qc.setQueryData<Message[]>(["messages", channelId], (prev = []) => [
-        ...prev,
-        tempMsg,
-      ]);
-
-      try {
-        const result = await chatApi.uploadToChannel(channelId, formData);
-        const newMsg: Message = result?.data ?? result;
-        qc.setQueryData<Message[]>(["messages", channelId], (prev = []) =>
-          prev.map((m) => (m.id === tempMsg.id ? newMsg : m))
-        );
-      } catch {
-        // Remove optimistic message on error
-        qc.setQueryData<Message[]>(["messages", channelId], (prev = []) =>
-          prev.filter((m) => m.id !== tempMsg.id)
-        );
-      }
-    },
-    [channelId, qc]
-  );
-
-  return { messages, sendMessage, uploadFile, isConnected };
 }

@@ -183,18 +183,6 @@ def send_message(channel_id):
     except Exception:
         pass
 
-
-    # Emit via SocketIO if available
-    try:
-        from .. import socketio
-        socketio.emit(
-            "new_message",
-            msg.to_dict(),
-            room=f"channel_{channel_id}",
-        )
-    except Exception:
-        pass
-
     return jsonify({"data": msg.to_dict(), "message": "メッセージを送信しました"}), 201
 
 
@@ -253,4 +241,3 @@ def message_to_task(channel_id, mid):
     db.session.commit()
 
     return jsonify({"data": task.to_dict(), "message": "メッセージからタスクを作成しました"}), 201
-
