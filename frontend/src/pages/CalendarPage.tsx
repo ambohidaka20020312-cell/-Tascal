@@ -1,30 +1,61 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import timeGridPlugin from "@fullcalendar/timegrid";
-import interactionPlugin, { DateClickArg } from "@fullcalendar/interaction";
-import { EventClickArg, EventInput, DatesSetArg, EventDropArg, EventMountArg } from "@fullcalendar/core";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { calendarApi, taskApi } from "../utils/api";
+import interactionPlugin, { DateClickArg, EventResizeDoneArg } from "@fullcalendar/interaction";
+import listPlugin from "@fullcalendar/list";
+import { EventClickArg, EventDropArg, EventMountArg } from "@fullcalendar/core";
+import { useQueryClient } from "@tanstack/react-query";
+import { taskApi } from "../utils/api";
 import { Task } from "../store/taskStore";
 import Modal from "../components/common/Modal";
 import { isJapanHoliday, getHolidayName } from "../utils/japanHolidays";
+import { useCalendarTasks } from "../hooks/useCalendarTasks";
 
-// FullCalendar v6 bundles its own CSS automatically via the plugins.
+// ─── CSS overrides injected into page ───────────────────────────────────────
+const calendarStyles = `
+  .fc { background: var(--bg-primary); color: var(--text-primary); }
+  .fc-toolbar-title { font-size: 1.1rem; font-weight: 600; }
+  .fc-button {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border) !important;
+    color: var(--text-primary) !important;
+    box-shadow: none !important;
+  }
+  .fc-button:hover { opacity: 0.85; }
+  .fc-button-active,
+  .fc-button-primary:not(:disabled).fc-button-active {
+    background: var(--accent, #6366f1) !important;
+    color: white !important;
+    border-color: var(--accent, #6366f1) !important;
+  }
+  .fc-daygrid-day { background: var(--bg-primary); }
+  .fc-day-today { background: var(--bg-secondary) !important; }
+  .fc-col-header-cell { background: var(--bg-secondary); border-color: var(--border); }
+  .fc-scrollgrid { border-color: var(--border) !important; }
+  .fc-theme-standard td,
+  .fc-theme-standard th { border-color: var(--border); }
+  .fc-list-day-cushion { background: var(--bg-secondary) !important; }
+  .fc-list-event:hover td { background: var(--bg-secondary) !important; }
+  .fc-timegrid-slot { border-color: var(--border); }
+  .fc-event-completed { opacity: 0.5; }
+  .fc-event { cursor: pointer; }
+  .fc-day-holiday .fc-daygrid-day-number { color: #ef4444; }
+`;
+
+// ─── Constants ───────────────────────────────────────────────────────────────
+const PRIORITY_LABEL: Record<Task["priority"], string> = {
+  urgent: "緊急",
+  high: "高",
+  medium: "中",
+  low: "低",
+};
 
 const PRIORITY_COLOR: Record<Task["priority"], string> = {
   urgent: "#ef4444",
   high: "#f97316",
   medium: "#3b82f6",
-  low: "#6b7280",
-};
-
-/** Opacity applied to event background per priority level */
-const PRIORITY_OPACITY: Record<Task["priority"], number> = {
-  urgent: 1,
-  high: 0.75,
-  medium: 0.5,
-  low: 0.3,
+  low: "#22c55e",
 };
 
 const STATUS_LABEL: Record<Task["status"], string> = {
@@ -34,13 +65,6 @@ const STATUS_LABEL: Record<Task["status"], string> = {
   overrun: "超過",
 };
 
-const PRIORITY_LABEL: Record<Task["priority"], string> = {
-  urgent: "緊急",
-  high: "高",
-  medium: "中",
-  low: "低",
-};
-
 interface NewTaskForm {
   title: string;
   priority: Task["priority"];
@@ -48,20 +72,14 @@ interface NewTaskForm {
   description: string;
 }
 
-/** Convert hex color + opacity to rgba string */
-function hexToRgba(hex: string, opacity: number): string {
-  const r = parseInt(hex.slice(1, 3), 16);
-  const g = parseInt(hex.slice(3, 5), 16);
-  const b = parseInt(hex.slice(5, 7), 16);
-  return `rgba(${r},${g},${b},${opacity})`;
-}
-
+// ─── Component ───────────────────────────────────────────────────────────────
 export default function CalendarPage() {
   const queryClient = useQueryClient();
-  const [dateRange, setDateRange] = useState<{ start: string; end: string }>({
-    start: "",
-    end: "",
-  });
+  const calendarRef = useRef<FullCalendar>(null);
+
+  const { events, handleDatesSet, updateTaskDate, updateTaskDuration, refetch } =
+    useCalendarTasks();
+
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [newTaskDate, setNewTaskDate] = useState<string | null>(null);
   const [newTaskForm, setNewTaskForm] = useState<NewTaskForm>({
@@ -71,43 +89,9 @@ export default function CalendarPage() {
     description: "",
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
 
-  const { data: calendarTasks, refetch } = useQuery<Task[]>({
-    queryKey: ["calendar-tasks", dateRange.start, dateRange.end],
-    queryFn: async () => {
-      if (!dateRange.start || !dateRange.end) return [];
-      const res = await calendarApi.getTasks(dateRange.start, dateRange.end);
-      return (res.data.data ?? res.data) as Task[];
-    },
-    enabled: Boolean(dateRange.start && dateRange.end),
-  });
-
-  const events: EventInput[] = (calendarTasks ?? []).map((task) => {
-    const color = PRIORITY_COLOR[task.priority];
-    const opacity = PRIORITY_OPACITY[task.priority];
-    const bgColor = hexToRgba(color, opacity);
-    const isRecurring = Boolean(task.recurrence);
-    return {
-      id: String(task.id),
-      title: task.title + (isRecurring ? " ↻" : ""),
-      start: task.scheduled_date ?? task.due_datetime ?? undefined,
-      end: task.due_datetime ?? undefined,
-      backgroundColor: bgColor,
-      borderColor: color,
-      textColor: "#fff",
-      extendedProps: {
-        task,
-        description: task.description,
-      },
-    };
-  });
-
-  const handleDatesSet = useCallback((arg: DatesSetArg) => {
-    setDateRange({
-      start: arg.startStr,
-      end: arg.endStr,
-    });
-  }, []);
+  // ── Handlers ───────────────────────────────────────────────────────────────
 
   const handleEventClick = useCallback((arg: EventClickArg) => {
     const task = arg.event.extendedProps.task as Task;
@@ -122,20 +106,39 @@ export default function CalendarPage() {
   const handleEventDrop = useCallback(
     async (info: EventDropArg) => {
       const taskId = parseInt(info.event.id, 10);
-      const newDate = info.event.startStr.split("T")[0];
+      const startStr = info.event.startStr;
+      const newDate = startStr.split("T")[0];
+      const newDatetime = startStr.includes("T") ? startStr : undefined;
       try {
-        await taskApi.update(taskId, { scheduled_date: newDate });
-        queryClient.invalidateQueries({ queryKey: ["calendar-tasks"] });
+        await updateTaskDate(taskId, newDate, newDatetime);
       } catch {
         info.revert();
       }
     },
-    [queryClient],
+    [updateTaskDate],
+  );
+
+  const handleEventResize = useCallback(
+    async (info: EventResizeDoneArg) => {
+      const taskId = parseInt(info.event.id, 10);
+      const start = info.event.start;
+      const end = info.event.end;
+      if (start && end) {
+        const diffMs = end.getTime() - start.getTime();
+        const minutes = Math.round(diffMs / 60000);
+        try {
+          await updateTaskDuration(taskId, minutes);
+        } catch {
+          info.revert();
+        }
+      }
+    },
+    [updateTaskDuration],
   );
 
   const handleEventDidMount = useCallback((info: EventMountArg) => {
-    const desc = info.event.extendedProps.description as string | undefined;
-    info.el.title = desc || info.event.title;
+    const task = info.event.extendedProps.task as Task;
+    info.el.title = task.description || task.title;
   }, []);
 
   const handleCreateTask = async () => {
@@ -149,9 +152,10 @@ export default function CalendarPage() {
         estimated_minutes: newTaskForm.estimated_minutes
           ? parseInt(newTaskForm.estimated_minutes, 10)
           : null,
-        scheduled_date: newTaskDate,
+        scheduled_date: newTaskDate.split("T")[0],
       });
       setNewTaskDate(null);
+      queryClient.invalidateQueries({ queryKey: ["calendar-tasks"] });
       refetch();
     } catch {
       // keep modal open on error
@@ -160,38 +164,78 @@ export default function CalendarPage() {
     }
   };
 
+  const handleCompleteTask = async () => {
+    if (!selectedTask) return;
+    setIsCompleting(true);
+    try {
+      await taskApi.complete(selectedTask.id, selectedTask.actual_minutes ?? 0);
+      setSelectedTask(null);
+      queryClient.invalidateQueries({ queryKey: ["calendar-tasks"] });
+      refetch();
+    } catch {
+      // ignore
+    } finally {
+      setIsCompleting(false);
+    }
+  };
+
+  // ── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="bg-[var(--bg-primary)] p-4 md:p-8 mb-16 md:mb-0">
+      {/* Inject custom CSS */}
+      <style>{calendarStyles}</style>
+
       <div className="max-w-6xl mx-auto space-y-4">
         {/* Page header */}
         <div>
-          <p className="text-[10px] tracking-[0.25em] uppercase text-[var(--text-subtle)] mb-1">CALENDAR</p>
-          <h1 className="text-2xl font-light tracking-wide text-[var(--text-primary)]">カレンダー</h1>
-          <p className="text-xs text-[var(--text-subtle)] mt-0.5 tracking-wide hidden sm:block">日付をクリックしてタスクを追加、タスクをドラッグして日程変更</p>
-          <p className="text-xs text-[var(--text-subtle)] mt-0.5 tracking-wide sm:hidden">日付をタップしてタスクを追加</p>
+          <p className="text-[10px] tracking-[0.25em] uppercase text-[var(--text-subtle)] mb-1">
+            CALENDAR
+          </p>
+          <h1 className="text-2xl font-light tracking-wide text-[var(--text-primary)]">
+            カレンダー
+          </h1>
+          <p className="text-xs text-[var(--text-subtle)] mt-0.5 tracking-wide hidden sm:block">
+            日付をクリックしてタスクを追加、タスクをドラッグして日程変更
+          </p>
+          <p className="text-xs text-[var(--text-subtle)] mt-0.5 tracking-wide sm:hidden">
+            日付をタップしてタスクを追加
+          </p>
+        </div>
+
+        {/* Legend */}
+        <div className="flex flex-wrap gap-3 text-xs text-[var(--text-muted)]">
+          {(["urgent", "high", "medium", "low"] as Task["priority"][]).map((p) => (
+            <span key={p} className="flex items-center gap-1.5">
+              <span
+                className="inline-block w-2.5 h-2.5 rounded-sm"
+                style={{ backgroundColor: PRIORITY_COLOR[p] }}
+              />
+              {PRIORITY_LABEL[p]}
+            </span>
+          ))}
+          <span className="flex items-center gap-1.5 ml-2 text-[var(--text-subtle)]">
+            🔒 固定タスク
+          </span>
+          <span className="flex items-center gap-1.5 text-[var(--text-subtle)]">↻ 繰り返し</span>
         </div>
 
         {/* Calendar */}
         <div className="border border-[var(--border)] rounded-xl p-2 sm:p-4 overflow-hidden bg-[var(--bg-primary)]">
           <FullCalendar
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+            ref={calendarRef}
+            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin, listPlugin]}
             initialView="timeGridWeek"
-            views={{
-              timeGridWeek: { buttonText: "週" },
-              dayGridMonth: { buttonText: "月" },
-              timeGridDay: { buttonText: "日" },
-            }}
             headerToolbar={{
               left: "prev,next today",
               center: "title",
-              right: "timeGridWeek,dayGridMonth,timeGridDay",
+              right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek",
             }}
-            windowResizeDelay={0}
             buttonText={{
               today: "今日",
               month: "月",
               week: "週",
               day: "日",
+              list: "リスト",
             }}
             locale="ja"
             events={events}
@@ -200,21 +244,33 @@ export default function CalendarPage() {
             dateClick={handleDateClick}
             editable={true}
             eventDrop={handleEventDrop}
+            eventResize={handleEventResize}
             eventDidMount={handleEventDidMount}
+            windowResizeDelay={0}
+            height="auto"
+            eventDisplay="block"
+            dayMaxEvents={4}
+            longPressDelay={500}
+            nowIndicator={true}
+            slotMinTime="06:00:00"
+            slotMaxTime="23:00:00"
             dayCellContent={(arg) => {
               const dateStr = arg.date.toISOString().slice(0, 10);
               const holidayName = isJapanHoliday(dateStr) ? getHolidayName(dateStr) : null;
               return (
-                <div className="fc-daygrid-day-number-wrapper" style={{ width: "100%" }}>
+                <div style={{ width: "100%" }}>
                   <span className="fc-daygrid-day-number">{arg.dayNumberText}</span>
                   {holidayName && (
-                    <span style={{ fontSize: "9px", color: "#ef4444", display: "block", lineHeight: 1.2, marginTop: 1 }}>
+                    <span
+                      style={{
+                        fontSize: "9px",
+                        color: "#ef4444",
+                        display: "block",
+                        lineHeight: 1.2,
+                        marginTop: 1,
+                      }}
+                    >
                       {holidayName}
-                    </span>
-                  )}
-                  {!holidayName && isJapanHoliday(dateStr) && (
-                    <span style={{ fontSize: "9px", color: "#ef4444", display: "block", lineHeight: 1.2, marginTop: 1 }}>
-                      祝
                     </span>
                   )}
                 </div>
@@ -224,27 +280,24 @@ export default function CalendarPage() {
               const dateStr = arg.date.toISOString().slice(0, 10);
               return isJapanHoliday(dateStr) ? ["fc-day-holiday"] : [];
             }}
-            height="auto"
-            eventDisplay="block"
-            dayMaxEvents={3}
-            longPressDelay={500}
           />
         </div>
       </div>
 
-      {/* Task detail modal */}
-      <Modal
-        isOpen={selectedTask !== null}
-        onClose={() => setSelectedTask(null)}
-        title="タスク詳細"
-      >
+      {/* ── Task detail modal ─────────────────────────────────────────────── */}
+      <Modal isOpen={selectedTask !== null} onClose={() => setSelectedTask(null)} title="タスク詳細">
         {selectedTask && (
           <div className="space-y-4">
             <div className="flex items-start justify-between gap-4">
-              <h3 className="text-lg font-semibold text-gray-800 leading-snug">
+              <h3 className="text-lg font-semibold text-[var(--text-primary)] leading-snug">
                 {selectedTask.title}
                 {selectedTask.recurrence && (
-                  <span className="ml-2 text-sm text-gray-400" title="繰り返しタスク">↻</span>
+                  <span
+                    className="ml-2 text-sm text-[var(--text-muted)]"
+                    title="繰り返しタスク"
+                  >
+                    ↻
+                  </span>
                 )}
               </h3>
               <span
@@ -256,31 +309,35 @@ export default function CalendarPage() {
             </div>
 
             {selectedTask.description && (
-              <p className="text-sm text-gray-600 leading-relaxed">{selectedTask.description}</p>
+              <p className="text-sm text-[var(--text-muted)] leading-relaxed">
+                {selectedTask.description}
+              </p>
             )}
 
             <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
               <div>
-                <dt className="text-gray-400 text-xs font-medium">ステータス</dt>
-                <dd className="text-gray-800 font-medium mt-0.5">{STATUS_LABEL[selectedTask.status]}</dd>
+                <dt className="text-[var(--text-subtle)] text-xs font-medium">ステータス</dt>
+                <dd className="text-[var(--text-primary)] font-medium mt-0.5">
+                  {STATUS_LABEL[selectedTask.status]}
+                </dd>
               </div>
               <div>
-                <dt className="text-gray-400 text-xs font-medium">予定日</dt>
-                <dd className="text-gray-800 font-medium mt-0.5">
+                <dt className="text-[var(--text-subtle)] text-xs font-medium">予定日</dt>
+                <dd className="text-[var(--text-primary)] font-medium mt-0.5">
                   {selectedTask.scheduled_date ?? "未設定"}
                 </dd>
               </div>
               <div>
-                <dt className="text-gray-400 text-xs font-medium">見積もり時間</dt>
-                <dd className="text-gray-800 font-medium mt-0.5">
+                <dt className="text-[var(--text-subtle)] text-xs font-medium">見積もり時間</dt>
+                <dd className="text-[var(--text-primary)] font-medium mt-0.5">
                   {selectedTask.estimated_minutes != null
                     ? `${selectedTask.estimated_minutes}分`
                     : "未設定"}
                 </dd>
               </div>
               <div>
-                <dt className="text-gray-400 text-xs font-medium">実績時間</dt>
-                <dd className="text-gray-800 font-medium mt-0.5">
+                <dt className="text-[var(--text-subtle)] text-xs font-medium">実績時間</dt>
+                <dd className="text-[var(--text-primary)] font-medium mt-0.5">
                   {selectedTask.actual_minutes != null
                     ? `${selectedTask.actual_minutes}分`
                     : "—"}
@@ -288,24 +345,35 @@ export default function CalendarPage() {
               </div>
               {selectedTask.due_datetime && (
                 <div className="col-span-2">
-                  <dt className="text-gray-400 text-xs font-medium">締め切り</dt>
-                  <dd className="text-gray-800 font-medium mt-0.5">
+                  <dt className="text-[var(--text-subtle)] text-xs font-medium">締め切り</dt>
+                  <dd className="text-[var(--text-primary)] font-medium mt-0.5">
                     {new Date(selectedTask.due_datetime).toLocaleString("ja-JP")}
                   </dd>
                 </div>
               )}
               {selectedTask.recurrence && (
                 <div className="col-span-2">
-                  <dt className="text-gray-400 text-xs font-medium">繰り返し</dt>
-                  <dd className="text-gray-800 font-medium mt-0.5">{selectedTask.recurrence}</dd>
+                  <dt className="text-[var(--text-subtle)] text-xs font-medium">繰り返し</dt>
+                  <dd className="text-[var(--text-primary)] font-medium mt-0.5">
+                    {selectedTask.recurrence}
+                  </dd>
                 </div>
               )}
             </dl>
 
-            <div className="pt-2 flex justify-end">
+            <div className="pt-2 flex gap-2 justify-end">
+              {selectedTask.status !== "completed" && (
+                <button
+                  onClick={handleCompleteTask}
+                  disabled={isCompleting}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-300 text-white text-sm font-medium rounded-xl transition-colors"
+                >
+                  {isCompleting ? "処理中…" : "完了にする"}
+                </button>
+              )}
               <button
                 onClick={() => setSelectedTask(null)}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-xl transition-colors"
+                className="px-4 py-2 bg-[var(--bg-secondary)] hover:opacity-80 text-[var(--text-primary)] text-sm font-medium rounded-xl transition-colors border border-[var(--border)]"
               >
                 閉じる
               </button>
@@ -314,15 +382,15 @@ export default function CalendarPage() {
         )}
       </Modal>
 
-      {/* New task modal */}
+      {/* ── New task modal ────────────────────────────────────────────────── */}
       <Modal
         isOpen={newTaskDate !== null}
         onClose={() => setNewTaskDate(null)}
-        title={`タスクを追加 — ${newTaskDate ?? ""}`}
+        title={`タスクを追加 — ${newTaskDate?.split("T")[0] ?? ""}`}
       >
         <div className="space-y-3">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">
+            <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">
               タスク名 <span className="text-red-500">*</span>
             </label>
             <input
@@ -330,30 +398,36 @@ export default function CalendarPage() {
               value={newTaskForm.title}
               onChange={(e) => setNewTaskForm((f) => ({ ...f, title: e.target.value }))}
               placeholder="タスクのタイトル"
-              className="w-full border border-gray-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              className="w-full border border-[var(--border)] rounded-xl px-3 py-3 text-base bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              autoFocus
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">説明</label>
+            <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">説明</label>
             <textarea
               value={newTaskForm.description}
               onChange={(e) => setNewTaskForm((f) => ({ ...f, description: e.target.value }))}
               placeholder="詳細（任意）"
               rows={2}
-              className="w-full border border-gray-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
+              className="w-full border border-[var(--border)] rounded-xl px-3 py-3 text-base bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-indigo-400 resize-none"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">優先度</label>
+              <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">
+                優先度
+              </label>
               <select
                 value={newTaskForm.priority}
                 onChange={(e) =>
-                  setNewTaskForm((f) => ({ ...f, priority: e.target.value as Task["priority"] }))
+                  setNewTaskForm((f) => ({
+                    ...f,
+                    priority: e.target.value as Task["priority"],
+                  }))
                 }
-                className="w-full border border-gray-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                className="w-full border border-[var(--border)] rounded-xl px-3 py-3 text-base bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-indigo-400"
               >
                 <option value="low">低</option>
                 <option value="medium">中</option>
@@ -362,7 +436,9 @@ export default function CalendarPage() {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">見積もり（分）</label>
+              <label className="block text-xs font-medium text-[var(--text-muted)] mb-1">
+                見積もり（分）
+              </label>
               <input
                 type="number"
                 value={newTaskForm.estimated_minutes}
@@ -371,7 +447,7 @@ export default function CalendarPage() {
                 }
                 placeholder="例: 60"
                 min="1"
-                className="w-full border border-gray-200 rounded-xl px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-indigo-400"
+                className="w-full border border-[var(--border)] rounded-xl px-3 py-3 text-base bg-[var(--bg-primary)] text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-indigo-400"
               />
             </div>
           </div>
@@ -379,7 +455,7 @@ export default function CalendarPage() {
           <div className="flex gap-2 pt-1">
             <button
               onClick={() => setNewTaskDate(null)}
-              className="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-xl transition-colors"
+              className="flex-1 px-4 py-2 bg-[var(--bg-secondary)] hover:opacity-80 text-[var(--text-primary)] text-sm font-medium rounded-xl transition-colors border border-[var(--border)]"
             >
               キャンセル
             </button>
