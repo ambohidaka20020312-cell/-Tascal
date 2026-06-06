@@ -124,6 +124,16 @@ def create_task():
     db.session.add(task)
     db.session.commit()
     invalidate_user_cache(user_id)
+
+    # Googleカレンダーへの自動同期
+    user = User.query.get(user_id)
+    if user and user.google_calendar_sync_enabled and user.google_calendar_token:
+        try:
+            from ..api.integrations import sync_task_to_google
+            sync_task_to_google(user, task)
+        except Exception:
+            pass
+
     return jsonify({"data": task.to_dict(), "message": "タスクを作成しました"}), 201
 
 
