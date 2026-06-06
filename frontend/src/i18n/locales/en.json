@@ -64,7 +64,10 @@
     "upgrade": "Upgrade",
     "current_plan": "Current Plan",
     "personal_tab": "Personal",
-    "corporate_tab": "Corporate"
+    "corporate_tab": "Corporate",
+    "trial_banner": "Try Pro free for 14 days →",
+    "trial_active": "Pro Trial - {{days}} days left",
+    "continue_pro": "Upgrade to continue →"
   },
   "settings": {
     "title": "Settings",

@@ -64,7 +64,10 @@
     "upgrade": "アップグレード",
     "current_plan": "現在のプラン",
     "personal_tab": "個人",
-    "corporate_tab": "法人"
+    "corporate_tab": "法人",
+    "trial_banner": "14日間 Pro を無料体験 →",
+    "trial_active": "Pro体験中 残り{{days}}日",
+    "continue_pro": "アップグレードして継続 →"
   },
   "settings": {
     "title": "設定",
