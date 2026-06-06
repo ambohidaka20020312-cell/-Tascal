@@ -41,7 +41,6 @@ class Task(db.Model):
     # "someday" = no hard deadline, low urgency
     deadline_type = db.Column(db.String(10), nullable=False, default="today")
 
-    google_event_id = db.Column(db.String(200), nullable=True)
     sort_order = db.Column(db.Integer, default=0)
     is_deleted = db.Column(db.Boolean, default=False)
     completed_at = db.Column(db.DateTime, nullable=True)
