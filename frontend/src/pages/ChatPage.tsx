@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import { useChannels, useChat } from "../hooks/useChat";
@@ -6,6 +7,7 @@ import { useOrgMembers } from "../hooks/useOrg";
 import { useOrg } from "../hooks/useOrg";
 import api from "../utils/api";
 import type { Channel, Message } from "../types/team";
+import type { Channel, Message, Attachment } from "../types/team";
 
 // ── Upsell screen for non-team plans ─────────────────────────────────────────
 
@@ -48,6 +50,39 @@ function InitialsAvatar({ name }: { name: string }) {
 function formatTime(iso: string) {
   const d = new Date(iso);
   return d.toLocaleTimeString("ja-JP", { hour: "2-digit", minute: "2-digit" });
+}
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return `${bytes}B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)}KB`;
+  return `${(bytes / 1024 / 1024).toFixed(1)}MB`;
+}
+
+function AttachmentPreview({ attachment }: { attachment: Attachment }) {
+  const isImage = attachment.mime_type.startsWith("image/");
+  if (isImage) {
+    return (
+      <img
+        src={attachment.url}
+        alt={attachment.filename}
+        className="max-w-xs max-h-48 rounded-lg cursor-pointer object-cover"
+        onClick={() => window.open(attachment.url, "_blank")}
+      />
+    );
+  }
+  return (
+    <a
+      href={attachment.url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="flex items-center gap-2 px-3 py-2 rounded-lg border border-[var(--border)] bg-[var(--bg-secondary)] text-sm hover:opacity-70"
+    >
+      📄 {attachment.filename}
+      <span className="text-xs text-[var(--text-secondary)]">
+        {formatFileSize(attachment.size)}
+      </span>
+    </a>
+  );
 }
 
 // ── Message → Task modal ──────────────────────────────────────────────────────
@@ -206,6 +241,13 @@ function MessageItem({ message, channelId, orgId, currentUserId }: MessageItemPr
           >
             {message.body}
           </div>
+          {message.attachments && message.attachments.length > 0 && (
+            <div className="mt-1 flex flex-col gap-1">
+              {message.attachments.map((att, i) => (
+                <AttachmentPreview key={i} attachment={att} />
+              ))}
+            </div>
+          )}
           {message.task_id && (
             <span className="mt-1 text-xs px-2 py-0.5 rounded-full bg-[var(--bg-tertiary)] border border-[var(--border)] text-[var(--text-secondary)]">
               📋 タスク: #{message.task_id}
@@ -339,6 +381,12 @@ function ChatArea({ channelId, channelName, orgId, currentUserId }: ChatAreaProp
   const { messages, sendMessage, isConnected } = useChat(channelId);
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
+  const { messages, sendMessage, uploadFile, isConnected } = useChat(channelId);
+  const [input, setInput] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
+  const bottomRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -354,6 +402,71 @@ function ChatArea({ channelId, channelName, orgId, currentUserId }: ChatAreaProp
 
   return (
     <div className="flex flex-col flex-1 h-full bg-[var(--bg-primary)]">
+  const handleFiles = useCallback(
+    async (files: FileList | File[]) => {
+      const fileArr = Array.from(files);
+      if (fileArr.length === 0) return;
+      setUploading(true);
+      try {
+        for (const file of fileArr) {
+          await uploadFile(file);
+        }
+      } finally {
+        setUploading(false);
+      }
+    },
+    [uploadFile]
+  );
+
+  const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      handleFiles(e.target.files);
+      e.target.value = "";
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+    const files = e.clipboardData.files;
+    if (files && files.length > 0) {
+      e.preventDefault();
+      handleFiles(files);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    setIsDragOver(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      handleFiles(e.dataTransfer.files);
+    }
+  };
+
+  return (
+    <div
+      className={`flex flex-col flex-1 h-full bg-[var(--bg-primary)] relative ${
+        isDragOver ? "border-2 border-dashed border-[var(--accent)]" : ""
+      }`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drag overlay */}
+      {isDragOver && (
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-[var(--bg-primary)]/80 pointer-events-none">
+          <p className="text-sm font-medium text-[var(--accent)]">ファイルをドロップしてアップロード</p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center gap-2 px-5 py-3 border-b border-[var(--border)] bg-[var(--bg-secondary)]">
         <span className="text-[var(--text-secondary)]">#</span>
@@ -388,12 +501,42 @@ function ChatArea({ channelId, channelName, orgId, currentUserId }: ChatAreaProp
         <div ref={bottomRef} />
       </div>
 
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        accept="image/*,application/pdf,.xlsx,.xls,.csv,.docx,.doc,.txt,.zip"
+        className="hidden"
+        onChange={handleFileInputChange}
+      />
+
       {/* Input */}
       <form
         onSubmit={handleSend}
         className="px-4 py-3 border-t border-[var(--border)] bg-[var(--bg-secondary)]"
       >
         <div className="flex items-end gap-2 bg-[var(--bg-primary)] border border-[var(--border)] rounded-xl px-3 py-2">
+          {/* Attach button */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={uploading}
+            className="shrink-0 w-8 h-8 flex items-center justify-center rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-secondary)] transition-colors disabled:opacity-40"
+            aria-label="ファイルを添付"
+          >
+            {uploading ? (
+              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+              </svg>
+            ) : (
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+              </svg>
+            )}
+          </button>
+
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -403,6 +546,7 @@ function ChatArea({ channelId, channelName, orgId, currentUserId }: ChatAreaProp
                 handleSend(e as unknown as React.FormEvent);
               }
             }}
+            onPaste={handlePaste}
             rows={1}
             placeholder={`#${channelName} にメッセージを送る`}
             className="flex-1 bg-transparent resize-none text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)] focus:outline-none max-h-32"

@@ -171,6 +171,16 @@ export const chatApi = {
     api.delete(`/org/${orgId}/departments/${deptId}`),
   assignMemberToDepartment: (orgId: number, deptId: number, userId: number) =>
     api.post(`/org/${orgId}/departments/${deptId}/members`, { user_id: userId }),
+  uploadToChannel: async (channelId: number, formData: FormData) => {
+    const token = localStorage.getItem("access_token");
+    const baseURL = import.meta.env.VITE_API_BASE_URL || "/api/v1";
+    const response = await fetch(`${baseURL}/channels/${channelId}/upload`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token ?? ""}` },
+      body: formData,
+    });
+    return response.json();
+  },
 };
 
 export default api;
