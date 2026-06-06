@@ -23,6 +23,8 @@ class User(db.Model):
     trial_started_at = db.Column(db.DateTime, nullable=True)
     trial_used = db.Column(db.Boolean, nullable=False, default=False)
     is_admin = db.Column(db.Boolean, nullable=False, default=False)
+    google_calendar_token = db.Column(db.JSON, nullable=True)
+    google_calendar_sync_enabled = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
 
     tasks = db.relationship("Task", foreign_keys="Task.user_id", backref="user", lazy="dynamic")

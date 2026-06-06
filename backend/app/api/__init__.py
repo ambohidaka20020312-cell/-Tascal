@@ -19,6 +19,7 @@ def register_blueprints(app: Flask):
     from .channels import bp as channels_bp
     from .notifications import notifications_bp
     from .admin import bp as admin_bp
+    from .integrations import bp as integrations_bp
 
     app.register_blueprint(auth_bp, url_prefix="/api/v1/auth")
     app.register_blueprint(tasks_bp, url_prefix="/api/v1/tasks")
@@ -37,3 +38,4 @@ def register_blueprints(app: Flask):
     app.register_blueprint(channels_bp, url_prefix="/api/v1/channels")
     app.register_blueprint(notifications_bp, url_prefix="/api/v1/notifications")
     app.register_blueprint(admin_bp, url_prefix="/api/v1/admin")
+    app.register_blueprint(integrations_bp, url_prefix="/api/v1/integrations")
