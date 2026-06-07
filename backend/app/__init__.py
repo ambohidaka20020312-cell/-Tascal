@@ -218,4 +218,12 @@ def create_app(config_name: str = "development"):
             app.logger.exception("Unhandled exception: %s", str(e))
             return jsonify({"error": {"code": "INTERNAL_ERROR", "message": "サーバーエラーが発生しました"}}), 500
 
+    @app.cli.command("check-notifications")
+    def check_notifications_command():
+        """手動で通知チェックを実行: flask check-notifications"""
+        from .services.notification_scheduler import check_deadline_reminders, check_unstarted_reminders
+        check_deadline_reminders()
+        check_unstarted_reminders()
+        print("通知チェック完了")
+
     return app
