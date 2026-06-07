@@ -106,19 +106,17 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const sidebarWidth = isTablet ? 220 : 240;
   const topSafeArea = hasDynamicIsland ? 54 : safeArea.top;
 
-  const isActive = (to: string) =>
-    to === "/" ? pathname === "/" : pathname.startsWith(to);
+  const isActive = (to: string) => pathname.startsWith(to);
 
   const isTeamPlan = plan === "team";
   const effectivePlan = user?.effective_plan ?? plan;
   const hasTeamChat = isTeamPlan || effectivePlan === "business" || effectivePlan === "enterprise";
 
   const SIDEBAR_NAV = [
-    { label: t('nav.today'), to: "/", Icon: HomeIcon },
-    { label: t('nav.calendar'), to: "/calendar", Icon: CalendarIcon },
-    { label: t('subscription.title'), to: "/plans", Icon: PlansIcon },
-    ...(isTeamPlan ? [{ label: "チーム", to: "/team", Icon: TeamIcon, dimmed: false }] : []),
-    ...(hasTeamChat ? [{ label: "チャット", to: "/chat", Icon: ChatIcon, dimmed: false }] : []),
+    { label: t('nav.today'), to: "/app/tasks", Icon: HomeIcon },
+    { label: t('nav.calendar'), to: "/app/calendar", Icon: CalendarIcon },
+    { label: t('subscription.title'), to: "/app/plans", Icon: PlansIcon },
+    ...(isTeamPlan ? [{ label: "チーム", to: "/app/team", Icon: TeamIcon, dimmed: false }] : []),
   ];
 
   return (
@@ -140,7 +138,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           >
             {/* Sidebar logo */}
             <div className="flex items-center gap-2 px-5 py-7">
-              <Link to="/" aria-label="Tascal ホームへ" className="flex items-center gap-2 text-[var(--text-primary)] hover:opacity-70 shrink-0">
+              <Link to="/app/tasks" aria-label="Tascal ホームへ" className="flex items-center gap-2 text-[var(--text-primary)] hover:opacity-70 shrink-0">
                 {(isDesktop || isUltrawide) ? (
                   <span className="text-sm font-semibold tracking-[0.25em] uppercase">TASCAL</span>
                 ) : (
@@ -227,7 +225,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   className="flex items-center justify-between px-4 py-3"
                   style={{ fontSize: deviceType === "phone-small" ? "14px" : undefined }}
                 >
-                  <Link to="/" aria-label="Tascal ホームへ" className="text-[var(--text-primary)] font-bold">
+                  <Link to="/app/tasks" aria-label="Tascal ホームへ" className="text-[var(--text-primary)] font-bold">
                     <span className="text-xl font-bold tracking-widest uppercase">TASCAL</span>
                   </Link>
                   {user && (
@@ -280,7 +278,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                       <Link to="/terms" className="text-xs text-[var(--text-subtle)] hover:text-[var(--text-muted)]">利用規約</Link>
                       <Link to="/tokusho" className="text-xs text-[var(--text-subtle)] hover:text-[var(--text-muted)]">特定商取引法</Link>
                       {isFree && (
-                        <Link to="/plans" className="text-xs text-[var(--text-primary)] underline hover:opacity-70">
+                        <Link to="/app/plans" className="text-xs text-[var(--text-primary)] underline hover:opacity-70">
                           広告を非表示にする
                         </Link>
                       )}
@@ -305,34 +303,32 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <div role="tablist" className="flex items-center h-[var(--bottom-nav-height)]">
             {/* Home */}
             <Link
-              to="/"
+              to="/app/tasks"
               role="tab"
-              aria-selected={isActive("/")}
-              aria-current={isActive("/") ? "page" : undefined}
+              aria-selected={isActive("/app/tasks")}
+              aria-current={isActive("/app/tasks") ? "page" : undefined}
               className={[
-                "flex-1 flex flex-col items-center justify-center min-h-[44px] gap-0.5 transition-colors relative",
-                isActive("/") ? "text-[var(--accent)]" : "text-[var(--text-subtle)]",
+                "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
+                isActive("/app/tasks") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
               ].join(" ")}
             >
-              <HomeIcon active={isActive("/")} />
-              <span className={`font-medium tracking-wide ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>タスク</span>
-              {isActive("/") && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[var(--accent)]" aria-hidden="true" />}
+              <HomeIcon active={isActive("/app/tasks")} />
+              <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>{t('nav.today')}</span>
             </Link>
 
             {/* Calendar */}
             <Link
-              to="/calendar"
+              to="/app/calendar"
               role="tab"
-              aria-selected={isActive("/calendar")}
-              aria-current={isActive("/calendar") ? "page" : undefined}
+              aria-selected={isActive("/app/calendar")}
+              aria-current={isActive("/app/calendar") ? "page" : undefined}
               className={[
-                "flex-1 flex flex-col items-center justify-center min-h-[44px] gap-0.5 transition-colors relative",
-                isActive("/calendar") ? "text-[var(--accent)]" : "text-[var(--text-subtle)]",
+                "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
+                isActive("/app/calendar") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
               ].join(" ")}
             >
-              <CalendarIcon active={isActive("/calendar")} />
-              <span className={`font-medium tracking-wide ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>カレンダー</span>
-              {isActive("/calendar") && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[var(--accent)]" aria-hidden="true" />}
+              <CalendarIcon active={isActive("/app/calendar")} />
+              <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>{t('nav.calendar')}</span>
             </Link>
 
             {/* Add task center button */}
@@ -351,63 +347,33 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
             {/* Plans */}
             <Link
-              to="/plans"
+              to="/app/plans"
               role="tab"
-              aria-selected={isActive("/plans")}
-              aria-current={isActive("/plans") ? "page" : undefined}
+              aria-selected={isActive("/app/plans")}
+              aria-current={isActive("/app/plans") ? "page" : undefined}
               className={[
-                "flex-1 flex flex-col items-center justify-center min-h-[44px] gap-0.5 transition-colors relative",
-                isActive("/plans") ? "text-[var(--accent)]" : "text-[var(--text-subtle)]",
+                "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
+                isActive("/app/plans") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
               ].join(" ")}
             >
-              <PlansIcon active={isActive("/plans")} />
-              <span className={`font-medium tracking-wide ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>チャット</span>
-              {isActive("/plans") && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[var(--accent)]" aria-hidden="true" />}
+              <PlansIcon active={isActive("/app/plans")} />
+              <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>{t('subscription.title')}</span>
             </Link>
 
             {/* Team — only shown to team plan users; otherwise Profile/Settings */}
             {isTeamPlan ? (
               <Link
-                to="/team"
+                to="/app/team"
                 role="tab"
-                aria-selected={isActive("/team")}
-                aria-current={isActive("/team") ? "page" : undefined}
-                className={[
-                  "flex-1 flex flex-col items-center justify-center min-h-[44px] gap-0.5 transition-colors relative",
-                  isActive("/team") ? "text-[var(--accent)]" : "text-[var(--text-subtle)]",
-                ].join(" ")}
-              >
-                <TeamIcon active={isActive("/team")} />
-                <span className={`font-medium tracking-wide ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>チーム</span>
-                {isActive("/team") && <span className="absolute bottom-0.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-[var(--accent)]" aria-hidden="true" />}
-              </Link>
-            ) : (
-              <button
-                onClick={logout}
-                role="tab"
-                aria-selected={false}
-                aria-label={t('auth.logout')}
-                className="flex-1 flex flex-col items-center justify-center min-h-[44px] gap-0.5 text-[var(--text-subtle)]"
-              >
-                <ProfileIcon active={false} />
-                <span className={`font-medium tracking-wide ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>設定</span>
-              </button>
-            )}
-
-            {/* Chat — only shown to team/enterprise plan users */}
-            {hasTeamChat && (
-              <Link
-                to="/chat"
-                role="tab"
-                aria-selected={isActive("/chat")}
-                aria-current={isActive("/chat") ? "page" : undefined}
+                aria-selected={isActive("/app/team")}
+                aria-current={isActive("/app/team") ? "page" : undefined}
                 className={[
                   "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
-                  isActive("/chat") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
+                  isActive("/app/team") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
                 ].join(" ")}
               >
-                <ChatIcon active={isActive("/chat")} />
-                <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>チャット</span>
+                <TeamIcon active={isActive("/app/team")} />
+                <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>チーム</span>
               </Link>
             )}
 
