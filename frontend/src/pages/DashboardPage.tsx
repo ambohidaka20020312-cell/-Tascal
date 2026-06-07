@@ -3,8 +3,10 @@ import { format, addDays, subDays } from "date-fns";
 import { ja } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 import { useTaskStore } from "../store/taskStore";
+import { useAuthStore } from "../store/authStore";
 import { useTasksQuery, useBulkComplete, useBulkDelete, useOverdueTasks } from "../hooks/useTasks";
 import { aiApi, taskApi } from "../utils/api";
+import { useAdGate } from "../hooks/useAdGate";
 import { useViewport } from "../hooks/useViewport";
 import { useDailyBriefing } from "../hooks/useDailyBriefing";
 import { useDragSort } from "../hooks/useDragSort";
@@ -21,6 +23,7 @@ import DailyBriefingPanel from "../components/ai/DailyBriefingPanel";
 import ReplanButton from "../components/ai/ReplanButton";
 import TaskSuggestions from "../components/ai/TaskSuggestions";
 import AdBanner from "../components/ads/AdBanner";
+import VideoAdGate from "../components/ads/VideoAdGate";
 import OverdueBanner from "../components/tasks/OverdueBanner";
 import StatsBar from "../components/dashboard/StatsBar";
 
@@ -52,6 +55,9 @@ function priorityLabel(p: ParsedTask["priority"]) {
 export default function DashboardPage() {
   const { t } = useTranslation();
   const { tasks, selectedDate, setSelectedDate, reorderTasks } = useTaskStore();
+  const user = useAuthStore((s) => s.user);
+  const { needsAd, incrementCount, remainingFree } = useAdGate();
+  const [showAdGate, setShowAdGate] = useState(false);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [taskFormInit, setTaskFormInit] = useState<Partial<ParsedTask>>({});
@@ -142,8 +148,7 @@ export default function DashboardPage() {
   // Custom event listeners for global keyboard shortcuts
   useEffect(() => {
     const onOpenTaskForm = () => {
-      setTaskFormInit({});
-      setShowTaskForm(true);
+      openTaskForm();
     };
     const onPrefillTaskForm = (e: Event) => {
       const detail = (e as CustomEvent<Partial<ParsedTask>>).detail;
@@ -231,7 +236,21 @@ export default function DashboardPage() {
     }
   };
 
+  const plan = user?.effective_plan ?? "free";
+
   const openTaskForm = () => {
+    if (needsAd(plan)) {
+      setShowAdGate(true);
+      return;
+    }
+    incrementCount();
+    setTaskFormInit({});
+    setShowTaskForm(true);
+  };
+
+  const handleAdComplete = () => {
+    setShowAdGate(false);
+    incrementCount();
     setTaskFormInit({});
     setShowTaskForm(true);
   };
@@ -553,6 +572,11 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+          {plan === "free" && (
+            <p className="text-xs text-center mt-1" style={{ color: "var(--text-secondary)" }}>
+              今日あと{remainingFree(plan)}個無料で追加できます
+            </p>
+          )}
 
           {/* Stats bar */}
           <StatsBar />
@@ -875,6 +899,10 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {showAdGate && (
+        <VideoAdGate onComplete={handleAdComplete} onClose={() => setShowAdGate(false)} />
       )}
 
       {showTaskForm && (
