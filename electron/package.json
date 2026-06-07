@@ -1,0 +1,62 @@
+{
+  "name": "tascal-desktop",
+  "version": "1.0.0",
+  "description": "AIが締め切りを自動で守るタスク管理アプリ",
+  "main": "main.js",
+  "author": {
+    "name": "Tascal",
+    "email": "info@tascal.app"
+  },
+  "license": "UNLICENSED",
+  "scripts": {
+    "start": "electron .",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:all": "electron-builder --mac --win"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.0"
+  },
+  "build": {
+    "appId": "app.tascal.desktop",
+    "productName": "Tascal",
+    "copyright": "© 2026 Tascal",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "../frontend/dist/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "../frontend/public/icon-1024.png",
+      "target": [
+        { "target": "dmg", "arch": ["x64", "arm64"] }
+      ],
+      "darkModeSupport": true,
+      "minimumSystemVersion": "12.0"
+    },
+    "win": {
+      "icon": "../frontend/public/icon-512.png",
+      "target": [
+        { "target": "nsis", "arch": ["x64"] }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowDirChange": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Tascal"
+    },
+    "dmg": {
+      "title": "Tascal インストール",
+      "background": "../frontend/public/icon-512.png",
+      "window": { "width": 540, "height": 380 }
+    }
+  }
+}
