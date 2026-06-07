@@ -1,0 +1,91 @@
+name: Build Electron App
+
+on:
+  push:
+    tags:
+      - 'v*'  # v1.0.0 のようなタグでトリガー
+  workflow_dispatch:  # 手動実行も可能
+
+jobs:
+  build-mac:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build React app
+        working-directory: frontend
+        run: |
+          npm ci --legacy-peer-deps
+          npm run build:electron
+
+      - name: Build Electron (Mac)
+        working-directory: electron
+        run: |
+          npm ci
+          npm run build:mac
+
+      - name: Upload Mac artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tascal-mac
+          path: electron/dist-electron/*.dmg
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Build React app
+        working-directory: frontend
+        run: |
+          npm ci --legacy-peer-deps
+          npm run build:electron
+
+      - name: Build Electron (Windows)
+        working-directory: electron
+        run: |
+          npm ci
+          npm run build:win
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Tascal-windows
+          path: electron/dist-electron/*.exe
+
+  release:
+    needs: [build-mac, build-windows]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            Tascal-mac/*.dmg
+            Tascal-windows/*.exe
+          body: |
+            ## Tascal デスクトップアプリ
+
+            ### ダウンロード
+            - **Mac**: `Tascal-mac.dmg`（Intel + Apple Silicon対応）
+            - **Windows**: `Tascal-Setup.exe`（Windows 10/11）
+
+            ### インストール方法
+            **Mac**: .dmgを開いてApplicationsフォルダにドラッグ
+            **Windows**: .exeを実行してインストール
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
