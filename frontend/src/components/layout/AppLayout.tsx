@@ -98,16 +98,15 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const sidebarWidth = isTablet ? 220 : 240;
   const topSafeArea = hasDynamicIsland ? 54 : safeArea.top;
 
-  const isActive = (to: string) =>
-    to === "/" ? pathname === "/" : pathname.startsWith(to);
+  const isActive = (to: string) => pathname.startsWith(to);
 
   const isTeamPlan = plan === "team";
 
   const SIDEBAR_NAV = [
-    { label: t('nav.today'), to: "/", Icon: HomeIcon },
-    { label: t('nav.calendar'), to: "/calendar", Icon: CalendarIcon },
-    { label: t('subscription.title'), to: "/plans", Icon: PlansIcon },
-    ...(isTeamPlan ? [{ label: "チーム", to: "/team", Icon: TeamIcon, dimmed: false }] : []),
+    { label: t('nav.today'), to: "/app/tasks", Icon: HomeIcon },
+    { label: t('nav.calendar'), to: "/app/calendar", Icon: CalendarIcon },
+    { label: t('subscription.title'), to: "/app/plans", Icon: PlansIcon },
+    ...(isTeamPlan ? [{ label: "チーム", to: "/app/team", Icon: TeamIcon, dimmed: false }] : []),
   ];
 
   return (
@@ -129,7 +128,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
           >
             {/* Sidebar logo */}
             <div className="flex items-center gap-2 px-5 py-7">
-              <Link to="/" aria-label="Tascal ホームへ" className="flex items-center gap-2 text-[var(--text-primary)] hover:opacity-70 shrink-0">
+              <Link to="/app/tasks" aria-label="Tascal ホームへ" className="flex items-center gap-2 text-[var(--text-primary)] hover:opacity-70 shrink-0">
                 {(isDesktop || isUltrawide) ? (
                   <span className="text-sm font-semibold tracking-[0.25em] uppercase">TASCAL</span>
                 ) : (
@@ -216,7 +215,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                   className="flex items-center justify-between px-4 py-3"
                   style={{ fontSize: deviceType === "phone-small" ? "14px" : undefined }}
                 >
-                  <Link to="/" aria-label="Tascal ホームへ" className="text-[var(--text-primary)] font-bold">
+                  <Link to="/app/tasks" aria-label="Tascal ホームへ" className="text-[var(--text-primary)] font-bold">
                     <span className="text-xl font-bold tracking-widest uppercase">TASCAL</span>
                   </Link>
                   {user && (
@@ -269,7 +268,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                       <Link to="/terms" className="text-xs text-[var(--text-subtle)] hover:text-[var(--text-muted)]">利用規約</Link>
                       <Link to="/tokusho" className="text-xs text-[var(--text-subtle)] hover:text-[var(--text-muted)]">特定商取引法</Link>
                       {isFree && (
-                        <Link to="/plans" className="text-xs text-[var(--text-primary)] underline hover:opacity-70">
+                        <Link to="/app/plans" className="text-xs text-[var(--text-primary)] underline hover:opacity-70">
                           広告を非表示にする
                         </Link>
                       )}
@@ -292,31 +291,31 @@ export default function AppLayout({ children }: AppLayoutProps) {
           <div role="tablist" className="flex items-center h-[var(--bottom-nav-height)]">
             {/* Home */}
             <Link
-              to="/"
+              to="/app/tasks"
               role="tab"
-              aria-selected={isActive("/")}
-              aria-current={isActive("/") ? "page" : undefined}
+              aria-selected={isActive("/app/tasks")}
+              aria-current={isActive("/app/tasks") ? "page" : undefined}
               className={[
                 "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
-                isActive("/") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
+                isActive("/app/tasks") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
               ].join(" ")}
             >
-              <HomeIcon active={isActive("/")} />
+              <HomeIcon active={isActive("/app/tasks")} />
               <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>{t('nav.today')}</span>
             </Link>
 
             {/* Calendar */}
             <Link
-              to="/calendar"
+              to="/app/calendar"
               role="tab"
-              aria-selected={isActive("/calendar")}
-              aria-current={isActive("/calendar") ? "page" : undefined}
+              aria-selected={isActive("/app/calendar")}
+              aria-current={isActive("/app/calendar") ? "page" : undefined}
               className={[
                 "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
-                isActive("/calendar") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
+                isActive("/app/calendar") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
               ].join(" ")}
             >
-              <CalendarIcon active={isActive("/calendar")} />
+              <CalendarIcon active={isActive("/app/calendar")} />
               <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>{t('nav.calendar')}</span>
             </Link>
 
@@ -336,32 +335,32 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
             {/* Plans */}
             <Link
-              to="/plans"
+              to="/app/plans"
               role="tab"
-              aria-selected={isActive("/plans")}
-              aria-current={isActive("/plans") ? "page" : undefined}
+              aria-selected={isActive("/app/plans")}
+              aria-current={isActive("/app/plans") ? "page" : undefined}
               className={[
                 "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
-                isActive("/plans") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
+                isActive("/app/plans") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
               ].join(" ")}
             >
-              <PlansIcon active={isActive("/plans")} />
+              <PlansIcon active={isActive("/app/plans")} />
               <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>{t('subscription.title')}</span>
             </Link>
 
             {/* Team — only shown to team plan users */}
             {isTeamPlan && (
               <Link
-                to="/team"
+                to="/app/team"
                 role="tab"
-                aria-selected={isActive("/team")}
-                aria-current={isActive("/team") ? "page" : undefined}
+                aria-selected={isActive("/app/team")}
+                aria-current={isActive("/app/team") ? "page" : undefined}
                 className={[
                   "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
-                  isActive("/team") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
+                  isActive("/app/team") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
                 ].join(" ")}
               >
-                <TeamIcon active={isActive("/team")} />
+                <TeamIcon active={isActive("/app/team")} />
                 <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>チーム</span>
               </Link>
             )}
