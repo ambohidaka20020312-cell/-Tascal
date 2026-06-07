@@ -6,3 +6,4 @@ from .member_skill import MemberSkill
 from .task_template import TaskTemplate
 from .push_subscription import PushSubscription
 from .task_note import TaskNote
+from .device_token import DeviceToken
