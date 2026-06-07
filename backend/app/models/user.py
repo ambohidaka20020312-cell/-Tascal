@@ -19,6 +19,9 @@ class User(db.Model):
     onboarding_completed = db.Column(db.Boolean, nullable=False, default=False)
     password_reset_token = db.Column(db.String(100), unique=True, nullable=True, index=True)
     password_reset_expires = db.Column(db.DateTime, nullable=True)
+    email_verified = db.Column(db.Boolean, nullable=False, default=False)
+    email_verify_token = db.Column(db.String(100), unique=True, nullable=True, index=True)
+    email_verify_expires = db.Column(db.DateTime, nullable=True)
     revenuecat_user_id = db.Column(db.String(200), unique=True, nullable=True, index=True)
     trial_started_at = db.Column(db.DateTime, nullable=True)
     trial_used = db.Column(db.Boolean, nullable=False, default=False)
@@ -38,6 +41,19 @@ class User(db.Model):
         self.password_reset_token = token
         self.password_reset_expires = datetime.datetime.utcnow() + datetime.timedelta(hours=1)
         return token
+
+    def generate_verify_token(self) -> str:
+        token = secrets.token_urlsafe(32)
+        self.email_verify_token = token
+        self.email_verify_expires = datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+        return token
+
+    def verify_email_token_valid(self) -> bool:
+        return (
+            self.email_verify_token is not None
+            and self.email_verify_expires is not None
+            and self.email_verify_expires > datetime.datetime.utcnow()
+        )
 
     def clear_reset_token(self):
         self.password_reset_token = None

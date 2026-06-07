@@ -64,14 +64,16 @@ def register():
 
     user = User(email=data["email"], name=data.get("name", ""))
     user.set_password(data["password"])
+    verify_token = user.generate_verify_token()
     db.session.add(user)
-    db.session.flush()  # get user.id before commit
+    db.session.flush()
     log_action(user.id, "auth.register", extra={"email": user.email})
     db.session.commit()
 
+    _send_verify_email(user.email, verify_token)
+
     return jsonify({
-        "data": {"user": user.to_dict()},
-        "message": "登録が完了しました"
+        "message": "登録が完了しました。確認メールをお送りしましたので、メールのリンクをクリックしてアカウントを有効化してください。"
     }), 201
 
 
@@ -101,6 +103,9 @@ def login():
         log_action(None, "auth.login_failed", extra={"email": data.get("email"), "ip": ip})
         db.session.commit()
         return jsonify({"error": {"code": "INVALID_CREDENTIALS", "message": "メールアドレスまたはパスワードが正しくありません"}}), 401
+
+    if not user.email_verified:
+        return jsonify({"error": {"code": "EMAIL_NOT_VERIFIED", "message": "メールアドレスが確認されていません。届いた確認メールのリンクをクリックしてください。"}}), 403
 
     record_success(ip)
     log_action(user.id, "auth.login", extra={"ip": ip})
@@ -168,6 +173,116 @@ def update_profile():
 
     db.session.commit()
     return jsonify({"data": {"user": user.to_dict()}, "message": "プロフィールを更新しました"})
+
+
+def _send_verify_email(email: str, token: str):
+    frontend_url = current_app.config.get("FRONTEND_URL", "http://localhost:5173")
+    verify_link = f"{frontend_url}/verify-email?token={token}"
+    try:
+        from flask_mail import Message
+        from .. import mail
+        html_body = f"""<!DOCTYPE html>
+<html lang="ja">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f5f5f5;font-family:-apple-system,BlinkMacSystemFont,'Hiragino Sans',sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f5f5f5;padding:40px 16px;">
+    <tr><td align="center">
+      <table width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;max-width:560px;width:100%;">
+        <tr>
+          <td style="background:#0f172a;padding:32px 40px;">
+            <p style="margin:0;font-size:13px;letter-spacing:0.3em;text-transform:uppercase;color:#94a3b8;">TASCAL</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:40px 40px 32px;">
+            <h1 style="margin:0 0 8px;font-size:22px;font-weight:300;letter-spacing:0.05em;color:#0f172a;">メールアドレスの確認</h1>
+            <p style="margin:0 0 24px;font-size:13px;color:#64748b;line-height:1.7;">
+              Tascalへのご登録ありがとうございます。<br>
+              下のボタンをクリックしてメールアドレスを確認してください。
+            </p>
+            <table cellpadding="0" cellspacing="0" style="margin:0 0 28px;">
+              <tr>
+                <td style="border-radius:8px;background:#0f172a;">
+                  <a href="{verify_link}"
+                     style="display:inline-block;padding:14px 32px;font-size:13px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:#ffffff;text-decoration:none;">
+                    メールアドレスを確認する
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:0 0 24px;font-size:12px;color:#94a3b8;line-height:1.7;">
+              ⏱ このリンクの有効期限は <strong>24時間</strong> です。
+            </p>
+            <hr style="border:none;border-top:1px solid #e2e8f0;margin:0 0 24px;">
+            <p style="margin:0 0 8px;font-size:11px;color:#94a3b8;">ボタンが表示されない場合は以下のURLをブラウザに貼り付けてください：</p>
+            <p style="margin:0;font-size:11px;color:#64748b;word-break:break-all;">{verify_link}</p>
+          </td>
+        </tr>
+        <tr>
+          <td style="background:#f8fafc;padding:20px 40px;border-top:1px solid #e2e8f0;">
+            <p style="margin:0;font-size:11px;color:#94a3b8;line-height:1.7;">
+              このメールに心当たりがない場合は無視してください。<br>
+              ご不明な点は <a href="mailto:tascal.support@gmail.com" style="color:#64748b;">tascal.support@gmail.com</a> までご連絡ください。
+            </p>
+          </td>
+        </tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>"""
+        text_body = (
+            f"Tascalへのご登録ありがとうございます。\n\n"
+            f"以下のリンクからメールアドレスを確認してください（有効期限：24時間）:\n\n"
+            f"{verify_link}\n\n"
+            f"このメールに心当たりがない場合は無視してください。\n\n"
+            f"Tascal\ntascal.support@gmail.com"
+        )
+        msg = Message(
+            subject="【Tascal】メールアドレスの確認",
+            recipients=[email],
+            body=text_body,
+            html=html_body,
+        )
+        mail.send(msg)
+    except Exception as e:
+        current_app.logger.error("Verify email send failed: %s", e)
+
+
+@bp.get("/verify-email")
+def verify_email():
+    token = request.args.get("token", "").strip()
+    if not token:
+        return jsonify({"error": {"code": "MISSING_TOKEN", "message": "トークンが必要です"}}), 400
+
+    user = User.query.filter_by(email_verify_token=token).first()
+    if not user or not user.verify_email_token_valid():
+        return jsonify({"error": {"code": "INVALID_TOKEN", "message": "リンクが無効または期限切れです。再度登録をお試しください"}}), 400
+
+    user.email_verified = True
+    user.email_verify_token = None
+    user.email_verify_expires = None
+    db.session.commit()
+
+    return jsonify({"message": "メールアドレスを確認しました。ログインできます。"})
+
+
+@bp.post("/resend-verify")
+@limiter.limit("3 per hour")
+def resend_verify():
+    data = request.get_json() or {}
+    email = (data.get("email") or "").strip().lower()
+    if not email:
+        return jsonify({"error": {"code": "MISSING_FIELDS", "message": "メールアドレスを入力してください"}}), 400
+
+    user = User.query.filter_by(email=email).first()
+    if not user or user.email_verified:
+        return jsonify({"message": "未確認の場合は確認メールを再送しました"}), 200
+
+    token = user.generate_verify_token()
+    db.session.commit()
+    _send_verify_email(user.email, token)
+    return jsonify({"message": "確認メールを再送しました"}), 200
 
 
 @bp.post("/forgot-password")
