@@ -27,6 +27,7 @@ import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import MiniTimer from "./components/timer/MiniTimer";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
+import ShareTargetPage from "./pages/ShareTargetPage";
 
 // Lazy-loaded heavy pages
 const CalendarPage = lazy(() => import("./pages/CalendarPage"));
@@ -112,6 +113,9 @@ function AppRoutes() {
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+      {/* PWA Share Target */}
+      <Route path="/share-target" element={<ShareTargetPage />} />
 
       {/* 法的ページ */}
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
