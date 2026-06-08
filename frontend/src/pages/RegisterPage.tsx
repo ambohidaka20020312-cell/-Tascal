@@ -49,8 +49,8 @@ export default function RegisterPage() {
         setUser(data.user);
         navigate("/app/tasks");
       } else {
-        // 確認メール送信済み → ログインページへ案内
-        navigate("/login?registered=1");
+        // 確認メール送信済み → メール確認案内ページへ
+        navigate("/check-email", { state: { email } });
       }
     } catch (err: unknown) {
       const msg =

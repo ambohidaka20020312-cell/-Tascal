@@ -17,7 +17,6 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const resetDone = searchParams.get("reset") === "done";
-  const registered = searchParams.get("registered") === "1";
   const setUser = useAuthStore((s) => s.setUser);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -103,11 +102,6 @@ export default function LoginPage() {
             {resetDone && (
               <p className="text-xs text-emerald-500 border-l-2 border-emerald-500 pl-3 mb-6 tracking-wide">
                 パスワードを更新しました。新しいパスワードでログインしてください。
-              </p>
-            )}
-            {registered && (
-              <p className="text-xs text-emerald-500 border-l-2 border-emerald-500 pl-3 mb-6 tracking-wide">
-                確認メールを送信しました。メール内のリンクをクリックしてからログインしてください。
               </p>
             )}
 

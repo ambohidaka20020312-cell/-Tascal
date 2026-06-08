@@ -28,6 +28,7 @@ import MiniTimer from "./components/timer/MiniTimer";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import ShareTargetPage from "./pages/ShareTargetPage";
+import CheckEmailPage from "./pages/CheckEmailPage";
 
 // Lazy-loaded heavy pages
 const CalendarPage = lazy(() => import("./pages/CalendarPage"));
@@ -116,6 +117,7 @@ function AppRoutes() {
 
       {/* PWA Share Target */}
       <Route path="/share-target" element={<ShareTargetPage />} />
+      <Route path="/check-email" element={<CheckEmailPage />} />
 
       {/* 法的ページ */}
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
