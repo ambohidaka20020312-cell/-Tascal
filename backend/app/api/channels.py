@@ -188,12 +188,43 @@ def send_message(channel_id):
     if not body:
         return jsonify({"error": {"code": "MISSING_FIELDS", "message": "メッセージ本文は必須です"}}), 400
 
+    # DM: auto-create task for the other party if add_task=true
+    if channel.channel_type == "dm" and data.get("add_task"):
+        other_member = ChannelMember.query.filter(
+            ChannelMember.channel_id == channel_id,
+            ChannelMember.user_id != user.id,
+        ).first()
+        if other_member:
+            auto_task = Task(
+                user_id=other_member.user_id,
+                assigned_to=other_member.user_id,
+                title=data.get("task_title") or body[:200],
+                description=body,
+                priority=data.get("priority", "medium"),
+                estimated_minutes=data.get("estimated_minutes"),
+                scheduled_date=data.get("scheduled_date"),
+            )
+            db.session.add(auto_task)
+            db.session.flush()
+
+    # Group channel: @channel mention required for task posting
+    if channel.channel_type == "group" and data.get("add_task"):
+        channel_mention = f"@{channel.name}"
+        if channel_mention.lower() not in body.lower():
+            return jsonify({
+                "error": {
+                    "code": "CHANNEL_MENTION_REQUIRED",
+                    "message": f"グループへのタスク投稿には {channel_mention} のメンションが必要です",
+                }
+            }), 400
+
     mentions = _extract_mentions(body, channel.team_id)
     msg = Message(
         channel_id=channel_id,
         sender_id=user.id,
         body=body,
         mentions=json.dumps(mentions) if mentions else None,
+        message_type="task_created" if data.get("add_task") else "text",
     )
     db.session.add(msg)
     db.session.commit()
