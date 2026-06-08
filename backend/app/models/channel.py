@@ -57,6 +57,9 @@ class Message(db.Model):
     sender_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     body = db.Column(db.Text, nullable=False)
     task_id = db.Column(db.Integer, db.ForeignKey("tasks.id"), nullable=True)
+    # Mentions: JSON list of {"type": "user"|"channel", "id": int, "name": str}
+    mentions = db.Column(db.Text, nullable=True)
+    message_type = db.Column(db.String(20), nullable=False, default="text")  # text / task_created / task_assigned
     created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
@@ -64,12 +67,16 @@ class Message(db.Model):
     task = db.relationship("Task", foreign_keys=[task_id])
 
     def to_dict(self):
+        import json
         return {
             "id": self.id,
             "channel_id": self.channel_id,
             "sender_id": self.sender_id,
+            "sender_name": self.sender.name if self.sender else None,
             "body": self.body,
             "task_id": self.task_id,
+            "mentions": json.loads(self.mentions) if self.mentions else [],
+            "message_type": self.message_type,
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }

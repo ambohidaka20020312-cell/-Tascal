@@ -8,8 +8,36 @@ from .. import db
 from ..utils.team_auth import require_team_seat, get_user_team
 from ..utils.audit import log_action
 import datetime
+import json
+import re
 
 bp = Blueprint("channels", __name__)
+
+
+def _extract_mentions(body: str, team_id: int) -> list:
+    """
+    Parse @username and @channel mentions from message body.
+    Returns list of {"type": "user"|"channel", "id": int, "name": str}
+    """
+    mentions = []
+    # @username pattern
+    at_names = re.findall(r'@(\S+)', body)
+    for name in at_names:
+        # Try user match
+        user = User.query.filter(User.name.ilike(name)).first()
+        if user:
+            tm = TeamMember.query.filter_by(team_id=team_id, user_id=user.id).first()
+            if tm:
+                mentions.append({"type": "user", "id": user.id, "name": user.name})
+                continue
+        # Try channel match
+        channel = Channel.query.filter(
+            Channel.team_id == team_id,
+            Channel.name.ilike(name),
+        ).first()
+        if channel:
+            mentions.append({"type": "channel", "id": channel.id, "name": channel.name})
+    return mentions
 
 
 def _get_current_user():
@@ -160,9 +188,31 @@ def send_message(channel_id):
     if not body:
         return jsonify({"error": {"code": "MISSING_FIELDS", "message": "メッセージ本文は必須です"}}), 400
 
-    msg = Message(channel_id=channel_id, sender_id=user.id, body=body)
+    mentions = _extract_mentions(body, channel.team_id)
+    msg = Message(
+        channel_id=channel_id,
+        sender_id=user.id,
+        body=body,
+        mentions=json.dumps(mentions) if mentions else None,
+    )
     db.session.add(msg)
     db.session.commit()
+
+    # Notify mentioned users specifically
+    for mention in mentions:
+        if mention["type"] == "user":
+            mentioned_user = User.query.get(mention["id"])
+            if mentioned_user and mentioned_user.id != user.id:
+                try:
+                    from .notifications import send_push
+                    send_push(
+                        mentioned_user,
+                        title=f"@{user.name or 'Tascal'} があなたをメンションしました",
+                        body=body[:100],
+                        url=f"/chat/{channel_id}",
+                    )
+                except Exception:
+                    pass
 
     # Send Web Push to all channel members except the sender
     try:
@@ -241,3 +291,135 @@ def message_to_task(channel_id, mid):
     db.session.commit()
 
     return jsonify({"data": task.to_dict(), "message": "メッセージからタスクを作成しました"}), 201
+
+
+@bp.post("/<int:channel_id>/post-task")
+@jwt_required()
+def post_task_to_channel(channel_id):
+    """
+    タスク作成画面からチャンネルに通知を投稿する。
+    タスク作成後にchannel_idを指定して呼ぶと、チャンネルに
+    「タスクが追加されました」メッセージが自動投稿される。
+    """
+    user = _get_current_user()
+    channel = Channel.query.get_or_404(channel_id)
+    err = _assert_channel_access(user, channel)
+    if err:
+        return err
+
+    data = request.get_json() or {}
+    task_id = data.get("task_id")
+    task = Task.query.get_or_404(task_id)
+
+    # Build message body
+    assignee_name = ""
+    if task.assigned_to:
+        assignee = User.query.get(task.assigned_to)
+        assignee_name = f"@{assignee.name}" if assignee else ""
+
+    priority_label = {"urgent": "🔴 緊急", "high": "🟠 高", "medium": "🟡 中", "low": "🟢 低"}.get(task.priority, "中")
+    due = task.scheduled_date.strftime("%m/%d") if task.scheduled_date else "未定"
+
+    body = (
+        f"📋 タスクが追加されました\n"
+        f"「{task.title}」\n"
+        f"優先度: {priority_label}　期日: {due}"
+        + (f"　担当: {assignee_name}" if assignee_name else "")
+    )
+
+    mentions = []
+    if task.assigned_to and task.assigned_to != user.id:
+        assignee = User.query.get(task.assigned_to)
+        if assignee:
+            mentions.append({"type": "user", "id": assignee.id, "name": assignee.name})
+
+    msg = Message(
+        channel_id=channel_id,
+        sender_id=user.id,
+        body=body,
+        task_id=task_id,
+        message_type="task_created",
+        mentions=json.dumps(mentions) if mentions else None,
+    )
+    db.session.add(msg)
+    db.session.commit()
+
+    # Push notification to assignee
+    for mention in mentions:
+        if mention["type"] == "user":
+            mentioned_user = User.query.get(mention["id"])
+            if mentioned_user:
+                try:
+                    from .notifications import send_push
+                    send_push(
+                        mentioned_user,
+                        title=f"新しいタスクがアサインされました",
+                        body=task.title,
+                        url=f"/app/tasks",
+                    )
+                except Exception:
+                    pass
+
+    return jsonify({"data": msg.to_dict(), "message": "チャンネルに投稿しました"}), 201
+
+
+@bp.get("/<int:channel_id>/mention-suggestions")
+@jwt_required()
+def mention_suggestions(channel_id):
+    """
+    @メンション候補を返す（ユーザー名・チャンネル名）
+    クエリパラメータ: q=入力中の文字列
+    """
+    user = _get_current_user()
+    channel = Channel.query.get_or_404(channel_id)
+    err = _assert_channel_access(user, channel)
+    if err:
+        return err
+
+    q = (request.args.get("q") or "").strip().lower()
+
+    # Team members
+    members = TeamMember.query.filter_by(team_id=channel.team_id).all()
+    users = []
+    for m in members:
+        u = User.query.get(m.user_id)
+        if u and (not q or q in u.name.lower()):
+            users.append({"type": "user", "id": u.id, "name": u.name})
+
+    # Channels in same team
+    channels = Channel.query.filter(
+        Channel.team_id == channel.team_id,
+        Channel.channel_type == "group",
+    ).all()
+    channel_list = []
+    for c in channels:
+        if not q or q in c.name.lower():
+            channel_list.append({"type": "channel", "id": c.id, "name": c.name})
+
+    return jsonify({"data": {"users": users, "channels": channel_list}})
+
+
+@bp.post("/smart-assign")
+@jwt_required()
+def smart_assign_endpoint():
+    """
+    AIスマートアサイン：タスク内容・スキル・現在のワークロードから
+    最適な担当者を提案する。
+    """
+    user = _get_current_user()
+    team = get_user_team(user)
+    if not team:
+        return jsonify({"error": {"code": "TEAM_SEAT_REQUIRED", "message": "チームに所属していません"}}), 403
+
+    data = request.get_json() or {}
+    required_skills = data.get("required_skills", [])
+    exclude_self = data.get("exclude_self", False)
+
+    from ..services.smart_assign import smart_assign
+    result = smart_assign(
+        team_id=team.id,
+        required_skills=required_skills,
+        exclude_user_id=user.id if exclude_self else None,
+    )
+
+    return jsonify({"data": result})
