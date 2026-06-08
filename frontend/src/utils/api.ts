@@ -183,4 +183,11 @@ export const chatApi = {
   },
 };
 
+export const adminApi = {
+  getStats: () => api.get("/admin/stats"),
+  getUsers: (params?: object) => api.get("/admin/users", { params }),
+  getUser: (id: number) => api.get(`/admin/users/${id}`),
+  updateUser: (id: number, data: object) => api.patch(`/admin/users/${id}`, data),
+};
+
 export default api;
