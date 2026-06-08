@@ -311,11 +311,9 @@ def post_task_to_channel(channel_id):
     task_id = data.get("task_id")
     task = Task.query.get_or_404(task_id)
 
-    # Build message body
-    assignee_name = ""
-    if task.assigned_to:
-        assignee = User.query.get(task.assigned_to)
-        assignee_name = f"@{assignee.name}" if assignee else ""
+    # Build message body with @mention
+    assignee = User.query.get(task.assigned_to) if task.assigned_to else None
+    assignee_mention = f"@{assignee.name}" if assignee else ""
 
     priority_label = {"urgent": "🔴 緊急", "high": "🟠 高", "medium": "🟡 中", "low": "🟢 低"}.get(task.priority, "中")
     due = task.scheduled_date.strftime("%m/%d") if task.scheduled_date else "未定"
@@ -324,14 +322,11 @@ def post_task_to_channel(channel_id):
         f"📋 タスクが追加されました\n"
         f"「{task.title}」\n"
         f"優先度: {priority_label}　期日: {due}"
-        + (f"　担当: {assignee_name}" if assignee_name else "")
+        + (f"　担当: {assignee_mention}" if assignee_mention else "")
     )
 
-    mentions = []
-    if task.assigned_to and task.assigned_to != user.id:
-        assignee = User.query.get(task.assigned_to)
-        if assignee:
-            mentions.append({"type": "user", "id": assignee.id, "name": assignee.name})
+    # Parse mentions from body (picks up @name automatically)
+    mentions = _extract_mentions(body, channel.team_id)
 
     msg = Message(
         channel_id=channel_id,
@@ -344,18 +339,18 @@ def post_task_to_channel(channel_id):
     db.session.add(msg)
     db.session.commit()
 
-    # Push notification to assignee
+    # Push notifications via unified mention handler
     for mention in mentions:
-        if mention["type"] == "user":
+        if mention["type"] == "user" and mention["id"] != user.id:
             mentioned_user = User.query.get(mention["id"])
             if mentioned_user:
                 try:
                     from .notifications import send_push
                     send_push(
                         mentioned_user,
-                        title=f"新しいタスクがアサインされました",
+                        title="新しいタスクがアサインされました",
                         body=task.title,
-                        url=f"/app/tasks",
+                        url="/app/tasks",
                     )
                 except Exception:
                     pass
