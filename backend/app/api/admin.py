@@ -261,6 +261,10 @@ def update_user(user_id: int):
     if "is_admin" in body:
         user.is_admin = bool(body["is_admin"])
 
+    if body.get("email_verified") is True:
+        user.email_verified = True
+        user.email_verify_token = None
+
     db.session.commit()
 
     return jsonify({

@@ -10,7 +10,10 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [errorCode, setErrorCode] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendDone, setResendDone] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const resetDone = searchParams.get("reset") === "done";
@@ -20,6 +23,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError("");
+    setErrorCode("");
     setLoading(true);
     try {
       const res = await api.post("/auth/login", { email, password });
@@ -29,12 +33,25 @@ export default function LoginPage() {
       setUser(user);
       navigate("/");
     } catch (err: unknown) {
-      const msg =
-        (err as { response?: { data?: { error?: { message?: string } } } })
-          ?.response?.data?.error?.message ?? t("auth.login_error");
-      setError(msg);
+      const errData = (err as { response?: { data?: { error?: { code?: string; message?: string } } } })?.response?.data?.error;
+      setErrorCode(errData?.code ?? "");
+      setError(errData?.message ?? t("auth.login_error"));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResendVerify = async () => {
+    if (!email) return;
+    setResendLoading(true);
+    try {
+      await api.post("/auth/resend-verify", { email });
+      setResendDone(true);
+    } catch {
+      // ignore — show generic message
+      setResendDone(true);
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -95,13 +112,25 @@ export default function LoginPage() {
             )}
 
             {error && (
-              <p
-                id="login-error"
-                role="alert"
-                className="text-xs text-[var(--text-muted)] border-l-2 border-[var(--border)] pl-3 mb-6 tracking-wide"
-              >
-                {error}
-              </p>
+              <div id="login-error" role="alert" className="border-l-2 border-[var(--border)] pl-3 mb-6">
+                <p className="text-xs text-[var(--text-muted)] tracking-wide">{error}</p>
+                {errorCode === "EMAIL_NOT_VERIFIED" && (
+                  <div className="mt-2">
+                    {resendDone ? (
+                      <p className="text-xs text-emerald-500 tracking-wide">確認メールを再送しました。</p>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleResendVerify}
+                        disabled={resendLoading}
+                        className="text-xs text-[var(--text-secondary)] underline tracking-wide disabled:opacity-50"
+                      >
+                        {resendLoading ? "送信中..." : "確認メールを再送する"}
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-8" noValidate>
