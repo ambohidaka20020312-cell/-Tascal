@@ -31,7 +31,7 @@ export default function LoginPage() {
       localStorage.setItem("access_token", access_token);
       localStorage.setItem("refresh_token", refresh_token);
       setUser(user);
-      navigate("/");
+      navigate("/app/tasks");
     } catch (err: unknown) {
       const errData = (err as { response?: { data?: { error?: { code?: string; message?: string } } } })?.response?.data?.error;
       setErrorCode(errData?.code ?? "");
