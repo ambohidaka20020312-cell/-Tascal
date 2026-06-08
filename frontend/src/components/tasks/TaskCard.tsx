@@ -285,7 +285,7 @@ export default function TaskCard({ task, selectable, selected, onSelect, categor
           }}
           onTouchStart={isPhone ? (e) => { onSwipeTouchStart(e); longPressHandlers.onTouchStart(); } : undefined}
           onTouchMove={isPhone ? onSwipeTouchMove : undefined}
-          onTouchEnd={isPhone ? (e) => { onSwipeTouchEnd(); longPressHandlers.onTouchEnd(); } : undefined}
+          onTouchEnd={isPhone ? (_e) => { onSwipeTouchEnd(); longPressHandlers.onTouchEnd(); } : undefined}
         >
           <div className={`flex items-start gap-3 px-4 ${isPhoneSmall ? "py-3" : "py-4"}`}>
             {selectable && (

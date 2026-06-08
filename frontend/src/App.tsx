@@ -12,7 +12,6 @@ import DashboardPage from "./pages/DashboardPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import AccountPage from "./pages/AccountPage";
 import TeamPage from "./pages/TeamPage";
-import ChatPage from "./pages/ChatPage";
 import CookieConsent from "./components/legal/CookieConsent";
 import OnboardingWizard from "./components/onboarding/OnboardingWizard";
 import UpgradePrompt from "./components/subscription/UpgradePrompt";

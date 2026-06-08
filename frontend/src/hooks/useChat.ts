@@ -108,5 +108,9 @@ export function useChat(channelId: number | null) {
     [channelId, qc]
   );
 
-  return { messages, sendMessage, isConnected };
+  const uploadFile = async (_file: File) => {
+    // File upload via R2 — not yet implemented
+  };
+
+  return { messages, sendMessage, uploadFile, isConnected };
 }

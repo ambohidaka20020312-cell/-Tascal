@@ -79,13 +79,6 @@ function ProfileIcon({ active }: { active: boolean }) {
   );
 }
 
-function ChatIcon({ active }: { active: boolean }) {
-  return (
-    <svg className={`w-6 h-6 ${active ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]"}`} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-    </svg>
-  );
-}
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const { t } = useTranslation();
@@ -109,8 +102,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const isActive = (to: string) => pathname.startsWith(to);
 
   const isTeamPlan = plan === "team";
-  const effectivePlan = user?.effective_plan ?? plan;
-  const hasTeamChat = isTeamPlan || effectivePlan === "business" || effectivePlan === "enterprise";
+  const effectivePlan = (user?.effective_plan ?? plan) as string; void effectivePlan;
 
   const SIDEBAR_NAV = [
     { label: t('nav.today'), to: "/app/tasks", Icon: HomeIcon },
@@ -375,7 +367,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 <TeamIcon active={isActive("/app/team")} />
                 <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>チーム</span>
               </Link>
-            )}
+            ) : null}
 
             {/* Profile / Logout */}
             <button

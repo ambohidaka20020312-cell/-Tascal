@@ -27,6 +27,15 @@ export interface Channel {
   unread_count?: number;
 }
 
+export interface Attachment {
+  id: string;
+  name: string;
+  filename: string;
+  url: string;
+  mime_type: string;
+  size: number;
+}
+
 export interface Message {
   id: number;
   channel_id: number;
@@ -34,5 +43,9 @@ export interface Message {
   sender_name: string;
   body: string;
   task_id: number | null;
+  mentions?: { type: string; id: number; name: string }[];
+  message_type?: string;
+  attachments?: Attachment[];
   created_at: string;
+  updated_at?: string;
 }
