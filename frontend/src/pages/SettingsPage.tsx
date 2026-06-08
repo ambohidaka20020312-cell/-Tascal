@@ -2,6 +2,8 @@ import React from "react";
 import { useSettingsStore } from "../store/settingsStore";
 import PushNotificationToggle from "../components/settings/PushNotificationToggle";
 import NotificationSettings from "../components/settings/NotificationSettings";
+import LanguageSwitcher from "../components/common/LanguageSwitcher";
+
 
 function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
@@ -179,6 +181,13 @@ export default function SettingsPage() {
       <NotificationSettings />
 
       <Section>
+        <SectionTitle>言語 / Language</SectionTitle>
+        <Row label="言語">
+          <LanguageSwitcher />
+        </Row>
+      </Section>
+
+      <Section>
         <SectionTitle>表示</SectionTitle>
 
         <Row label="デフォルトビュー">
@@ -207,6 +216,7 @@ export default function SettingsPage() {
           />
         </Row>
       </Section>
+
     </div>
   );
 }

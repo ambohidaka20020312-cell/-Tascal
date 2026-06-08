@@ -7,6 +7,7 @@ from .. import db
 from ..utils.validators import validate_task_fields, sanitize_string
 from ..utils.cache import cached, invalidate_user_cache
 from ..utils.plan_limits import check_task_limit
+from ..utils.audit import log_action
 from sqlalchemy import func
 import csv
 import datetime
@@ -122,8 +123,12 @@ def create_task():
         deadline_type=data.get("deadline_type", "today"),
     )
     db.session.add(task)
+    db.session.flush()
+    log_action(user_id, "task.create", resource_type="task", resource_id=task.id, extra={"title": task.title})
     db.session.commit()
     invalidate_user_cache(user_id)
+
+
     return jsonify({"data": task.to_dict(), "message": "タスクを作成しました"}), 201
 
 
@@ -159,6 +164,7 @@ def delete_task(task_id):
     user_id = get_jwt_identity()
     task = Task.query.filter_by(id=task_id, user_id=user_id, is_deleted=False).first_or_404()
     task.is_deleted = True
+    log_action(user_id, "task.delete", resource_type="task", resource_id=task_id)
     db.session.commit()
     invalidate_user_cache(user_id)
     return jsonify({"message": "タスクを削除しました"})
@@ -196,6 +202,7 @@ def complete_task(task_id):
             )
             db.session.add(next_task)
 
+    log_action(user_id, "task.complete", resource_type="task", resource_id=task_id)
     db.session.commit()
     invalidate_user_cache(user_id)
     response_data = {"data": task.to_dict(), "message": "タスクを完了しました"}

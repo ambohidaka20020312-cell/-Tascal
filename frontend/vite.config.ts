@@ -3,6 +3,8 @@ import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig({
+  // 本番ビルド時はファイル相対パスにする（Electron用）
+  base: process.env.ELECTRON_BUILD === "true" ? "./" : "/",
   plugins: [
     react(),
     VitePWA({

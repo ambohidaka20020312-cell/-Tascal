@@ -8,11 +8,16 @@ from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_cors import CORS
 from flask_mail import Mail
+from flask_socketio import SocketIO
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 
 db = SQLAlchemy()
 migrate = Migrate()
 jwt = JWTManager()
 mail = Mail()
+socketio = SocketIO()
+limiter = Limiter(get_remote_address, default_limits=["200 per day", "50 per hour"])
 
 # Content-Security-Policy that allows AdSense and Stripe resources
 _CSP = (
@@ -52,11 +57,18 @@ def create_app(config_name: str = "development"):
     migrate.init_app(app, db)
     jwt.init_app(app)
     mail.init_app(app)
+    socketio.init_app(
+        app,
+        cors_allowed_origins="*",
+        async_mode="threading",
+        message_queue=os.getenv("REDIS_URL"),
+    )
+    limiter.init_app(app)
 
     allowed_origins = os.getenv("ALLOWED_ORIGINS", ",".join(app.config["CORS_ORIGINS"])).split(",")
     CORS(app, resources={r"/api/*": {"origins": allowed_origins}}, supports_credentials=True)
 
-    app.config["MAX_CONTENT_LENGTH"] = 1 * 1024 * 1024  # 1MB max request size
+    app.config["MAX_CONTENT_LENGTH"] = 52 * 1024 * 1024  # 52MB — allows up to 50MB file uploads
 
     @jwt.token_in_blocklist_loader
     def check_if_token_revoked(jwt_header, jwt_payload):
@@ -65,6 +77,74 @@ def create_app(config_name: str = "development"):
 
     from .api import register_blueprints
     register_blueprints(app)
+
+    # ------------------------------------------------------------------ #
+    # SocketIO events                                                       #
+    # ------------------------------------------------------------------ #
+    from flask_socketio import join_room, leave_room
+    from flask_jwt_extended import decode_token
+
+    @socketio.on("join_channel")
+    def on_join_channel(data):
+        token = data.get("token")
+        channel_id = data.get("channel_id")
+        if not token or not channel_id:
+            return
+        try:
+            decoded = decode_token(token)
+            user_id = decoded["sub"]
+        except Exception:
+            return
+        room = f"channel_{channel_id}"
+        join_room(room)
+
+    @socketio.on("leave_channel")
+    def on_leave_channel(data):
+        channel_id = data.get("channel_id")
+        if channel_id:
+            leave_room(f"channel_{channel_id}")
+
+    @socketio.on("send_message")
+    def on_send_message(data):
+        token = data.get("token")
+        channel_id = data.get("channel_id")
+        body = (data.get("body") or "").strip()
+        if not token or not channel_id or not body:
+            return
+        try:
+            decoded = decode_token(token)
+            user_id = decoded["sub"]
+        except Exception:
+            return
+        with app.app_context():
+            from .models.channel import Channel, ChannelMember, Message as Msg
+            from .utils.team_auth import require_team_seat
+            from .models.user import User
+            channel = Channel.query.get(channel_id)
+            if not channel:
+                return
+            cm = ChannelMember.query.filter_by(channel_id=channel_id, user_id=user_id).first()
+            if not cm:
+                return
+            tm_check = require_team_seat(User.query.get(user_id), channel.team_id)
+            if tm_check is not None:
+                return
+            msg = Msg(channel_id=channel_id, sender_id=user_id, body=body)
+            db.session.add(msg)
+            db.session.commit()
+            socketio.emit("new_message", msg.to_dict(), room=f"channel_{channel_id}")
+
+    # ------------------------------------------------------------------ #
+    # Local-development static file serving for uploaded attachments      #
+    # (When S3_ENDPOINT_URL is set this route is never used in practice.) #
+    # ------------------------------------------------------------------ #
+    from flask import send_from_directory as _send_from_directory
+
+    @app.route("/uploads/<path:filename>")
+    def serve_upload(filename):
+        upload_root = os.path.join(os.path.dirname(__file__), "..", "uploads")
+        upload_root = os.path.abspath(upload_root)
+        return _send_from_directory(upload_root, filename)
 
     @app.route("/api/v1/docs/openapi.yaml")
     def openapi_spec():
@@ -137,5 +217,13 @@ def create_app(config_name: str = "development"):
         def unhandled_exception(e):
             app.logger.exception("Unhandled exception: %s", str(e))
             return jsonify({"error": {"code": "INTERNAL_ERROR", "message": "サーバーエラーが発生しました"}}), 500
+
+    @app.cli.command("check-notifications")
+    def check_notifications_command():
+        """手動で通知チェックを実行: flask check-notifications"""
+        from .services.notification_scheduler import check_deadline_reminders, check_unstarted_reminders
+        check_deadline_reminders()
+        check_unstarted_reminders()
+        print("通知チェック完了")
 
     return app

@@ -7,6 +7,7 @@ import RegisterPage from "./pages/RegisterPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import LandingPage from "./pages/LandingPage";
 import DashboardPage from "./pages/DashboardPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import AccountPage from "./pages/AccountPage";
@@ -24,6 +25,9 @@ import { ToastProvider } from "./components/common/Toast";
 import ShortcutsOverlay from "./components/common/ShortcutsOverlay";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import MiniTimer from "./components/timer/MiniTimer";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsers from "./pages/AdminUsers";
+import ShareTargetPage from "./pages/ShareTargetPage";
 
 // Lazy-loaded heavy pages
 const CalendarPage = lazy(() => import("./pages/CalendarPage"));
@@ -41,6 +45,18 @@ function PageSkeleton() {
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return isAuthenticated() ? <>{children}</> : <Navigate to="/login" replace />;
+}
+
+function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  return isAuthenticated() ? <Navigate to="/app/tasks" replace /> : <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((s) => s.user);
+  if (!user) return <Navigate to="/login" replace />;
+  if (!user.is_admin) return <Navigate to="/app/tasks" replace />;
+  return <>{children}</>;
 }
 
 function OnboardingGate({ children }: { children: React.ReactNode }) {
@@ -79,135 +95,182 @@ function AppShell({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+function AppRoutes() {
+  return (
+    <Routes>
+      {/* ランディングページ — 認証済みユーザーは /app/tasks へリダイレクト */}
+      <Route
+        path="/"
+        element={
+          <PublicOnlyRoute>
+            <LandingPage />
+          </PublicOnlyRoute>
+        }
+      />
+
+      {/* 認証不要ページ — AppLayoutなし */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+      {/* PWA Share Target */}
+      <Route path="/share-target" element={<ShareTargetPage />} />
+
+      {/* 法的ページ */}
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsOfServicePage />} />
+      <Route path="/cookies" element={<CookiePolicyPage />} />
+      <Route path="/tokusho" element={<SpecifiedCommercialTransactionsPage />} />
+
+      {/* アプリ本体 — /app/* プレフィックス、認証必須 */}
+      <Route
+        path="/app/tasks"
+        element={
+          <PrivateRoute>
+            <OnboardingGate>
+              <AppLayout>
+                <ErrorBoundary>
+                  <DashboardPage />
+                </ErrorBoundary>
+              </AppLayout>
+            </OnboardingGate>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/app/calendar"
+        element={
+          <PrivateRoute>
+            <OnboardingGate>
+              <AppLayout>
+                <ErrorBoundary>
+                  <Suspense fallback={<PageSkeleton />}>
+                    <CalendarPage />
+                  </Suspense>
+                </ErrorBoundary>
+              </AppLayout>
+            </OnboardingGate>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/app/plans"
+        element={
+          <PrivateRoute>
+            <AppLayout>
+              <ErrorBoundary>
+                <SubscriptionPage />
+              </ErrorBoundary>
+            </AppLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/app/subscription"
+        element={
+          <PrivateRoute>
+            <AppLayout>
+              <ErrorBoundary>
+                <SubscriptionPage />
+              </ErrorBoundary>
+            </AppLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/app/insights"
+        element={
+          <PrivateRoute>
+            <AppLayout>
+              <ErrorBoundary>
+                <Suspense fallback={<PageSkeleton />}>
+                  <InsightsPage />
+                </Suspense>
+              </ErrorBoundary>
+            </AppLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/app/settings"
+        element={
+          <PrivateRoute>
+            <AppLayout>
+              <ErrorBoundary>
+                <Suspense fallback={<PageSkeleton />}>
+                  <SettingsPage />
+                </Suspense>
+              </ErrorBoundary>
+            </AppLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/app/account"
+        element={
+          <PrivateRoute>
+            <AppLayout>
+              <ErrorBoundary>
+                <AccountPage />
+              </ErrorBoundary>
+            </AppLayout>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/app/team"
+        element={
+          <PrivateRoute>
+            <AppLayout>
+              <ErrorBoundary>
+                <TeamPage />
+              </ErrorBoundary>
+            </AppLayout>
+          </PrivateRoute>
+        }
+      />
+
+      {/* 管理者専用ページ */}
+      <Route
+        path="/app/admin"
+        element={
+          <AdminRoute>
+            <ErrorBoundary>
+              <AdminDashboard />
+            </ErrorBoundary>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/app/admin/users"
+        element={
+          <AdminRoute>
+            <ErrorBoundary>
+              <AdminUsers />
+            </ErrorBoundary>
+          </AdminRoute>
+        }
+      />
+
+      {/* /app/* の未マッチ → 認証済みなら /app/tasks、未認証なら /login */}
+      <Route path="/app/*" element={<Navigate to="/app/tasks" replace />} />
+
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  );
+}
+
 export default function App() {
   return (
     <ToastProvider>
       <AppShell>
-      <OfflineIndicator />
-      <MiniTimer />
-      <CookieConsent />
-      <GlobalUpgradeListener />
-      <ShortcutsOverlay />
-      <Routes>
-        {/* 認証不要ページ — AppLayoutなし */}
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-        <Route path="/reset-password" element={<ResetPasswordPage />} />
-
-        {/* 認証必要ページ — AppLayoutでラップ */}
-        <Route
-          path="/"
-          element={
-            <PrivateRoute>
-              <OnboardingGate>
-                <AppLayout>
-                  <ErrorBoundary>
-                    <DashboardPage />
-                  </ErrorBoundary>
-                </AppLayout>
-              </OnboardingGate>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/calendar"
-          element={
-            <PrivateRoute>
-              <OnboardingGate>
-                <AppLayout>
-                  <ErrorBoundary>
-                    <Suspense fallback={<PageSkeleton />}>
-                      <CalendarPage />
-                    </Suspense>
-                  </ErrorBoundary>
-                </AppLayout>
-              </OnboardingGate>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/subscription"
-          element={
-            <PrivateRoute>
-              <AppLayout>
-                <ErrorBoundary>
-                  <SubscriptionPage />
-                </ErrorBoundary>
-              </AppLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/plans"
-          element={
-            <PrivateRoute>
-              <AppLayout>
-                <ErrorBoundary>
-                  <SubscriptionPage />
-                </ErrorBoundary>
-              </AppLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/insights"
-          element={
-            <PrivateRoute>
-              <AppLayout>
-                <ErrorBoundary>
-                  <Suspense fallback={<PageSkeleton />}>
-                    <InsightsPage />
-                  </Suspense>
-                </ErrorBoundary>
-              </AppLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/settings"
-          element={
-            <PrivateRoute>
-              <AppLayout>
-                <ErrorBoundary>
-                  <Suspense fallback={<PageSkeleton />}>
-                    <SettingsPage />
-                  </Suspense>
-                </ErrorBoundary>
-              </AppLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/account"
-          element={
-            <PrivateRoute>
-              <AppLayout>
-                <ErrorBoundary>
-                  <AccountPage />
-                </ErrorBoundary>
-              </AppLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route
-          path="/team"
-          element={
-            <PrivateRoute>
-              <AppLayout>
-                <ErrorBoundary>
-                  <TeamPage />
-                </ErrorBoundary>
-              </AppLayout>
-            </PrivateRoute>
-          }
-        />
-        <Route path="/privacy" element={<PrivacyPolicyPage />} />
-        <Route path="/terms" element={<TermsOfServicePage />} />
-        <Route path="/cookies" element={<CookiePolicyPage />} />
-        <Route path="/tokusho" element={<SpecifiedCommercialTransactionsPage />} />
-        <Route path="*" element={<NotFoundPage />} />
-      </Routes>
+        <OfflineIndicator />
+        <MiniTimer />
+        <CookieConsent />
+        <GlobalUpgradeListener />
+        <ShortcutsOverlay />
+        <AppRoutes />
       </AppShell>
     </ToastProvider>
   );

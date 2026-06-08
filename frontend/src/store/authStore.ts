@@ -11,6 +11,7 @@ interface User {
   trial_active?: boolean;
   trial_days_left?: number;
   effective_plan?: string;
+  is_admin?: boolean;
 }
 
 interface AuthState {

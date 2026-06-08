@@ -1,7 +1,9 @@
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useTrialBanner } from "../../hooks/useTrialBanner";
 
 export default function TrialBanner() {
+  const { t } = useTranslation();
   const { isTrialActive, trialDaysLeft, startTrial, isLoading } = useTrialBanner();
 
   if (isTrialActive) {
@@ -11,13 +13,13 @@ export default function TrialBanner() {
         style={{ height: 36 }}
       >
         <span className="text-xs text-[var(--text-primary)] font-medium">
-          Pro体験中 残り{trialDaysLeft}日
+          {t("subscription.trial_active", { days: trialDaysLeft })}
         </span>
         <Link
           to="/plans"
           className="text-xs text-[var(--accent)] font-semibold hover:opacity-70 transition-opacity"
         >
-          アップグレードして継続 →
+          {t("subscription.continue_pro")}
         </Link>
       </div>
     );
@@ -33,7 +35,7 @@ export default function TrialBanner() {
         disabled={isLoading}
         className="text-xs text-[var(--text-primary)] font-semibold hover:opacity-70 transition-opacity disabled:opacity-40"
       >
-        14日間 Pro を無料体験 →
+        {t("subscription.trial_banner")}
       </button>
     </div>
   );

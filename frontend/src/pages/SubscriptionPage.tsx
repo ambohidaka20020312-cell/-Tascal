@@ -15,8 +15,9 @@ interface FeatureRow {
 }
 
 const FEATURES: FeatureRow[] = [
-  { label: "タスク数",       free: "20件/月", pro: "無制限",  team: "無制限" },
-  { label: "AI最適化",      free: "3回/日",  pro: "無制限",  team: "無制限" },
+  { label: "タスク追加",     free: "5個/日",  pro: "無制限",  team: "無制限" },
+  { label: "6個目以降",     free: "動画広告", pro: "なし",    team: "なし" },
+  { label: "AI最適化",      free: false,     pro: "無制限",  team: "無制限" },
   { label: "週次インサイト", free: false,     pro: true,      team: true },
   { label: "広告",          free: "あり",    pro: "なし",    team: "なし" },
   { label: "チーム共有",    free: false,     pro: false,     team: "最大5名" },

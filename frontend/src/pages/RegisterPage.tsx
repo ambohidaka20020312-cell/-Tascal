@@ -40,11 +40,18 @@ export default function RegisterPage() {
     setLoading(true);
     try {
       const res = await api.post("/auth/register", { name, email, password, age_confirmed: true });
-      const { access_token, refresh_token, user } = res.data.data ?? res.data;
-      localStorage.setItem("access_token", access_token);
-      localStorage.setItem("refresh_token", refresh_token);
-      setUser(user);
-      navigate("/");
+      const data = res.data.data ?? res.data;
+
+      // メール確認フロー：トークンなしでメッセージのみ返る
+      if (data?.access_token) {
+        localStorage.setItem("access_token", data.access_token);
+        localStorage.setItem("refresh_token", data.refresh_token);
+        setUser(data.user);
+        navigate("/app/tasks");
+      } else {
+        // 確認メール送信済み → ログインページへ案内
+        navigate("/login?registered=1");
+      }
     } catch (err: unknown) {
       const msg =
         (err as { response?: { data?: { error?: { message?: string } } } })

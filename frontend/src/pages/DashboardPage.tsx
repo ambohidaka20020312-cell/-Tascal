@@ -3,11 +3,14 @@ import { format, addDays, subDays } from "date-fns";
 import { ja } from "date-fns/locale";
 import { useTranslation } from "react-i18next";
 import { useTaskStore } from "../store/taskStore";
+import { useAuthStore } from "../store/authStore";
 import { useTasksQuery, useBulkComplete, useBulkDelete, useOverdueTasks } from "../hooks/useTasks";
 import { aiApi, taskApi } from "../utils/api";
+import { useAdGate } from "../hooks/useAdGate";
 import { useViewport } from "../hooks/useViewport";
 import { useDailyBriefing } from "../hooks/useDailyBriefing";
 import { useDragSort } from "../hooks/useDragSort";
+import { usePullToRefresh } from "../hooks/usePullToRefresh";
 import { useSpeechInput } from "../hooks/useSpeechInput";
 import { parseNaturalLanguageTask, ParsedTask } from "../utils/nlpTaskParser";
 import TaskCard from "../components/tasks/TaskCard";
@@ -21,6 +24,7 @@ import DailyBriefingPanel from "../components/ai/DailyBriefingPanel";
 import ReplanButton from "../components/ai/ReplanButton";
 import TaskSuggestions from "../components/ai/TaskSuggestions";
 import AdBanner from "../components/ads/AdBanner";
+import VideoAdGate from "../components/ads/VideoAdGate";
 import OverdueBanner from "../components/tasks/OverdueBanner";
 import StatsBar from "../components/dashboard/StatsBar";
 
@@ -52,6 +56,9 @@ function priorityLabel(p: ParsedTask["priority"]) {
 export default function DashboardPage() {
   const { t } = useTranslation();
   const { tasks, selectedDate, setSelectedDate, reorderTasks } = useTaskStore();
+  const user = useAuthStore((s) => s.user);
+  const { needsAd, incrementCount, remainingFree } = useAdGate();
+  const [showAdGate, setShowAdGate] = useState(false);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [taskFormInit, setTaskFormInit] = useState<Partial<ParsedTask>>({});
@@ -119,7 +126,14 @@ export default function DashboardPage() {
   const isTabletOrAbove =
     deviceType === "tablet" || deviceType === "desktop" || deviceType === "ultrawide";
 
-  const { isLoading, isError } = useTasksQuery(selectedDate, filterCategoryId);
+  const { isLoading, isError, refetch: refetchTasks } = useTasksQuery(selectedDate, filterCategoryId);
+
+  // Pull-to-refresh (mobile)
+  const pageRef = useRef<HTMLDivElement>(null);
+  const { refreshing, pulling, pullDistance } = usePullToRefresh(pageRef, {
+    onRefresh: async () => { await refetchTasks(); },
+    threshold: 50,
+  });
   const { data: overdueTasks = [] } = useOverdueTasks();
 
   const { handlers: dragHandlers, dragIndex, overIndex, isDragging, draggedId, onKeyDown: dragKeyDown } = useDragSort(tasks, (reordered) => {
@@ -142,8 +156,7 @@ export default function DashboardPage() {
   // Custom event listeners for global keyboard shortcuts
   useEffect(() => {
     const onOpenTaskForm = () => {
-      setTaskFormInit({});
-      setShowTaskForm(true);
+      openTaskForm();
     };
     const onPrefillTaskForm = (e: Event) => {
       const detail = (e as CustomEvent<Partial<ParsedTask>>).detail;
@@ -231,7 +244,21 @@ export default function DashboardPage() {
     }
   };
 
+  const plan = user?.effective_plan ?? "free";
+
   const openTaskForm = () => {
+    if (needsAd(plan)) {
+      setShowAdGate(true);
+      return;
+    }
+    incrementCount();
+    setTaskFormInit({});
+    setShowTaskForm(true);
+  };
+
+  const handleAdComplete = () => {
+    setShowAdGate(false);
+    incrementCount();
     setTaskFormInit({});
     setShowTaskForm(true);
   };
@@ -320,7 +347,23 @@ export default function DashboardPage() {
     : null;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-5 mb-16 md:mb-0">
+    <div ref={pageRef} className="max-w-2xl mx-auto space-y-5 mb-16 md:mb-0">
+      {/* Pull-to-refresh indicator */}
+      {(pulling || refreshing) && (
+        <div
+          className="flex items-center justify-center text-[var(--text-muted)] transition-all"
+          style={{ height: pulling ? Math.min(pullDistance, 50) : 0, overflow: "hidden" }}
+        >
+          {refreshing ? (
+            <div className="w-5 h-5 border-2 border-[var(--border)] border-t-[var(--text-muted)] rounded-full animate-spin" />
+          ) : (
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          )}
+        </div>
+      )}
+
       {/* Overdue tasks banner */}
       <OverdueBanner />
 
@@ -553,6 +596,11 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
+          {plan === "free" && (
+            <p className="text-xs text-center mt-1" style={{ color: "var(--text-secondary)" }}>
+              今日あと{remainingFree(plan)}個無料で追加できます
+            </p>
+          )}
 
           {/* Stats bar */}
           <StatsBar />
@@ -875,6 +923,10 @@ export default function DashboardPage() {
             </button>
           </div>
         </div>
+      )}
+
+      {showAdGate && (
+        <VideoAdGate onComplete={handleAdComplete} onClose={() => setShowAdGate(false)} />
       )}
 
       {showTaskForm && (
