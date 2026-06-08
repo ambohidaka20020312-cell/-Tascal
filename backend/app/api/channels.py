@@ -207,16 +207,9 @@ def send_message(channel_id):
             db.session.add(auto_task)
             db.session.flush()
 
-    # Group channel: @channel mention required for task posting
-    if channel.channel_type == "group" and data.get("add_task"):
-        channel_mention = f"@{channel.name}"
-        if channel_mention.lower() not in body.lower():
-            return jsonify({
-                "error": {
-                    "code": "CHANNEL_MENTION_REQUIRED",
-                    "message": f"グループへのタスク投稿には {channel_mention} のメンションが必要です",
-                }
-            }), 400
+    # Group channel: @channel mention required ONLY when posting from outside
+    # (i.e. via post-task endpoint). Inside the channel, @name alone is enough.
+    # This block is intentionally left empty — enforcement is in post_task_to_channel.
 
     mentions = _extract_mentions(body, channel.team_id)
     msg = Message(
@@ -341,6 +334,20 @@ def post_task_to_channel(channel_id):
     data = request.get_json() or {}
     task_id = data.get("task_id")
     task = Task.query.get_or_404(task_id)
+
+    # External post (from task screen): require @channel mention in body
+    # Internal post (from within the channel): @name alone is enough
+    is_external = data.get("external", False)
+    if is_external and channel.channel_type == "group":
+        channel_mention = f"@{channel.name}".lower()
+        body_check = (data.get("body") or "").lower()
+        if channel_mention not in body_check:
+            return jsonify({
+                "error": {
+                    "code": "CHANNEL_MENTION_REQUIRED",
+                    "message": f"チャンネル外からの投稿には @{channel.name} のメンションが必要です",
+                }
+            }), 400
 
     # Build message body with @mention
     assignee = User.query.get(task.assigned_to) if task.assigned_to else None
