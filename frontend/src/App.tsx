@@ -26,6 +26,8 @@ import { ToastProvider } from "./components/common/Toast";
 import ShortcutsOverlay from "./components/common/ShortcutsOverlay";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
 import MiniTimer from "./components/timer/MiniTimer";
+import AdminDashboard from "./pages/AdminDashboard";
+import AdminUsers from "./pages/AdminUsers";
 
 // Lazy-loaded heavy pages
 const CalendarPage = lazy(() => import("./pages/CalendarPage"));
@@ -48,6 +50,13 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 function PublicOnlyRoute({ children }: { children: React.ReactNode }) {
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   return isAuthenticated() ? <Navigate to="/app/tasks" replace /> : <>{children}</>;
+}
+
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((s) => s.user);
+  if (!user) return <Navigate to="/login" replace />;
+  if (!user.is_admin) return <Navigate to="/app/tasks" replace />;
+  return <>{children}</>;
 }
 
 function OnboardingGate({ children }: { children: React.ReactNode }) {
@@ -216,6 +225,28 @@ function AppRoutes() {
               </ErrorBoundary>
             </AppLayout>
           </PrivateRoute>
+        }
+      />
+
+      {/* 管理者専用ページ */}
+      <Route
+        path="/app/admin"
+        element={
+          <AdminRoute>
+            <ErrorBoundary>
+              <AdminDashboard />
+            </ErrorBoundary>
+          </AdminRoute>
+        }
+      />
+      <Route
+        path="/app/admin/users"
+        element={
+          <AdminRoute>
+            <ErrorBoundary>
+              <AdminUsers />
+            </ErrorBoundary>
+          </AdminRoute>
         }
       />
 
