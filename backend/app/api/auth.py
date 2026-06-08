@@ -104,7 +104,9 @@ def login():
         db.session.commit()
         return jsonify({"error": {"code": "INVALID_CREDENTIALS", "message": "メールアドレスまたはパスワードが正しくありません"}}), 401
 
-    if not user.email_verified:
+    # Skip email verification check if SKIP_EMAIL_VERIFY=true (dev/staging)
+    skip_verify = current_app.config.get("SKIP_EMAIL_VERIFY", "false").lower() == "true"
+    if not skip_verify and not user.email_verified:
         return jsonify({"error": {"code": "EMAIL_NOT_VERIFIED", "message": "メールアドレスが確認されていません。届いた確認メールのリンクをクリックしてください。"}}), 403
 
     record_success(ip)

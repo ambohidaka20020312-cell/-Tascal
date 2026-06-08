@@ -21,6 +21,8 @@ class BaseConfig:
     REDIS_URL = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     REVENUECAT_WEBHOOK_SECRET = os.getenv("REVENUECAT_WEBHOOK_SECRET", "")
 
+    SKIP_EMAIL_VERIFY = os.getenv("SKIP_EMAIL_VERIFY", "false")
+
     # Mail settings (Flask-Mail / Gmail SMTP)
     MAIL_SERVER = os.getenv("MAIL_SERVER", "smtp.gmail.com")
     MAIL_PORT = int(os.getenv("MAIL_PORT", "587"))
