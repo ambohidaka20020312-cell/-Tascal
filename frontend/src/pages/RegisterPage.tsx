@@ -133,6 +133,7 @@ export default function RegisterPage() {
                     <EyeIcon open={showPassword} />
                   </button>
                 </div>
+                <p className="mt-2 text-[10px] text-[var(--text-subtle)] tracking-wide">英字と数字を含む8文字以上</p>
               </div>
 
               <div>
