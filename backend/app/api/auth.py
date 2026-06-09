@@ -59,8 +59,21 @@ def register():
     if not ok:
         return jsonify({"error": {"code": "WEAK_PASSWORD", "message": msg}}), 400
 
-    if User.query.filter_by(email=data["email"]).first():
-        return jsonify({"error": {"code": "EMAIL_EXISTS", "message": "このメールアドレスは既に使用されています"}}), 409
+    existing = User.query.filter_by(email=data["email"]).first()
+    if existing:
+        if existing.email_verified:
+            return jsonify({"error": {"code": "EMAIL_EXISTS", "message": "このメールアドレスは既に使用されています"}}), 409
+        # 未認証アカウントは上書き再登録を許可
+        user = existing
+        user.set_password(data["password"])
+        if data.get("name"):
+            user.name = data["name"]
+        verify_token = user.generate_verify_token()
+        db.session.commit()
+        _send_verify_email(user.email, verify_token)
+        return jsonify({
+            "message": "確認メールを再送しました。メールのリンクをクリックしてアカウントを有効化してください。"
+        }), 201
 
     user = User(email=data["email"], name=data.get("name", ""))
     user.set_password(data["password"])
