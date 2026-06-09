@@ -14,20 +14,24 @@ depends_on = None
 
 
 def upgrade():
-    op.create_table(
-        "audit_logs",
-        sa.Column("id", sa.Integer(), nullable=False),
-        sa.Column("user_id", sa.Integer(), sa.ForeignKey("users.id"), nullable=True),
-        sa.Column("action", sa.String(100), nullable=False),
-        sa.Column("resource_type", sa.String(50), nullable=True),
-        sa.Column("resource_id", sa.Integer(), nullable=True),
-        sa.Column("ip_address", sa.String(45), nullable=True),
-        sa.Column("user_agent", sa.String(500), nullable=True),
-        sa.Column("extra", sa.JSON(), nullable=True),
-        sa.Column("created_at", sa.DateTime(), nullable=True),
-        sa.PrimaryKeyConstraint("id"),
+    op.execute("""
+        CREATE TABLE IF NOT EXISTS audit_logs (
+            id SERIAL NOT NULL,
+            user_id INTEGER,
+            action VARCHAR(100) NOT NULL,
+            resource_type VARCHAR(50),
+            resource_id INTEGER,
+            ip_address VARCHAR(45),
+            user_agent VARCHAR(500),
+            extra JSON,
+            created_at TIMESTAMP WITHOUT TIME ZONE,
+            PRIMARY KEY (id),
+            FOREIGN KEY(user_id) REFERENCES users (id)
+        )
+    """)
+    op.execute(
+        "CREATE INDEX IF NOT EXISTS ix_audit_logs_created_at ON audit_logs (created_at)"
     )
-    op.create_index("ix_audit_logs_created_at", "audit_logs", ["created_at"])
 
 
 def downgrade():
