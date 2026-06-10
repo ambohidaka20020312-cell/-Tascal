@@ -157,9 +157,10 @@ export default function SubscriptionPage() {
       upgradeOrder.indexOf(plan) > upgradeOrder.indexOf(currentPlan);
 
     if (isUpgrade) {
+      const trialAvailable = plan === "pro" && !subscription?.trial_used;
       const label = checkout.isPending
         ? "処理中..."
-        : plan === "pro"
+        : trialAvailable
         ? "14日間無料で試す"
         : "アップグレード";
       return (

@@ -114,6 +114,7 @@ def create_checkout():
 
     plan = data["plan"]
     is_pro = plan in ("pro", "personal_pro")
+    use_trial = is_pro and not user.trial_used
 
     s = get_stripe()
     session_params = dict(
@@ -125,8 +126,10 @@ def create_checkout():
         cancel_url=data["cancel_url"],
         metadata={"user_id": user_id},
     )
-    if is_pro:
+    if use_trial:
         session_params["subscription_data"] = {"trial_period_days": 14}
+        user.trial_used = True
+        db.session.commit()
 
     session = s.checkout.Session.create(**session_params)
     )
@@ -192,7 +195,7 @@ def webhook():
 def get_subscription():
     user_id = get_jwt_identity()
     user = User.query.get_or_404(user_id)
-    return jsonify({"data": {"plan": user.plan, "stripe_customer_id": user.stripe_customer_id}})
+    return jsonify({"data": {"plan": user.plan, "stripe_customer_id": user.stripe_customer_id, "trial_used": user.trial_used}})
 
 
 def _handle_checkout_completed(session):

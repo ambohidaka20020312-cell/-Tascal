@@ -6,6 +6,7 @@ export interface Subscription {
   status: string;
   current_period_end?: string;
   cancel_at_period_end?: boolean;
+  trial_used?: boolean;
 }
 
 export function useSubscription() {
