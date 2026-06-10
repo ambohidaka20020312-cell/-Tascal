@@ -16,7 +16,7 @@ export default function TrialBanner() {
           {t("subscription.trial_active", { days: trialDaysLeft })}
         </span>
         <Link
-          to="/plans"
+          to="/app/plans"
           className="text-xs text-[var(--accent)] font-semibold hover:opacity-70 transition-opacity"
         >
           {t("subscription.continue_pro")}

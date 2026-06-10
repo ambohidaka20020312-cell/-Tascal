@@ -89,7 +89,7 @@ export default function ProFeatureGate({
       <Button
         size="sm"
         onClick={() => {
-          window.location.href = "/plans";
+          window.location.href = "/app/plans";
         }}
       >
         プランをアップグレード

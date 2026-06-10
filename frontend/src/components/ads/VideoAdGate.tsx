@@ -60,7 +60,7 @@ export default function VideoAdGate({ onComplete, onClose }: VideoAdGateProps) {
 
             {countdown <= 10 && (
               <Link
-                to="/plans"
+                to="/app/plans"
                 onClick={onClose}
                 className="block text-xs mb-3"
                 style={{ color: "var(--accent)" }}
