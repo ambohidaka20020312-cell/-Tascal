@@ -99,12 +99,14 @@ def create_checkout():
     user = User.query.get_or_404(user_id)
     data = request.get_json()
 
+    pro_price = current_app.config.get("STRIPE_PRICE_ID_PRO") or current_app.config.get("STRIPE_PRICE_ID_PERSONAL_PRO")
+    team_price = current_app.config.get("STRIPE_PRICE_ID_TEAM") or current_app.config.get("STRIPE_PRICE_ID_BUSINESS")
     price_map = {
-        "pro": current_app.config["STRIPE_PRICE_ID_PRO"],
-        "team": current_app.config["STRIPE_PRICE_ID_TEAM"],
-        "personal_pro": current_app.config["STRIPE_PRICE_ID_PERSONAL_PRO"],
-        "business": current_app.config["STRIPE_PRICE_ID_BUSINESS"],
-        "enterprise": current_app.config["STRIPE_PRICE_ID_ENTERPRISE"],
+        "pro": pro_price,
+        "personal_pro": pro_price,
+        "team": team_price,
+        "business": team_price,
+        "enterprise": current_app.config.get("STRIPE_PRICE_ID_ENTERPRISE") or team_price,
     }
     price_id = price_map.get(data["plan"])
     if not price_id:
@@ -115,6 +117,8 @@ def create_checkout():
         customer_email=user.email,
         mode="subscription",
         line_items=[{"price": price_id, "quantity": 1}],
+        subscription_data={"trial_period_days": 14},
+        payment_method_collection="always",
         success_url=data["success_url"],
         cancel_url=data["cancel_url"],
         metadata={"user_id": user_id},

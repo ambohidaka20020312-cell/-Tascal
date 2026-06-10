@@ -22,8 +22,8 @@ export function useSubscription() {
 export function useCheckout() {
   return useMutation({
     mutationFn: async (plan: "pro" | "team" | "personal_pro" | "business" | "enterprise") => {
-      const successUrl = `${window.location.origin}/subscription?success=true`;
-      const cancelUrl = `${window.location.origin}/subscription?canceled=true`;
+      const successUrl = `${window.location.origin}/app/subscription?success=true`;
+      const cancelUrl = `${window.location.origin}/app/subscription?canceled=true`;
       const res = await billingApi.createCheckout(plan, successUrl, cancelUrl);
       return res.data.data as { url: string };
     },
@@ -36,7 +36,7 @@ export function useCheckout() {
 export function usePortal() {
   return useMutation({
     mutationFn: async () => {
-      const returnUrl = `${window.location.origin}/subscription`;
+      const returnUrl = `${window.location.origin}/app/subscription`;
       const res = await billingApi.getPortal(returnUrl);
       return res.data.data as { url: string };
     },
