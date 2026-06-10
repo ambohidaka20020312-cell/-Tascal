@@ -57,7 +57,7 @@ export default function DashboardPage() {
   const { t } = useTranslation();
   const { tasks, selectedDate, setSelectedDate, reorderTasks } = useTaskStore();
   const user = useAuthStore((s) => s.user);
-  const { needsAd, incrementCount, remainingFree } = useAdGate();
+  const { needsAd, incrementCount } = useAdGate();
   const [showAdGate, setShowAdGate] = useState(false);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -596,12 +596,6 @@ export default function DashboardPage() {
               )}
             </div>
           </div>
-          {plan === "free" && (
-            <p className="text-xs text-center mt-1" style={{ color: "var(--text-secondary)" }}>
-              今日あと{remainingFree(plan)}個無料で追加できます
-            </p>
-          )}
-
           {/* Stats bar */}
           <StatsBar />
 
