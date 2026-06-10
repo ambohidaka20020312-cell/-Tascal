@@ -24,6 +24,7 @@ import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { ToastProvider } from "./components/common/Toast";
 import ShortcutsOverlay from "./components/common/ShortcutsOverlay";
 import { useKeyboardShortcuts } from "./hooks/useKeyboardShortcuts";
+import { useIdleTimeout } from "./hooks/useIdleTimeout";
 import MiniTimer from "./components/timer/MiniTimer";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
@@ -93,6 +94,7 @@ function GlobalUpgradeListener() {
 
 function AppShell({ children }: { children: React.ReactNode }) {
   useKeyboardShortcuts();
+  useIdleTimeout();
   return <>{children}</>;
 }
 
