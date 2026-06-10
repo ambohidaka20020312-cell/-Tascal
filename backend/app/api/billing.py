@@ -132,7 +132,6 @@ def create_checkout():
         db.session.commit()
 
     session = s.checkout.Session.create(**session_params)
-    )
     return jsonify({"data": {"url": session.url}})
 
 
@@ -195,7 +194,12 @@ def webhook():
 def get_subscription():
     user_id = get_jwt_identity()
     user = User.query.get_or_404(user_id)
-    return jsonify({"data": {"plan": user.plan, "stripe_customer_id": user.stripe_customer_id, "trial_used": user.trial_used}})
+    return jsonify({"data": {
+        "plan": user.plan,
+        "stripe_customer_id": user.stripe_customer_id,
+        "trial_used": user.trial_used,
+        "trial_active": user.is_trial_active,
+    }})
 
 
 def _handle_checkout_completed(session):
