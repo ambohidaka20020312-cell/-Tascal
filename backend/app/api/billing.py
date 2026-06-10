@@ -112,16 +112,23 @@ def create_checkout():
     if not price_id:
         return jsonify({"error": {"code": "INVALID_PLAN", "message": "無効なプランです"}}), 400
 
+    plan = data["plan"]
+    is_pro = plan in ("pro", "personal_pro")
+
     s = get_stripe()
-    session = s.checkout.Session.create(
+    session_params = dict(
         customer_email=user.email,
         mode="subscription",
         line_items=[{"price": price_id, "quantity": 1}],
-        subscription_data={"trial_period_days": 14},
         payment_method_collection="always",
         success_url=data["success_url"],
         cancel_url=data["cancel_url"],
         metadata={"user_id": user_id},
+    )
+    if is_pro:
+        session_params["subscription_data"] = {"trial_period_days": 14}
+
+    session = s.checkout.Session.create(**session_params)
     )
     return jsonify({"data": {"url": session.url}})
 
