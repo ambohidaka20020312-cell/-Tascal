@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tascal</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 300px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #ffffff;
+      color: #111;
+    }
+    .header {
+      padding: 16px;
+      border-bottom: 1px solid #e5e5e5;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { font-size: 11px; letter-spacing: 0.3em; text-transform: uppercase; color: #666; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: #d1d5db; }
+    .status-dot.logged-in { background: #22c55e; }
+
+    /* ログイン画面 */
+    #login-view { padding: 20px 16px; }
+    #login-view h2 { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+    #login-view p { font-size: 11px; color: #888; margin-bottom: 16px; }
+    .field { margin-bottom: 12px; }
+    .field label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 0.15em; color: #888; margin-bottom: 4px; }
+    .field input {
+      width: 100%; border: none; border-bottom: 1px solid #e5e5e5;
+      padding: 6px 0; font-size: 13px; outline: none; color: #111;
+      background: transparent;
+    }
+    .field input:focus { border-bottom-color: #111; }
+    .btn {
+      width: 100%; padding: 10px; border: none; border-radius: 6px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.15em;
+      text-transform: uppercase; cursor: pointer; transition: opacity 0.15s;
+    }
+    .btn:disabled { opacity: 0.4; cursor: default; }
+    .btn-primary { background: #111; color: #fff; }
+    .btn-primary:hover:not(:disabled) { opacity: 0.8; }
+    .error { font-size: 11px; color: #888; margin-top: 8px; padding-left: 8px; border-left: 2px solid #e5e5e5; }
+
+    /* ログイン済み画面 */
+    #logged-view { padding: 16px; }
+    .user-info { font-size: 12px; color: #444; margin-bottom: 16px; }
+    .user-info strong { display: block; font-size: 13px; color: #111; margin-bottom: 2px; }
+    .divider { border: none; border-top: 1px solid #f0f0f0; margin: 12px 0; }
+    .hint { font-size: 11px; color: #888; line-height: 1.6; margin-bottom: 16px; }
+    .hint li { margin-bottom: 4px; }
+    .btn-outline {
+      background: transparent; color: #111;
+      border: 1px solid #e5e5e5;
+    }
+    .btn-outline:hover { background: #f9f9f9; }
+
+    /* クイック追加 */
+    .quick-add { margin-bottom: 12px; }
+    .quick-add textarea {
+      width: 100%; border: 1px solid #e5e5e5; border-radius: 6px;
+      padding: 8px; font-size: 12px; resize: none; outline: none;
+      font-family: inherit; color: #111;
+    }
+    .quick-add textarea:focus { border-color: #111; }
+    .quick-add .btn { margin-top: 8px; }
+
+    .success { font-size: 11px; color: #22c55e; margin-top: 8px; text-align: center; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <span class="logo">TASCAL</span>
+    <div class="status-dot" id="status-dot"></div>
+  </div>
+
+  <div id="login-view" style="display:none">
+    <h2>ログイン</h2>
+    <p>Tascalアカウントでサインイン</p>
+    <div class="field">
+      <label>メールアドレス</label>
+      <input type="email" id="email" placeholder="you@example.com" />
+    </div>
+    <div class="field">
+      <label>パスワード</label>
+      <input type="password" id="password" placeholder="••••••••" />
+    </div>
+    <button class="btn btn-primary" id="login-btn">ログイン</button>
+    <p class="error" id="login-error" style="display:none"></p>
+  </div>
+
+  <div id="logged-view" style="display:none">
+    <div class="user-info">
+      <strong id="user-name"></strong>
+      <span id="user-email"></span>
+    </div>
+
+    <div class="quick-add">
+      <textarea id="task-input" rows="2" placeholder="タスクをここに入力して追加..."></textarea>
+      <button class="btn btn-primary" id="add-btn">タスクを追加</button>
+      <p class="success" id="add-success" style="display:none">追加しました ✓</p>
+    </div>
+
+    <hr class="divider" />
+
+    <ul class="hint">
+      <li>右クリック → <strong>Tascalにタスクとして追加</strong></li>
+      <li>テキスト選択 → 右クリック → タスクに追加</li>
+    </ul>
+
+    <button class="btn btn-outline" id="logout-btn">ログアウト</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
