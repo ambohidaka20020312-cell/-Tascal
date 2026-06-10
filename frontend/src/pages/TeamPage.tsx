@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import { useAuthStore } from "../store/authStore";
 import { useToast } from "../components/common/Toast";
 import {
@@ -8,12 +7,11 @@ import {
   useCreateOrg,
   useInviteMember,
   useRemoveMember,
+  useUpdateMemberRole,
 } from "../hooks/useOrg";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "../utils/api";
 import type { Department } from "../types/team";
-
-const MAX_MEMBERS = 5;
 
 function InitialsAvatar({ name }: { name: string }) {
   const initials = name
@@ -56,31 +54,42 @@ function SkeletonCard() {
   );
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  owner: "代表者",
+  admin: "管理者",
+  member: "メンバー",
+};
+
 function CreateOrgForm() {
-  const { t } = useTranslation();
   const [name, setName] = useState("");
   const createOrg = useCreateOrg();
+  const { toast } = useToast();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
-    createOrg.mutate(name.trim());
+    try {
+      await createOrg.mutateAsync(name.trim());
+      toast("チームを作成しました", "success");
+    } catch {
+      toast("チームの作成に失敗しました", "error");
+    }
   };
 
   return (
     <div className="max-w-md mx-auto space-y-6 py-6">
-      <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-wide">{t("team.title")}</h1>
+      <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-wide">チーム</h1>
       <section className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-5 space-y-4">
-        <h2 className="text-sm font-semibold text-[var(--text-primary)]">{t("team.create_title")}</h2>
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">チームを作成</h2>
         <p className="text-xs text-[var(--text-muted)]">
-          {t("team.create_desc")}
+          チームを作成してメンバーを招待できます。招待されたメンバーはメールで通知されます。
         </p>
         <form onSubmit={handleSubmit} className="flex gap-2">
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder={t("team.create_placeholder")}
+            placeholder="チーム名を入力"
             className="flex-1 px-3 py-2 text-sm bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] focus:outline-none focus:border-[var(--text-muted)]"
           />
           <button
@@ -88,11 +97,11 @@ function CreateOrgForm() {
             disabled={!name.trim() || createOrg.isPending}
             className="px-4 py-2 text-sm font-medium border border-[var(--border)] rounded-lg text-[var(--text-primary)] bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {createOrg.isPending ? t("team.creating") : t("team.create_btn")}
+            {createOrg.isPending ? "作成中..." : "作成"}
           </button>
         </form>
         {createOrg.isError && (
-          <p className="text-xs text-[var(--color-danger,#e53e3e)]">{t("team.create_error")}</p>
+          <p className="text-xs text-red-500">チームの作成に失敗しました</p>
         )}
       </section>
     </div>
@@ -273,56 +282,47 @@ function DepartmentsTab({ orgId }: DepartmentsTabProps) {
 
 // ── Members tab ───────────────────────────────────────────────────────────────
 
-interface MembersTabProps {
-  orgId: number;
-  ownerId: number;
-}
-
-function MembersTab({ orgId, ownerId }: MembersTabProps) {
-  const { t } = useTranslation();
+function MembersTab({ orgId, myRole }: { orgId: number; myRole: "owner" | "admin" | "member" }) {
   const { toast } = useToast();
   const user = useAuthStore((s) => s.user);
   const { data: members = [] } = useOrgMembers(orgId);
   const inviteMember = useInviteMember(orgId);
   const removeMember = useRemoveMember(orgId);
+  const updateRole = useUpdateMemberRole(orgId);
 
   const [inviteEmail, setInviteEmail] = useState("");
 
-  const isOwner = ownerId === user?.id;
-  const memberCount = members.length;
-  const atLimit = memberCount >= MAX_MEMBERS;
+  const canManage = myRole === "owner" || myRole === "admin";
 
   const handleInvite = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inviteEmail.trim()) return;
-    if (atLimit) {
-      toast(t("team.at_limit", { max: MAX_MEMBERS }), "error");
-      return;
-    }
     try {
       await inviteMember.mutateAsync(inviteEmail.trim());
-      toast(t("team.toast_invited"), "success");
+      toast("招待メールを送信しました", "success");
       setInviteEmail("");
     } catch (err: unknown) {
-      const e = err as { response?: { status?: number } };
-      if (e?.response?.status === 404) {
-        toast(t("team.toast_not_found"), "error");
-      } else if (e?.response?.status === 400) {
-        toast(t("team.at_limit", { max: MAX_MEMBERS }), "error");
-      } else {
-        toast(t("team.toast_invite_fail"), "error");
-      }
+      const e = err as { response?: { data?: { error?: { message?: string } } } };
+      toast(e?.response?.data?.error?.message ?? "招待に失敗しました", "error");
     }
   };
 
   const handleRemove = async (userId: number) => {
     try {
       await removeMember.mutateAsync(userId);
-      if (userId === user?.id) {
-        toast(t("team.toast_left"), "success");
-      }
+      toast(userId === user?.id ? "チームを退出しました" : "メンバーを削除しました", "success");
     } catch {
-      toast(t("team.toast_remove_fail"), "error");
+      toast("削除に失敗しました", "error");
+    }
+  };
+
+  const handleRoleToggle = async (userId: number, currentRole: string) => {
+    const newRole = currentRole === "admin" ? "member" : "admin";
+    try {
+      await updateRole.mutateAsync({ userId, role: newRole as "admin" | "member" });
+      toast(`ロールを${ROLE_LABELS[newRole]}に変更しました`, "success");
+    } catch {
+      toast("ロールの変更に失敗しました", "error");
     }
   };
 
@@ -331,34 +331,46 @@ function MembersTab({ orgId, ownerId }: MembersTabProps) {
       {/* Member list */}
       <section className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold text-[var(--text-primary)]">{t("team.members")}</h2>
-          <span className="text-xs text-[var(--text-muted)]">
-            {memberCount} / {MAX_MEMBERS}
-          </span>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">メンバー</h2>
+          <span className="text-xs text-[var(--text-muted)]">{members.length}名</span>
         </div>
 
-        <ul className="space-y-2">
+        <ul className="space-y-3">
           {members.map((m) => (
             <li key={m.id} className="flex items-center gap-3">
-              <InitialsAvatar name={m.name} />
+              <InitialsAvatar name={m.name || m.email} />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-[var(--text-primary)] truncate">{m.name}</p>
+                <p className="text-sm font-medium text-[var(--text-primary)] truncate">{m.name || "（名前なし）"}</p>
                 <p className="text-xs text-[var(--text-muted)] truncate">{m.email}</p>
               </div>
               <span className={[
                 "text-xs px-2 py-0.5 rounded-full border shrink-0",
                 m.role === "owner"
                   ? "border-[var(--border)] text-[var(--text-primary)] bg-[var(--bg-tertiary)]"
-                  : "border-[var(--border)] text-[var(--text-muted)]",
+                  : m.role === "admin"
+                    ? "border-blue-400/50 text-blue-500 bg-blue-50/10"
+                    : "border-[var(--border)] text-[var(--text-muted)]",
               ].join(" ")}>
-                {m.role === "owner" ? t("team.role_owner") : t("team.role_member")}
+                {ROLE_LABELS[m.role] ?? m.role}
               </span>
-              {isOwner && m.id !== user?.id && (
+              {/* Owner can toggle admin/member */}
+              {myRole === "owner" && m.id !== user?.id && m.role !== "owner" && (
+                <button
+                  onClick={() => handleRoleToggle(m.id, m.role)}
+                  disabled={updateRole.isPending}
+                  title={m.role === "admin" ? "メンバーに戻す" : "管理者にする"}
+                  className="text-xs text-[var(--text-subtle)] hover:text-[var(--text-secondary)] transition-colors disabled:opacity-40 shrink-0"
+                >
+                  {m.role === "admin" ? "↓" : "↑"}
+                </button>
+              )}
+              {/* Owner/admin can remove non-owner members */}
+              {canManage && m.id !== user?.id && m.role !== "owner" && (
                 <button
                   onClick={() => handleRemove(m.id)}
                   disabled={removeMember.isPending}
-                  aria-label={t("team.remove_label", { name: m.name })}
-                  className="text-[var(--text-subtle)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40"
+                  aria-label={`${m.name} を削除`}
+                  className="text-[var(--text-subtle)] hover:text-[var(--text-primary)] transition-colors disabled:opacity-40 shrink-0"
                 >
                   <TrashIcon />
                 </button>
@@ -368,46 +380,43 @@ function MembersTab({ orgId, ownerId }: MembersTabProps) {
         </ul>
       </section>
 
-      {/* Invite section (owner only) */}
-      {isOwner && (
+      {/* Invite section (owner or admin) */}
+      {canManage && (
         <section className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-5 space-y-4">
-          <h2 className="text-sm font-semibold text-[var(--text-primary)]">{t("team.invite")}</h2>
-          {atLimit && (
-            <p className="text-xs text-[var(--text-muted)]">
-              {t("team.at_limit", { max: MAX_MEMBERS })}
-            </p>
-          )}
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">メンバーを招待</h2>
+          <p className="text-xs text-[var(--text-muted)]">
+            メールアドレスを入力すると招待メールが届きます。Tascal未登録の場合は登録用リンク付きで送信されます。
+          </p>
           <form onSubmit={handleInvite} className="flex gap-2">
             <input
               type="email"
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
-              placeholder={t("team.email_placeholder")}
-              disabled={atLimit}
-              className="flex-1 px-3 py-2 text-sm bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] focus:outline-none focus:border-[var(--text-muted)] disabled:opacity-40"
+              placeholder="招待するメールアドレス"
+              className="flex-1 px-3 py-2 text-sm bg-[var(--bg-primary)] border border-[var(--border)] rounded-lg text-[var(--text-primary)] placeholder:text-[var(--text-subtle)] focus:outline-none focus:border-[var(--text-muted)]"
             />
             <button
               type="submit"
-              disabled={!inviteEmail.trim() || inviteMember.isPending || atLimit}
+              disabled={!inviteEmail.trim() || inviteMember.isPending}
               className="px-4 py-2 text-sm font-medium border border-[var(--border)] rounded-lg text-[var(--text-primary)] bg-[var(--bg-tertiary)] hover:bg-[var(--bg-secondary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
-              {inviteMember.isPending ? t("team.sending") : t("team.invite_btn")}
+              {inviteMember.isPending ? "送信中..." : "招待する"}
             </button>
           </form>
         </section>
       )}
 
       {/* Leave team (member only) */}
-      {!isOwner && user && (
+      {myRole === "member" && user && (
         <section className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-5 space-y-3">
-          <h2 className="text-sm font-semibold text-[var(--text-primary)]">{t("team.leave")}</h2>
-          <p className="text-xs text-[var(--text-muted)]">{t("team.leave_desc")}</p>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">チームを退出</h2>
+          <p className="text-xs text-[var(--text-muted)]">チームから退出します。再参加には招待が必要です。</p>
           <button
             onClick={() => handleRemove(user.id)}
             disabled={removeMember.isPending}
             className="px-4 py-2 text-sm font-medium border border-[var(--border)] rounded-lg text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {removeMember.isPending ? t("team.leaving") : t("team.leave_btn")}
+            {removeMember.isPending ? "退出中..." : "チームを退出する"}
           </button>
         </section>
       )}
@@ -420,7 +429,6 @@ function MembersTab({ orgId, ownerId }: MembersTabProps) {
 type Tab = "members" | "departments";
 
 export default function TeamPage() {
-  const { t } = useTranslation();
   const { data: org, isLoading, isError, refetch } = useOrg();
   const { data: members = [], isLoading: membersLoading } = useOrgMembers(org?.id ?? 0);
 
@@ -438,12 +446,12 @@ export default function TeamPage() {
   if (isError) {
     return (
       <div className="max-w-xl mx-auto py-12 text-center space-y-4">
-        <p className="text-sm text-[var(--text-muted)]">{t("team.load_error")}</p>
+        <p className="text-sm text-[var(--text-muted)]">チーム情報の読み込みに失敗しました</p>
         <button
           onClick={() => refetch()}
           className="px-4 py-2 text-sm font-medium border border-[var(--border)] rounded-lg text-[var(--text-primary)] hover:bg-[var(--bg-tertiary)] transition-colors"
         >
-          {t("team.retry")}
+          再試行
         </button>
       </div>
     );
@@ -453,20 +461,22 @@ export default function TeamPage() {
     return <CreateOrgForm />;
   }
 
+  const myRole = org.role;
+  const canManageDepts = myRole === "owner" || myRole === "admin";
+
   return (
     <div className="max-w-xl mx-auto space-y-6 py-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-wide">
-          {org.name}
-        </h1>
-        <span className="text-xs text-[var(--text-muted)]">
-          {members.length} / {MAX_MEMBERS} 名
-        </span>
+        <div>
+          <h1 className="text-xl font-semibold text-[var(--text-primary)] tracking-wide">{org.name}</h1>
+          <p className="text-xs text-[var(--text-muted)] mt-0.5">{ROLE_LABELS[myRole] ?? myRole}として参加中</p>
+        </div>
+        <span className="text-xs text-[var(--text-muted)]">{members.length}名</span>
       </div>
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-[var(--border)]">
-        {(["members", "departments"] as Tab[]).map((t_) => (
+        {(["members", ...(canManageDepts ? ["departments"] : [])] as Tab[]).map((t_) => (
           <button
             key={t_}
             onClick={() => setTab(t_)}
@@ -483,7 +493,7 @@ export default function TeamPage() {
       </div>
 
       {tab === "members" ? (
-        <MembersTab orgId={org.id} ownerId={org.owner_id} />
+        <MembersTab orgId={org.id} myRole={myRole} />
       ) : (
         <DepartmentsTab orgId={org.id} />
       )}

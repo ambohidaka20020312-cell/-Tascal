@@ -143,6 +143,9 @@ export const orgApi = {
   invite: (orgId: number, email: string) => api.post(`/org/${orgId}/invite`, { email }),
   removeMember: (orgId: number, userId: number) => api.delete(`/org/${orgId}/members/${userId}`),
   getMembers: (orgId: number) => api.get(`/org/${orgId}/members`),
+  updateMemberRole: (orgId: number, userId: number, role: "admin" | "member") =>
+    api.patch(`/org/${orgId}/members/${userId}`, { role }),
+  acceptInvite: (token: string) => api.get(`/org/accept-invite?token=${token}`),
 };
 
 export const categoryApi = {

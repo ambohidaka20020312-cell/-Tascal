@@ -1,5 +1,6 @@
 from .. import db
 import datetime
+import secrets
 
 
 class Organization(db.Model):
@@ -65,4 +66,36 @@ class OrganizationMember(db.Model):
             "department_id": self.department_id,
             "role": self.role,
             "joined_at": self.joined_at.isoformat(),
+        }
+
+
+class OrgInvite(db.Model):
+    __tablename__ = "org_invites"
+    id = db.Column(db.Integer, primary_key=True)
+    org_id = db.Column(db.Integer, db.ForeignKey("organizations.id"), nullable=False)
+    email = db.Column(db.String(255), nullable=False)
+    token = db.Column(db.String(100), unique=True, nullable=False, index=True)
+    invited_by = db.Column(db.Integer, db.ForeignKey("users.id"))
+    expires_at = db.Column(db.DateTime)
+    accepted_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+    @staticmethod
+    def generate_token():
+        return secrets.token_urlsafe(32)
+
+    def is_valid(self):
+        if self.accepted_at:
+            return False
+        if self.expires_at and self.expires_at < datetime.datetime.utcnow():
+            return False
+        return True
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "org_id": self.org_id,
+            "email": self.email,
+            "expires_at": self.expires_at.isoformat() if self.expires_at else None,
+            "created_at": self.created_at.isoformat(),
         }

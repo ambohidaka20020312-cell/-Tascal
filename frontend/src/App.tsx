@@ -30,6 +30,7 @@ import ShareTargetPage from "./pages/ShareTargetPage";
 import CheckEmailPage from "./pages/CheckEmailPage";
 import ResendVerifyPage from "./pages/ResendVerifyPage";
 import VerifyEmailPage from "./pages/VerifyEmailPage";
+import JoinTeamPage from "./pages/JoinTeamPage";
 
 // Lazy-loaded heavy pages
 const CalendarPage = lazy(() => import("./pages/CalendarPage"));
@@ -114,6 +115,9 @@ function AppRoutes() {
 
       {/* PWA Share Target */}
       <Route path="/share-target" element={<ShareTargetPage />} />
+
+      {/* Team invite acceptance */}
+      <Route path="/join-team" element={<JoinTeamPage />} />
 
       {/* 法的ページ */}
       <Route path="/privacy" element={<PrivacyPolicyPage />} />

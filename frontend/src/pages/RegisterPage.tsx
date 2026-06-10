@@ -1,5 +1,5 @@
 import { useState, FormEvent } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, Link, useSearchParams } from "react-router-dom";
 import api from "../utils/api";
 import { useAuthStore } from "../store/authStore";
 import LanguageSwitcher from "../components/common/LanguageSwitcher";
@@ -29,6 +29,7 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const setUser = useAuthStore((s) => s.setUser);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -48,7 +49,12 @@ export default function RegisterPage() {
         localStorage.setItem("access_token", data.access_token);
         localStorage.setItem("refresh_token", data.refresh_token);
         setUser(data.user);
-        navigate("/app/tasks");
+        const inviteToken = searchParams.get("invite");
+        if (inviteToken) {
+          navigate(`/join-team?token=${inviteToken}`);
+        } else {
+          navigate("/app/tasks");
+        }
       } else {
         navigate("/check-email", { state: { email } });
       }

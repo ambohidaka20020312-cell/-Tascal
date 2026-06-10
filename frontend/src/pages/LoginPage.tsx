@@ -31,6 +31,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const resetDone = searchParams.get("reset") === "done";
+  const nextParam = searchParams.get("next");
   const setUser = useAuthStore((s) => s.setUser);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -44,7 +45,8 @@ export default function LoginPage() {
       localStorage.setItem("access_token", access_token);
       localStorage.setItem("refresh_token", refresh_token);
       setUser(user);
-      navigate("/app/tasks");
+      const redirectTo = nextParam && nextParam.startsWith("/") ? nextParam : "/app/tasks";
+      navigate(redirectTo);
     } catch (err: unknown) {
       const errData = (err as { response?: { data?: { error?: { code?: string; message?: string } } } })?.response?.data?.error;
       setErrorCode(errData?.code ?? "");

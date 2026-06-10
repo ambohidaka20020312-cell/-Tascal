@@ -3,15 +3,18 @@ import { orgApi } from "../utils/api";
 
 export interface OrgMember {
   id: number;
+  org_member_id: number;
   name: string;
   email: string;
-  role: "owner" | "member";
+  role: "owner" | "admin" | "member";
+  joined_at: string;
 }
 
 export interface Org {
   id: number;
   name: string;
   owner_id: number;
+  role: "owner" | "admin" | "member";
 }
 
 export function useOrg() {
@@ -20,7 +23,7 @@ export function useOrg() {
     queryFn: async () => {
       try {
         const res = await orgApi.get();
-        return (res.data as { data: Org }).data ?? null;
+        return (res.data as { data: Org | null }).data ?? null;
       } catch (err: unknown) {
         const e = err as { response?: { status?: number } };
         if (e?.response?.status === 404) return null;
@@ -53,9 +56,7 @@ export function useInviteMember(orgId: number) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (email: string) => orgApi.invite(orgId, email),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["org", orgId, "members"] });
-    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["org", orgId, "members"] }),
   });
 }
 
@@ -67,5 +68,22 @@ export function useRemoveMember(orgId: number) {
       qc.invalidateQueries({ queryKey: ["org", orgId, "members"] });
       qc.invalidateQueries({ queryKey: ["org"] });
     },
+  });
+}
+
+export function useUpdateMemberRole(orgId: number) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ userId, role }: { userId: number; role: "admin" | "member" }) =>
+      orgApi.updateMemberRole(orgId, userId, role),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["org", orgId, "members"] }),
+  });
+}
+
+export function useAcceptInvite() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (token: string) => orgApi.acceptInvite(token),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["org"] }),
   });
 }
