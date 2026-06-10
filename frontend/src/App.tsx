@@ -13,6 +13,7 @@ import SubscriptionPage from "./pages/SubscriptionPage";
 import AccountPage from "./pages/AccountPage";
 import TeamPage from "./pages/TeamPage";
 import CookieConsent from "./components/legal/CookieConsent";
+import OnboardingWizard from "./components/onboarding/OnboardingWizard";
 import UpgradePrompt from "./components/subscription/UpgradePrompt";
 import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/legal/TermsOfServicePage";
@@ -27,18 +28,12 @@ import MiniTimer from "./components/timer/MiniTimer";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminUsers from "./pages/AdminUsers";
 import ShareTargetPage from "./pages/ShareTargetPage";
-import CheckEmailPage from "./pages/CheckEmailPage";
-import ResendVerifyPage from "./pages/ResendVerifyPage";
-import VerifyEmailPage from "./pages/VerifyEmailPage";
-import JoinTeamPage from "./pages/JoinTeamPage";
+import IdleTimeoutWarning from "./components/common/IdleTimeoutWarning";
 
 // Lazy-loaded heavy pages
 const CalendarPage = lazy(() => import("./pages/CalendarPage"));
 const InsightsPage = lazy(() => import("./pages/InsightsPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
-const ChatPage = lazy(() => import("./pages/ChatPage"));
-const OrgDashboardPage = lazy(() => import("./pages/OrgDashboardPage"));
-const OrgTaskDistributionPage = lazy(() => import("./pages/OrgTaskDistributionPage"));
 
 function PageSkeleton() {
   return (
@@ -66,6 +61,15 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 function OnboardingGate({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((s) => s.user);
+  const [dismissed, setDismissed] = useState(false);
+
+  const needsOnboarding = user && !user.onboarding_completed && !dismissed;
+
+  if (needsOnboarding) {
+    return <OnboardingWizard onComplete={() => setDismissed(true)} />;
+  }
+
   return <>{children}</>;
 }
 
@@ -111,17 +115,8 @@ function AppRoutes() {
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-      {/* メール認証フロー */}
-      <Route path="/check-email" element={<CheckEmailPage />} />
-      <Route path="/resend-verify" element={<ResendVerifyPage />} />
-      <Route path="/verify-email" element={<VerifyEmailPage />} />
-      <Route path="/join-team" element={<JoinTeamPage />} />
-
       {/* PWA Share Target */}
       <Route path="/share-target" element={<ShareTargetPage />} />
-
-      {/* Team invite acceptance */}
-      <Route path="/join-team" element={<JoinTeamPage />} />
 
       {/* 法的ページ */}
       <Route path="/privacy" element={<PrivacyPolicyPage />} />
@@ -237,48 +232,6 @@ function AppRoutes() {
         }
       />
 
-      {/* チャット */}
-      <Route
-        path="/app/chat"
-        element={
-          <PrivateRoute>
-            <AppLayout>
-              <ErrorBoundary>
-                <Suspense fallback={<PageSkeleton />}>
-                  <ChatPage />
-                </Suspense>
-              </ErrorBoundary>
-            </AppLayout>
-          </PrivateRoute>
-        }
-      />
-
-      {/* 組織ダッシュボード */}
-      <Route
-        path="/org/:slug"
-        element={
-          <PrivateRoute>
-            <ErrorBoundary>
-              <Suspense fallback={<PageSkeleton />}>
-                <OrgDashboardPage />
-              </Suspense>
-            </ErrorBoundary>
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/org/:slug/distribute"
-        element={
-          <PrivateRoute>
-            <ErrorBoundary>
-              <Suspense fallback={<PageSkeleton />}>
-                <OrgTaskDistributionPage />
-              </Suspense>
-            </ErrorBoundary>
-          </PrivateRoute>
-        }
-      />
-
       {/* 管理者専用ページ */}
       <Route
         path="/app/admin"
@@ -318,6 +271,7 @@ export default function App() {
         <CookieConsent />
         <GlobalUpgradeListener />
         <ShortcutsOverlay />
+        <IdleTimeoutWarning />
         <AppRoutes />
       </AppShell>
     </ToastProvider>
