@@ -367,10 +367,10 @@ export default function SubscriptionPage() {
           </table>
         </div>
 
-        {/* ── IAP error ───────────────────────────────────────────────────── */}
-        {(iapError || iap.error) && (
+        {/* ── Checkout / IAP error ────────────────────────────────────────── */}
+        {(iapError || iap.error || checkout.isError) && (
           <p className="mt-4 text-center text-xs text-red-500">
-            {iapError || iap.error}
+            {iapError || iap.error || (checkout.error as Error)?.message || "決済エラーが発生しました。もう一度お試しください。"}
           </p>
         )}
 

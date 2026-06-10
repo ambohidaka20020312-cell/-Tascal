@@ -108,13 +108,17 @@ def create_checkout():
         "business": team_price,
         "enterprise": current_app.config.get("STRIPE_PRICE_ID_ENTERPRISE") or team_price,
     }
-    price_id = price_map.get(data["plan"])
+    plan = data.get("plan", "")
+    price_id = price_map.get(plan)
     if not price_id:
         return jsonify({"error": {"code": "INVALID_PLAN", "message": "無効なプランです"}}), 400
 
-    plan = data["plan"]
     is_pro = plan in ("pro", "personal_pro")
     use_trial = is_pro and not user.trial_used
+
+    origin = data.get("origin", "https://tascal-frontend.onrender.com")
+    success_url = data.get("success_url") or f"{origin}/app/subscription?success=true"
+    cancel_url = data.get("cancel_url") or f"{origin}/app/plans"
 
     s = get_stripe()
     session_params = dict(
@@ -122,9 +126,9 @@ def create_checkout():
         mode="subscription",
         line_items=[{"price": price_id, "quantity": 1}],
         payment_method_collection="always",
-        success_url=data["success_url"],
-        cancel_url=data["cancel_url"],
-        metadata={"user_id": user_id},
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata={"user_id": str(user_id)},
     )
     if use_trial:
         session_params["subscription_data"] = {"trial_period_days": 14}
