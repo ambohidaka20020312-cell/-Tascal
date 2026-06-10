@@ -15,13 +15,12 @@ interface FeatureRow {
 }
 
 const FEATURES: FeatureRow[] = [
-  { label: "タスク追加",     free: "5個/日",  pro: "無制限",  team: "無制限" },
-  { label: "6個目以降",     free: "動画広告", pro: "なし",    team: "なし" },
-  { label: "AI最適化",      free: false,     pro: "無制限",  team: "無制限" },
-  { label: "週次インサイト", free: false,     pro: true,      team: true },
-  { label: "広告",          free: "あり",    pro: "なし",    team: "なし" },
-  { label: "チーム共有",    free: false,     pro: false,     team: "最大5名" },
-  { label: "優先サポート",  free: false,     pro: false,     team: true },
+  { label: "タスク管理",     free: "無制限",   pro: "無制限",  team: "無制限" },
+  { label: "AI最適化",      free: "無制限",   pro: "無制限",  team: "無制限" },
+  { label: "広告",          free: "あり",     pro: "なし",    team: "なし" },
+  { label: "週次インサイト", free: false,      pro: true,      team: true },
+  { label: "チーム機能",    free: false,      pro: false,     team: true },
+  { label: "14日間無料体験", free: false,     pro: true,      team: false },
 ];
 
 // ─── Cell renderer ─────────────────────────────────────────────────────────────
@@ -121,8 +120,8 @@ export default function SubscriptionPage() {
   // ─── Prices ───────────────────────────────────────────────────────────────
   const PRICES: Record<PlanKey, { monthly: string; annual: string; note: string; annualNote: string }> = {
     free: { monthly: "¥0",     annual: "¥0",      note: "ずっと無料", annualNote: "ずっと無料" },
-    pro:  { monthly: "¥980",   annual: "¥9,800",  note: "/ 月",       annualNote: "/ 年" },
-    team: { monthly: "¥2,980", annual: "¥29,800", note: "/ 月",       annualNote: "/ 年" },
+    pro:  { monthly: "¥480",   annual: "¥4,800",  note: "/ 月",       annualNote: "/ 年（2ヶ月分お得）" },
+    team: { monthly: "¥980",   annual: "¥9,800",  note: "/ 人 / 月",  annualNote: "/ 人 / 年" },
   };
 
   function price(plan: PlanKey) {
@@ -158,13 +157,18 @@ export default function SubscriptionPage() {
       upgradeOrder.indexOf(plan) > upgradeOrder.indexOf(currentPlan);
 
     if (isUpgrade) {
+      const label = checkout.isPending
+        ? "処理中..."
+        : plan === "pro"
+        ? "14日間無料で試す"
+        : "アップグレード";
       return (
         <button
           disabled={checkout.isPending}
           onClick={() => handleUpgrade(plan as "pro" | "team")}
           className="w-full h-10 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.15em] uppercase rounded-lg hover:opacity-80 transition-opacity disabled:opacity-40"
         >
-          {checkout.isPending ? "処理中..." : "アップグレード"}
+          {label}
         </button>
       );
     }
@@ -308,6 +312,11 @@ export default function SubscriptionPage() {
                     <p className="text-[11px] text-[var(--text-muted)] mt-0.5">
                       {priceNote(col.key)}
                     </p>
+                    {col.key === "pro" && (
+                      <p className="text-[10px] text-[var(--text-subtle)] mt-1">
+                        14日間無料・自動更新
+                      </p>
+                    )}
                   </th>
                 ))}
               </tr>
