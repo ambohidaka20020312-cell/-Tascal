@@ -13,7 +13,6 @@ import SubscriptionPage from "./pages/SubscriptionPage";
 import AccountPage from "./pages/AccountPage";
 import TeamPage from "./pages/TeamPage";
 import CookieConsent from "./components/legal/CookieConsent";
-import OnboardingWizard from "./components/onboarding/OnboardingWizard";
 import UpgradePrompt from "./components/subscription/UpgradePrompt";
 import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
 import TermsOfServicePage from "./pages/legal/TermsOfServicePage";
@@ -63,15 +62,6 @@ function AdminRoute({ children }: { children: React.ReactNode }) {
 }
 
 function OnboardingGate({ children }: { children: React.ReactNode }) {
-  const user = useAuthStore((s) => s.user);
-  const [dismissed, setDismissed] = useState(false);
-
-  const needsOnboarding = user && !user.onboarding_completed && !dismissed;
-
-  if (needsOnboarding) {
-    return <OnboardingWizard onComplete={() => setDismissed(true)} />;
-  }
-
   return <>{children}</>;
 }
 
