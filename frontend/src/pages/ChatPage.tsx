@@ -20,7 +20,7 @@ function ChatUpsell() {
         法人プランにアップグレードすると、部署別チャンネル・ダイレクトメッセージ・メッセージからのタスク作成など、チームチャット機能が使えます。
       </p>
       <Link
-        to="/plans"
+        to="/app/plans"
         className="px-6 py-2.5 rounded-lg bg-[var(--accent)] text-white text-sm font-medium hover:opacity-80 transition-opacity"
       >
         プランを確認する

@@ -79,6 +79,31 @@ function ProfileIcon({ active }: { active: boolean }) {
   );
 }
 
+function InsightsIcon({ active }: { active: boolean }) {
+  return (
+    <svg className={`w-7 h-7 ${active ? "text-[var(--accent)]" : "text-[var(--text-subtle)]"}`} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+    </svg>
+  );
+}
+
+function ChatIcon({ active }: { active: boolean }) {
+  return (
+    <svg className={`w-7 h-7 ${active ? "text-[var(--accent)]" : "text-[var(--text-subtle)]"}`} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    </svg>
+  );
+}
+
+function SettingsIcon({ active }: { active: boolean }) {
+  return (
+    <svg className={`w-6 h-6 ${active ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]"}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  );
+}
+
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const { t } = useTranslation();
@@ -107,8 +132,12 @@ export default function AppLayout({ children }: AppLayoutProps) {
   const SIDEBAR_NAV = [
     { label: t('nav.today'), to: "/app/tasks", Icon: HomeIcon },
     { label: t('nav.calendar'), to: "/app/calendar", Icon: CalendarIcon },
+    { label: "インサイト", to: "/app/insights", Icon: InsightsIcon },
+    ...(isTeamPlan ? [
+      { label: "チャット", to: "/app/chat", Icon: ChatIcon },
+      { label: "チーム", to: "/app/team", Icon: TeamIcon },
+    ] : []),
     { label: t('subscription.title'), to: "/app/plans", Icon: PlansIcon },
-    ...(isTeamPlan ? [{ label: "チーム", to: "/app/team", Icon: TeamIcon, dimmed: false }] : []),
   ];
 
   return (
@@ -141,8 +170,8 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
             {/* Nav items */}
             <nav aria-label="メインナビゲーション" className="flex-1 py-4 space-y-0.5 px-2">
-              {SIDEBAR_NAV.map(({ label, to, Icon, dimmed }) => {
-                const active = isActive(to) && !dimmed;
+              {SIDEBAR_NAV.map(({ label, to, Icon }) => {
+                const active = isActive(to);
                 const showLabel = isDesktop || isUltrawide;
                 return (
                   <Link
@@ -151,9 +180,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     aria-current={active ? "page" : undefined}
                     className={[
                       "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors min-h-touch relative",
-                      dimmed
-                        ? "opacity-40 cursor-default"
-                        : active
+                      active
                           ? "text-[var(--text-primary)] font-medium"
                           : "text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]",
                       !showLabel ? "justify-center" : "",
@@ -183,6 +210,18 @@ export default function AppLayout({ children }: AppLayoutProps) {
                     </div>
                   </div>
                 )}
+                <div className={`flex gap-1 mb-1 ${!(isDesktop || isUltrawide) ? "flex-col items-center" : ""}`}>
+                  <Link to="/app/account" title="アカウント"
+                    className={`flex items-center gap-2 rounded-lg py-1.5 text-xs text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-colors ${!(isDesktop || isUltrawide) ? "px-1 justify-center" : "px-3 flex-1"}`}>
+                    <ProfileIcon active={isActive("/app/account")} />
+                    {(isDesktop || isUltrawide) && <span>アカウント</span>}
+                  </Link>
+                  <Link to="/app/settings" title="設定"
+                    className={`flex items-center gap-2 rounded-lg py-1.5 text-xs text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] transition-colors ${!(isDesktop || isUltrawide) ? "px-1 justify-center" : "px-3 flex-1"}`}>
+                    <SettingsIcon active={isActive("/app/settings")} />
+                    {(isDesktop || isUltrawide) && <span>設定</span>}
+                  </Link>
+                </div>
                 <button
                   onClick={logout}
                   aria-label={t('auth.logout')}
@@ -337,37 +376,51 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <span className={`font-medium text-[var(--text-subtle)] mt-0.5 tracking-wide ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>追加</span>
             </button>
 
-            {/* Plans */}
+            {/* Insights */}
             <Link
-              to="/app/plans"
+              to="/app/insights"
               role="tab"
-              aria-selected={isActive("/app/plans")}
-              aria-current={isActive("/app/plans") ? "page" : undefined}
+              aria-selected={isActive("/app/insights")}
+              aria-current={isActive("/app/insights") ? "page" : undefined}
               className={[
                 "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
-                isActive("/app/plans") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
+                isActive("/app/insights") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
               ].join(" ")}
             >
-              <PlansIcon active={isActive("/app/plans")} />
-              <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>{t('subscription.title')}</span>
+              <InsightsIcon active={isActive("/app/insights")} />
+              <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>分析</span>
             </Link>
 
-            {/* Team — only shown to team plan users; otherwise Profile/Settings */}
+            {/* Team plan: show Chat or Team; others: show Account */}
             {isTeamPlan ? (
               <Link
-                to="/app/team"
+                to="/app/chat"
                 role="tab"
-                aria-selected={isActive("/app/team")}
-                aria-current={isActive("/app/team") ? "page" : undefined}
+                aria-selected={isActive("/app/chat")}
+                aria-current={isActive("/app/chat") ? "page" : undefined}
                 className={[
                   "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
-                  isActive("/app/team") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
+                  isActive("/app/chat") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
                 ].join(" ")}
               >
-                <TeamIcon active={isActive("/app/team")} />
-                <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>チーム</span>
+                <ChatIcon active={isActive("/app/chat")} />
+                <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>チャット</span>
               </Link>
-            ) : null}
+            ) : (
+              <Link
+                to="/app/account"
+                role="tab"
+                aria-selected={isActive("/app/account")}
+                aria-current={isActive("/app/account") ? "page" : undefined}
+                className={[
+                  "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
+                  isActive("/app/account") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
+                ].join(" ")}
+              >
+                <ProfileIcon active={isActive("/app/account")} />
+                <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>アカウント</span>
+              </Link>
+            )}
 
             {/* Profile / Logout */}
             <button

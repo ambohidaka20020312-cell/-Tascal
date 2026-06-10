@@ -36,6 +36,9 @@ import JoinTeamPage from "./pages/JoinTeamPage";
 const CalendarPage = lazy(() => import("./pages/CalendarPage"));
 const InsightsPage = lazy(() => import("./pages/InsightsPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const ChatPage = lazy(() => import("./pages/ChatPage"));
+const OrgDashboardPage = lazy(() => import("./pages/OrgDashboardPage"));
+const OrgTaskDistributionPage = lazy(() => import("./pages/OrgTaskDistributionPage"));
 
 function PageSkeleton() {
   return (
@@ -112,6 +115,7 @@ function AppRoutes() {
       <Route path="/check-email" element={<CheckEmailPage />} />
       <Route path="/resend-verify" element={<ResendVerifyPage />} />
       <Route path="/verify-email" element={<VerifyEmailPage />} />
+      <Route path="/join-team" element={<JoinTeamPage />} />
 
       {/* PWA Share Target */}
       <Route path="/share-target" element={<ShareTargetPage />} />
@@ -229,6 +233,48 @@ function AppRoutes() {
                 <TeamPage />
               </ErrorBoundary>
             </AppLayout>
+          </PrivateRoute>
+        }
+      />
+
+      {/* チャット */}
+      <Route
+        path="/app/chat"
+        element={
+          <PrivateRoute>
+            <AppLayout>
+              <ErrorBoundary>
+                <Suspense fallback={<PageSkeleton />}>
+                  <ChatPage />
+                </Suspense>
+              </ErrorBoundary>
+            </AppLayout>
+          </PrivateRoute>
+        }
+      />
+
+      {/* 組織ダッシュボード */}
+      <Route
+        path="/org/:slug"
+        element={
+          <PrivateRoute>
+            <ErrorBoundary>
+              <Suspense fallback={<PageSkeleton />}>
+                <OrgDashboardPage />
+              </Suspense>
+            </ErrorBoundary>
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/org/:slug/distribute"
+        element={
+          <PrivateRoute>
+            <ErrorBoundary>
+              <Suspense fallback={<PageSkeleton />}>
+                <OrgTaskDistributionPage />
+              </Suspense>
+            </ErrorBoundary>
           </PrivateRoute>
         }
       />
