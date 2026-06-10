@@ -1,7 +1,7 @@
 """add revenuecat_user_id, trial fields, is_admin to users
 
 Revision ID: 015
-Revises: 014
+Revises: 014b
 Create Date: 2026-06-10
 """
 from alembic import op
@@ -14,24 +14,17 @@ depends_on = None
 
 
 def upgrade():
-    with op.batch_alter_table("users") as batch_op:
-        batch_op.add_column(sa.Column("revenuecat_user_id", sa.String(200), unique=True, nullable=True))
-        batch_op.add_column(sa.Column("trial_started_at", sa.DateTime(), nullable=True))
-        batch_op.add_column(sa.Column("trial_used", sa.Boolean(), nullable=False, server_default=sa.false()))
-        batch_op.add_column(sa.Column("is_admin", sa.Boolean(), nullable=False, server_default=sa.false()))
-    try:
-        op.create_index("ix_users_revenuecat_user_id", "users", ["revenuecat_user_id"], unique=True)
-    except Exception:
-        pass
+    # Use IF NOT EXISTS so this is safe to run even if columns were added manually
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS revenuecat_user_id VARCHAR(200)")
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_started_at TIMESTAMP WITHOUT TIME ZONE")
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS trial_used BOOLEAN NOT NULL DEFAULT FALSE")
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS is_admin BOOLEAN NOT NULL DEFAULT FALSE")
+    op.execute("CREATE UNIQUE INDEX IF NOT EXISTS ix_users_revenuecat_user_id ON users (revenuecat_user_id)")
 
 
 def downgrade():
-    try:
-        op.drop_index("ix_users_revenuecat_user_id", table_name="users")
-    except Exception:
-        pass
-    with op.batch_alter_table("users") as batch_op:
-        batch_op.drop_column("is_admin")
-        batch_op.drop_column("trial_used")
-        batch_op.drop_column("trial_started_at")
-        batch_op.drop_column("revenuecat_user_id")
+    op.execute("DROP INDEX IF EXISTS ix_users_revenuecat_user_id")
+    op.execute("ALTER TABLE users DROP COLUMN IF EXISTS revenuecat_user_id")
+    op.execute("ALTER TABLE users DROP COLUMN IF EXISTS trial_started_at")
+    op.execute("ALTER TABLE users DROP COLUMN IF EXISTS trial_used")
+    op.execute("ALTER TABLE users DROP COLUMN IF EXISTS is_admin")
