@@ -1,4 +1,5 @@
 import os
+import datetime
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -7,6 +8,8 @@ load_dotenv()
 class BaseConfig:
     SECRET_KEY = os.getenv("SECRET_KEY", "dev-secret")
     JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", "dev-jwt-secret")
+    JWT_ACCESS_TOKEN_EXPIRES = datetime.timedelta(hours=24)
+    JWT_REFRESH_TOKEN_EXPIRES = datetime.timedelta(days=30)
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     CORS_ORIGINS = ["http://localhost:5173"]
 
@@ -43,7 +46,11 @@ class DevelopmentConfig(BaseConfig):
 class ProductionConfig(BaseConfig):
     DEBUG = False
     SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
-    CORS_ORIGINS = [os.getenv("FRONTEND_URL", "https://tascal.app")]
+    CORS_ORIGINS = list(filter(None, [
+        os.getenv("FRONTEND_URL", "https://tascal.app"),
+        "https://tascal-frontend.onrender.com",
+        os.getenv("RENDER_EXTERNAL_URL"),
+    ]))
 
 
 class TestingConfig(BaseConfig):

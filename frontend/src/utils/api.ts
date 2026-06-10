@@ -1,8 +1,14 @@
 import axios, { InternalAxiosRequestConfig } from "axios";
 import { offlineQueue } from "./offlineQueue";
 
+// In production on Render, VITE_API_BASE_URL must be set to the backend URL.
+// Fallback: if running on tascal-frontend.onrender.com, point to tascal-api.
+const _defaultBase = window.location.hostname.includes("onrender.com")
+  ? "https://tascal-api.onrender.com/api/v1"
+  : "/api/v1";
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "/api/v1",
+  baseURL: import.meta.env.VITE_API_BASE_URL || _defaultBase,
 });
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
