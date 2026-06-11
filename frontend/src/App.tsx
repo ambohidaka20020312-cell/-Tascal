@@ -12,6 +12,7 @@ import DashboardPage from "./pages/DashboardPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import AccountPage from "./pages/AccountPage";
 import TeamPage from "./pages/TeamPage";
+import HelpPage from "./pages/HelpPage";
 import CookieConsent from "./components/legal/CookieConsent";
 import OnboardingWizard from "./components/onboarding/OnboardingWizard";
 import UpgradePrompt from "./components/subscription/UpgradePrompt";
@@ -95,6 +96,19 @@ function GlobalUpgradeListener() {
 function AppShell({ children }: { children: React.ReactNode }) {
   useKeyboardShortcuts();
   useIdleTimeout();
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+
+  useEffect(() => {
+    if (!isAuthenticated()) return;
+    const apiBase = import.meta.env.VITE_API_BASE_URL || "/api/v1";
+    // Strip the /api/v1 suffix to reach the root /health endpoint
+    const healthUrl = apiBase.replace(/\/api\/v\d+$/, "") + "/health";
+    const id = setInterval(() => {
+      fetch(healthUrl).catch(() => {/* ignore errors */});
+    }, 10 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [isAuthenticated]);
+
   return <>{children}</>;
 }
 
@@ -253,6 +267,19 @@ function AppRoutes() {
               <AdminUsers />
             </ErrorBoundary>
           </AdminRoute>
+        }
+      />
+
+      <Route
+        path="/app/help"
+        element={
+          <PrivateRoute>
+            <AppLayout>
+              <ErrorBoundary>
+                <HelpPage />
+              </ErrorBoundary>
+            </AppLayout>
+          </PrivateRoute>
         }
       />
 

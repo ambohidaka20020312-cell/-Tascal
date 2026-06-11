@@ -87,6 +87,14 @@ function InsightsIcon({ active }: { active: boolean }) {
   );
 }
 
+function HelpIcon({ active }: { active: boolean }) {
+  return (
+    <svg className={`w-6 h-6 ${active ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]"}`} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  );
+}
+
 function ChatIcon({ active }: { active: boolean }) {
   return (
     <svg className={`w-7 h-7 ${active ? "text-[var(--accent)]" : "text-[var(--text-subtle)]"}`} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
@@ -198,6 +206,34 @@ export default function AppLayout({ children }: AppLayoutProps) {
                 );
               })}
             </nav>
+
+            {/* Help link */}
+            {(() => {
+              const active = isActive("/app/help");
+              const showLabel = isDesktop || isUltrawide;
+              return (
+                <Link
+                  to="/app/help"
+                  aria-current={active ? "page" : undefined}
+                  className={[
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors min-h-touch relative",
+                    active
+                      ? "text-[var(--text-primary)] font-medium"
+                      : "text-[var(--text-muted)] hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)]",
+                    !showLabel ? "justify-center" : "",
+                  ].join(" ")}
+                  title={!showLabel ? "ヘルプ" : undefined}
+                >
+                  {active && (
+                    <span className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 bg-[var(--text-primary)] rounded-r-full" />
+                  )}
+                  <HelpIcon active={active} />
+                  {showLabel && (
+                    <span className="text-sm font-medium tracking-wide">ヘルプ</span>
+                  )}
+                </Link>
+              );
+            })()}
 
             {/* User + logout */}
             {user && (
