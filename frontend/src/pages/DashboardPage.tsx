@@ -804,43 +804,48 @@ export default function DashboardPage() {
           ) : (
             <div className="space-y-2 pb-24 sm:pb-4">
               {filteredTasks.map((task, index) => (
-                <div
-                  key={task.id}
-                  {...(bulkMode ? {} : dragHandlers(index))}
-                  className={[
-                    "group/drag relative transition-opacity",
-                    !bulkMode && dragIndex === index ? "opacity-50 cursor-grabbing" : !bulkMode ? "cursor-grab" : "",
-                    "",
-                  ].join(" ")}
-                >
-                  {/* Drag handle — hidden in bulk mode */}
-                  {!bulkMode && (
-                    <span
-                      aria-hidden="true"
-                      className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/drag:opacity-100 text-[var(--text-subtle)] text-xs select-none pointer-events-none transition-opacity z-10"
-                      style={{ lineHeight: 1 }}
-                    >
-                      ⠿
-                    </span>
-                  )}
-                  <TaskCard
-                    task={task}
-                    selectable={bulkMode}
-                    selected={selectedIds.has(task.id)}
-                    onSelect={handleSelectTask}
-                    categoryName={task.category_id != null ? categories.find((c) => c.id === task.category_id)?.name : undefined}
-                    isDragging={isDragging}
-                    draggedId={draggedId}
-                    isDropTarget={!bulkMode && overIndex === index && dragIndex !== index}
-                    onKeyDown={bulkMode ? undefined : dragKeyDown}
-                  />
-                  {!bulkMode && task.status === "in_progress" && task.estimated_minutes != null && task.estimated_minutes > 0 && (
-                    <div className="flex justify-end px-1 -mt-1 mb-1">
-                      <ReplanButton
-                        taskId={task.id}
-                        estimatedMinutes={task.estimated_minutes}
-                      />
-                    </div>
+                <div key={task.id}>
+                  <div
+                    {...(bulkMode ? {} : dragHandlers(index))}
+                    className={[
+                      "group/drag relative transition-opacity",
+                      !bulkMode && dragIndex === index ? "opacity-50 cursor-grabbing" : !bulkMode ? "cursor-grab" : "",
+                      "",
+                    ].join(" ")}
+                  >
+                    {/* Drag handle — hidden in bulk mode */}
+                    {!bulkMode && (
+                      <span
+                        aria-hidden="true"
+                        className="absolute left-1 top-1/2 -translate-y-1/2 opacity-0 group-hover/drag:opacity-100 text-[var(--text-subtle)] text-xs select-none pointer-events-none transition-opacity z-10"
+                        style={{ lineHeight: 1 }}
+                      >
+                        ⠿
+                      </span>
+                    )}
+                    <TaskCard
+                      task={task}
+                      selectable={bulkMode}
+                      selected={selectedIds.has(task.id)}
+                      onSelect={handleSelectTask}
+                      categoryName={task.category_id != null ? categories.find((c) => c.id === task.category_id)?.name : undefined}
+                      isDragging={isDragging}
+                      draggedId={draggedId}
+                      isDropTarget={!bulkMode && overIndex === index && dragIndex !== index}
+                      onKeyDown={bulkMode ? undefined : dragKeyDown}
+                    />
+                    {!bulkMode && task.status === "in_progress" && task.estimated_minutes != null && task.estimated_minutes > 0 && (
+                      <div className="flex justify-end px-1 -mt-1 mb-1">
+                        <ReplanButton
+                          taskId={task.id}
+                          estimatedMinutes={task.estimated_minutes}
+                        />
+                      </div>
+                    )}
+                  </div>
+                  {/* Show ad banner after every 5th task (1-indexed) */}
+                  {(index + 1) % 5 === 0 && (
+                    <AdBanner className="my-2" />
                   )}
                 </div>
               ))}
@@ -863,6 +868,8 @@ export default function DashboardPage() {
           </Button>
 
           {aiAdvice && (
+            <>
+            <AdBanner className="mb-4" />
             <div className="bg-[var(--bg-secondary)] border border-[var(--border)] rounded-xl p-4">
               <div className="flex items-start gap-3">
                 <div className="w-7 h-7 border border-[var(--border)] rounded-lg flex items-center justify-center shrink-0">
@@ -876,6 +883,7 @@ export default function DashboardPage() {
                 </div>
               </div>
             </div>
+            </>
           )}
         </div>
       </div>
@@ -941,7 +949,7 @@ export default function DashboardPage() {
       <TaskSuggestions />
 
       {/* Ad slot for free plan users — shown at the bottom of the dashboard */}
-      <AdBanner slot="1234567890" format="auto" className="mt-4 min-h-[90px]" />
+      <AdBanner className="mt-4 min-h-[90px]" />
     </div>
   );
 }
