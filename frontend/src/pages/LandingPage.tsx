@@ -188,7 +188,7 @@ const PLANS = [
   },
   {
     name: "Pro",
-    price: "¥980",
+    price: "¥480",
     period: "/月",
     features: ["無制限タスク", "AI最適化無制限", "高度な分析", "広告非表示"],
     accent: true,

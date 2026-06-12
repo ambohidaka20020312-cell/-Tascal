@@ -83,7 +83,7 @@ export default function UpgradePrompt({ isOpen, onClose, reason = "generic", mes
             onClick={() => { navigate("/subscription"); onClose(); }}
             className="w-full h-10 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.15em] uppercase rounded-lg hover:opacity-80 transition-opacity"
           >
-            Proにアップグレード — ¥980/月
+            Proにアップグレード — ¥480/月
           </button>
         </div>
       </div>

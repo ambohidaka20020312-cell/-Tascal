@@ -35,7 +35,7 @@ export default function VideoAdGate({ onComplete, onClose }: VideoAdGateProps) {
               今日の無料枠を使い切りました
             </h3>
             <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>
-              15秒の広告を視聴するとタスクを追加できます
+              広告を1本見ると、さらに3個追加できます
             </p>
             <div className="text-xs animate-pulse" style={{ color: "var(--text-secondary)" }}>
               広告を準備中...
@@ -65,7 +65,7 @@ export default function VideoAdGate({ onComplete, onClose }: VideoAdGateProps) {
                 className="block text-xs mb-3"
                 style={{ color: "var(--accent)" }}
               >
-                Proプランなら広告なし・無制限 ¥980/月 →
+                Proプランなら広告なし・無制限 ¥480/月 →
               </Link>
             )}
 

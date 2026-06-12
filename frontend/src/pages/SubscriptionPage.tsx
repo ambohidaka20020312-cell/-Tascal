@@ -118,7 +118,7 @@ export default function SubscriptionPage() {
   // ─── Prices ───────────────────────────────────────────────────────────────
   const PRICES: Record<PlanKey, { monthly: string; annual: string; note: string; annualNote: string }> = {
     free: { monthly: "¥0",   annual: "¥0",     note: "ずっと無料", annualNote: "ずっと無料" },
-    pro:  { monthly: "¥980", annual: "¥9,800", note: "/ 月",       annualNote: "/ 年" },
+    pro:  { monthly: "¥480", annual: "¥4,800", note: "/ 月",       annualNote: "/ 年" },
   };
 
   function price(plan: PlanKey) {

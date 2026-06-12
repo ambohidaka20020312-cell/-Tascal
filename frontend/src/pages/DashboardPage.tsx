@@ -57,7 +57,7 @@ export default function DashboardPage() {
   const { t } = useTranslation();
   const { tasks, selectedDate, setSelectedDate, reorderTasks } = useTaskStore();
   const user = useAuthStore((s) => s.user);
-  const { needsAd, incrementCount } = useAdGate();
+  const { needsAd, incrementCount, grantExtraSlots } = useAdGate();
   const [showAdGate, setShowAdGate] = useState(false);
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
@@ -258,7 +258,8 @@ export default function DashboardPage() {
 
   const handleAdComplete = () => {
     setShowAdGate(false);
-    incrementCount();
+    grantExtraSlots();   // unlock 3 extra slots for this ad watch
+    incrementCount();    // consume 1 slot for the task being added now
     setTaskFormInit({});
     setShowTaskForm(true);
   };

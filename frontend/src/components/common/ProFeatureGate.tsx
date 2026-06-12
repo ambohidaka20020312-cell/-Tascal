@@ -19,9 +19,9 @@ const PLAN_LABEL: Record<RequiredPlan, string> = {
 };
 
 const PLAN_PRICE: Record<RequiredPlan, string> = {
-  pro: "¥980/月",
+  pro: "¥480/月",
   team: "¥2,980/月",
-  personal_pro: "¥980/月",
+  personal_pro: "¥480/月",
   business: "¥4,980/月",
   enterprise: "¥19,800/月",
 };
