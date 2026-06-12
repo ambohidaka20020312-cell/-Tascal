@@ -4,22 +4,23 @@ const config: CapacitorConfig = {
   appId: 'app.tascal.tasks',
   appName: 'Tascal',
   webDir: 'dist',
-  server: {
-    androidScheme: 'https',
-  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 2000,
-      backgroundColor: '#6366f1',
+      backgroundColor: '#ffffff',
+      launchAutoHide: true,
       showSpinner: false,
     },
     PushNotifications: {
       presentationOptions: ['badge', 'sound', 'alert'],
     },
     LocalNotifications: {
-      smallIcon: 'ic_stat_icon_config_sample',
       iconColor: '#6366f1',
     },
+  },
+  ios: {
+    contentInset: 'automatic',
+    backgroundColor: '#ffffff',
   },
 };
 
