@@ -11,16 +11,14 @@ interface FeatureRow {
   label: string;
   free: string | boolean;
   pro: string | boolean;
-  team: string | boolean;
 }
 
 const FEATURES: FeatureRow[] = [
-  { label: "タスク管理",     free: "無制限",   pro: "無制限",  team: "無制限" },
-  { label: "AI最適化",      free: "無制限",   pro: "無制限",  team: "無制限" },
-  { label: "広告",          free: "あり",     pro: "なし",    team: "なし" },
-  { label: "週次インサイト", free: false,      pro: true,      team: true },
-  { label: "チーム機能",    free: false,      pro: false,     team: true },
-  { label: "14日間無料体験", free: false,     pro: true,      team: false },
+  { label: "タスク追加",     free: "5個/日",  pro: "無制限" },
+  { label: "6個目以降",     free: "動画広告", pro: "なし" },
+  { label: "AI最適化",      free: false,     pro: "無制限" },
+  { label: "週次インサイト", free: false,     pro: true },
+  { label: "広告",          free: "あり",    pro: "なし" },
 ];
 
 // ─── Cell renderer ─────────────────────────────────────────────────────────────
@@ -35,13 +33,13 @@ function Cell({ value }: { value: string | boolean }) {
 }
 
 // ─── Plan types ────────────────────────────────────────────────────────────────
-type PlanKey = "free" | "pro" | "team";
+type PlanKey = "free" | "pro";
 type AnyPlan = "free" | "pro" | "team" | "personal_pro" | "business" | "enterprise";
 
-/** Normalise legacy / extended plan keys to the 3-column model */
+/** Normalise legacy / extended plan keys to the 2-column model */
 function normalisePlan(plan: AnyPlan): PlanKey {
   if (plan === "personal_pro") return "pro";
-  if (plan === "business" || plan === "enterprise") return "team";
+  if (plan === "team" || plan === "business" || plan === "enterprise") return "pro";
   return plan as PlanKey;
 }
 
@@ -74,15 +72,15 @@ export default function SubscriptionPage() {
     }
   }, [searchParams]);
 
-  async function handleUpgrade(plan: "pro" | "team") {
+  async function handleUpgrade(plan: "pro") {
     analytics.track("upgrade_clicked", { plan, is_native: useNativeIAP });
     if (useNativeIAP) {
       // Native: use RevenueCat / Apple IAP
       setIapError("");
-      const pkgId = plan === "pro" ? "$rc_monthly" : "$rc_annual";
+      const pkgId = "$rc_monthly";
       const offering = iap.offerings[0];
       const pkg = offering?.packages.find(
-        (p) => p.identifier === pkgId || p.packageType === (plan === "pro" ? "MONTHLY" : "ANNUAL")
+        (p) => p.identifier === pkgId || p.packageType === "MONTHLY"
       ) ?? offering?.packages[0];
       if (!pkg) {
         setIapError("購入プランが見つかりません。後でもう一度お試しください。");
@@ -119,9 +117,8 @@ export default function SubscriptionPage() {
 
   // ─── Prices ───────────────────────────────────────────────────────────────
   const PRICES: Record<PlanKey, { monthly: string; annual: string; note: string; annualNote: string }> = {
-    free: { monthly: "¥0",     annual: "¥0",      note: "ずっと無料", annualNote: "ずっと無料" },
-    pro:  { monthly: "¥480",   annual: "¥4,800",  note: "/ 月",       annualNote: "/ 年（2ヶ月分お得）" },
-    team: { monthly: "¥980",   annual: "¥9,800",  note: "/ 人 / 月",  annualNote: "/ 人 / 年" },
+    free: { monthly: "¥0",   annual: "¥0",     note: "ずっと無料", annualNote: "ずっと無料" },
+    pro:  { monthly: "¥980", annual: "¥9,800", note: "/ 月",       annualNote: "/ 年" },
   };
 
   function price(plan: PlanKey) {
@@ -135,10 +132,9 @@ export default function SubscriptionPage() {
   const COLUMNS: { key: PlanKey; label: string; highlighted: boolean; badge?: string }[] = [
     { key: "free", label: "Free", highlighted: false },
     { key: "pro",  label: "Pro",  highlighted: true, badge: "おすすめ" },
-    { key: "team", label: "Team", highlighted: false },
   ];
 
-  const upgradeOrder: PlanKey[] = ["free", "pro", "team"];
+  const upgradeOrder: PlanKey[] = ["free", "pro"];
 
   // ─── CTA button per column ────────────────────────────────────────────────
   function renderCTA(plan: PlanKey) {
@@ -166,7 +162,7 @@ export default function SubscriptionPage() {
       return (
         <button
           disabled={checkout.isPending}
-          onClick={() => handleUpgrade(plan as "pro" | "team")}
+          onClick={() => handleUpgrade(plan as "pro")}
           className="w-full h-10 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.15em] uppercase rounded-lg hover:opacity-80 transition-opacity disabled:opacity-40"
         >
           {label}
@@ -186,7 +182,7 @@ export default function SubscriptionPage() {
     );
   }
 
-  const PLAN_LABELS: Record<PlanKey, string> = { free: "Free", pro: "Pro", team: "Team" };
+  const PLAN_LABELS: Record<PlanKey, string> = { free: "Free", pro: "Pro" };
 
   return (
     <div className="bg-[var(--bg-primary)] py-8 sm:py-12 px-4 mb-16 md:mb-0">
@@ -285,7 +281,7 @@ export default function SubscriptionPage() {
                   <th
                     key={col.key}
                     className={[
-                      "w-[21%] px-3 py-4 text-center align-top",
+                      "w-[32%] px-3 py-4 text-center align-top",
                       col.highlighted
                         ? "border-x border-b border-[var(--text-primary)] bg-[var(--bg-primary)]"
                         : "border-b border-[var(--border)] bg-[var(--bg-secondary)]",

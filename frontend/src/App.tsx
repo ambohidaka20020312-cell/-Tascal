@@ -11,7 +11,6 @@ import LandingPage from "./pages/LandingPage";
 import DashboardPage from "./pages/DashboardPage";
 import SubscriptionPage from "./pages/SubscriptionPage";
 import AccountPage from "./pages/AccountPage";
-import TeamPage from "./pages/TeamPage";
 import HelpPage from "./pages/HelpPage";
 import CookieConsent from "./components/legal/CookieConsent";
 import OnboardingWizard from "./components/onboarding/OnboardingWizard";
@@ -230,18 +229,6 @@ function AppRoutes() {
             <AppLayout>
               <ErrorBoundary>
                 <AccountPage />
-              </ErrorBoundary>
-            </AppLayout>
-          </PrivateRoute>
-        }
-      />
-      <Route
-        path="/app/team"
-        element={
-          <PrivateRoute>
-            <AppLayout>
-              <ErrorBoundary>
-                <TeamPage />
               </ErrorBoundary>
             </AppLayout>
           </PrivateRoute>

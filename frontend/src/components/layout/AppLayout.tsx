@@ -19,13 +19,11 @@ interface AppLayoutProps {
 const PLAN_BADGE_CLASSES: Record<string, string> = {
   free: "bg-[var(--bg-tertiary)] text-[var(--text-muted)]",
   pro: "bg-[var(--accent)] text-white dark:text-[#0f0f0f]",
-  team: "bg-[var(--bg-tertiary)] text-[var(--text-primary)] border border-[var(--border)]",
 };
 
 const PLAN_LABEL: Record<string, string> = {
   free: "Free",
   pro: "Pro",
-  team: "Team",
 };
 
 function PlanBadge({ plan }: { plan: string }) {
@@ -63,14 +61,6 @@ function PlansIcon({ active }: { active: boolean }) {
   );
 }
 
-function TeamIcon({ active }: { active: boolean }) {
-  return (
-    <svg className={`w-7 h-7 ${active ? "text-[var(--accent)]" : "text-[var(--text-subtle)]"}`} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6 5.87v-2a4 4 0 00-2-3.46M15 7a4 4 0 11-8 0 4 4 0 018 0zm6 4a3 3 0 11-6 0 3 3 0 016 0zM3 11a3 3 0 116 0 3 3 0 01-6 0z" />
-    </svg>
-  );
-}
-
 function ProfileIcon({ active }: { active: boolean }) {
   return (
     <svg className={`w-7 h-7 ${active ? "text-[var(--accent)]" : "text-[var(--text-subtle)]"}`} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
@@ -91,14 +81,6 @@ function HelpIcon({ active }: { active: boolean }) {
   return (
     <svg className={`w-6 h-6 ${active ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]"}`} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  );
-}
-
-function ChatIcon({ active }: { active: boolean }) {
-  return (
-    <svg className={`w-7 h-7 ${active ? "text-[var(--accent)]" : "text-[var(--text-subtle)]"}`} fill={active ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={active ? 0 : 1.5}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
     </svg>
   );
 }
@@ -134,17 +116,10 @@ export default function AppLayout({ children }: AppLayoutProps) {
 
   const isActive = (to: string) => pathname.startsWith(to);
 
-  const isTeamPlan = plan === "team";
-  const effectivePlan = (user?.effective_plan ?? plan) as string; void effectivePlan;
-
   const SIDEBAR_NAV = [
     { label: t('nav.today'), to: "/app/tasks", Icon: HomeIcon },
     { label: t('nav.calendar'), to: "/app/calendar", Icon: CalendarIcon },
     { label: "インサイト", to: "/app/insights", Icon: InsightsIcon },
-    ...(isTeamPlan ? [
-      { label: "チャット", to: "/app/chat", Icon: ChatIcon },
-      { label: "チーム", to: "/app/team", Icon: TeamIcon },
-    ] : []),
     { label: t('subscription.title'), to: "/app/plans", Icon: PlansIcon },
   ];
 
@@ -427,48 +402,20 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>分析</span>
             </Link>
 
-            {/* Team plan: show Chat or Team; others: show Account */}
-            {isTeamPlan ? (
-              <Link
-                to="/app/chat"
-                role="tab"
-                aria-selected={isActive("/app/chat")}
-                aria-current={isActive("/app/chat") ? "page" : undefined}
-                className={[
-                  "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
-                  isActive("/app/chat") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
-                ].join(" ")}
-              >
-                <ChatIcon active={isActive("/app/chat")} />
-                <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>チャット</span>
-              </Link>
-            ) : (
-              <Link
-                to="/app/account"
-                role="tab"
-                aria-selected={isActive("/app/account")}
-                aria-current={isActive("/app/account") ? "page" : undefined}
-                className={[
-                  "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
-                  isActive("/app/account") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
-                ].join(" ")}
-              >
-                <ProfileIcon active={isActive("/app/account")} />
-                <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>アカウント</span>
-              </Link>
-            )}
-
-            {/* Profile / Logout */}
-            <button
-              onClick={logout}
+            {/* Account */}
+            <Link
+              to="/app/account"
               role="tab"
-              aria-selected={false}
-              aria-label={t('auth.logout')}
-              className="flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 text-[var(--text-subtle)]"
+              aria-selected={isActive("/app/account")}
+              aria-current={isActive("/app/account") ? "page" : undefined}
+              className={[
+                "flex-1 flex flex-col items-center justify-center py-2 min-h-touch gap-0.5 transition-colors",
+                isActive("/app/account") ? "text-[var(--text-primary)]" : "text-[var(--text-subtle)]",
+              ].join(" ")}
             >
-              <ProfileIcon active={false} />
-              <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>{t('auth.logout')}</span>
-            </button>
+              <ProfileIcon active={isActive("/app/account")} />
+              <span className={`font-medium tracking-wider uppercase ${deviceType === "phone-small" ? "text-[9px]" : "text-[10px]"}`}>アカウント</span>
+            </Link>
           </div>
         </nav>
       )}

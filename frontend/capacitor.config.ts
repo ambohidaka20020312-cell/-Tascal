@@ -1,7 +1,7 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.tascal.tasks',
+  appId: 'app.tascal.personal',
   appName: 'Tascal',
   webDir: 'dist',
   plugins: {
