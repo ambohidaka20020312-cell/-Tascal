@@ -1,0 +1,76 @@
+/* ============================================================
+   Tascal — Mobile-first global styles
+   ============================================================ */
+
+/* Prevent overscroll bounce on iOS and Android */
+html,
+body {
+  overscroll-behavior: none;
+  overscroll-behavior-y: none;
+}
+
+/* Smooth scrolling within scrollable containers */
+.overflow-y-auto,
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Hide scrollbar visually but keep scroll functionality */
+.scrollbar-none {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none; /* Chrome/Safari */
+}
+
+/* Disable tap highlight on interactive elements */
+a,
+button,
+[role="button"],
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent iOS zoom on form focus — ensure font-size >= 16px on all inputs */
+input,
+select,
+textarea {
+  font-size: 16px !important;
+}
+
+/* iOS safe-area utility — bottom nav padding */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+/* FullCalendar mobile tweaks */
+@media (max-width: 640px) {
+  .fc .fc-toolbar {
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .fc .fc-toolbar-chunk {
+    display: flex;
+    justify-content: center;
+  }
+
+  /* Larger touch targets for calendar day cells */
+  .fc .fc-daygrid-day {
+    min-height: 44px;
+  }
+
+  /* Smaller font for calendar headers */
+  .fc .fc-col-header-cell-cushion {
+    font-size: 0.75rem;
+  }
+
+  /* List view rows */
+  .fc-list-event td {
+    padding: 10px 8px;
+  }
+}
