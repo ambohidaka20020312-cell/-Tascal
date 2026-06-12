@@ -1,8 +1,7 @@
 import { useState } from "react";
 import { useAuthStore } from "../store/authStore";
 import { useSubscription } from "../hooks/useBilling";
-import { useIAP } from "../hooks/useIAP";
-import { isWeb } from "../utils/platform";
+import { useRevenueCat } from "../hooks/useRevenueCat";
 
 // ─── Feature rows ─────────────────────────────────────────────────────────────
 interface FeatureRow {
@@ -44,26 +43,15 @@ function normalisePlan(plan: AnyPlan): PlanKey {
 // ─── Main component ────────────────────────────────────────────────────────────
 export default function SubscriptionPage() {
   const [annual, setAnnual] = useState(false);
-  const [iapError, setIapError] = useState("");
 
   const user = useAuthStore((s) => s.user);
-  const { data: subscription, isLoading } = useSubscription();
-  const iap = useIAP();
-
-  const useNativeIAP = !isWeb() && iap.available;
+  const { data: subscription, isLoading: subLoading } = useSubscription();
+  const { purchasePro, restorePurchases, isLoading, error, isPro } = useRevenueCat();
 
   const rawPlan: AnyPlan = ((subscription?.plan ?? user?.plan ?? "free") as AnyPlan);
   const currentPlan: PlanKey = normalisePlan(rawPlan);
-  const isPaid = currentPlan !== "free";
-
-  async function handleRestore() {
-    setIapError("");
-    try {
-      await iap.restore();
-    } catch {
-      setIapError("購入の復元に失敗しました。");
-    }
-  }
+  // isPro from RevenueCat is the source of truth for active entitlement
+  const isPaid = isPro || currentPlan !== "free";
 
   // ─── Prices ───────────────────────────────────────────────────────────────
   const PRICES: Record<PlanKey, { monthly: string; annual: string; note: string; annualNote: string }> = {
@@ -88,6 +76,18 @@ export default function SubscriptionPage() {
 
   // ─── CTA button per column ────────────────────────────────────────────────
   function renderCTA(plan: PlanKey) {
+    // Pro column: show active state when RevenueCat confirms entitlement
+    if (plan === "pro" && isPro) {
+      return (
+        <button
+          disabled
+          className="w-full h-10 border border-[var(--border)] text-[var(--text-subtle)] text-xs tracking-[0.15em] uppercase rounded-lg opacity-60 cursor-not-allowed"
+        >
+          現在Proプランをご利用中
+        </button>
+      );
+    }
+
     if (plan === currentPlan) {
       return (
         <button
@@ -105,10 +105,18 @@ export default function SubscriptionPage() {
     if (isUpgrade) {
       return (
         <button
-          disabled
-          className="w-full h-10 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.15em] uppercase rounded-lg opacity-50 cursor-not-allowed"
+          onClick={() => purchasePro()}
+          disabled={isLoading}
+          className="w-full h-10 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.15em] uppercase rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
         >
-          App Storeにて近日公開
+          {isLoading ? (
+            <>
+              <span className="w-3.5 h-3.5 border-2 border-[var(--bg-primary)] border-t-transparent rounded-full animate-spin" />
+              処理中...
+            </>
+          ) : (
+            "Proにアップグレード — ¥480/月"
+          )}
         </button>
       );
     }
@@ -141,7 +149,7 @@ export default function SubscriptionPage() {
 
         {/* ── Current plan badge ──────────────────────────────────────────── */}
         <div className="mb-6 flex justify-center">
-          {isLoading ? (
+          {subLoading ? (
             <div className="h-8 w-48 animate-pulse bg-[var(--bg-secondary)] rounded-full" />
           ) : (
             <div className="inline-flex items-center gap-2 border border-[var(--border)] rounded-full px-4 py-1.5">
@@ -306,9 +314,9 @@ export default function SubscriptionPage() {
         </div>
 
         {/* ── IAP error ───────────────────────────────────────────────────── */}
-        {(iapError || iap.error) && (
+        {error && (
           <p className="mt-4 text-center text-xs text-red-500">
-            {iapError || iap.error || "エラーが発生しました。もう一度お試しください。"}
+            {error}
           </p>
         )}
 
@@ -327,18 +335,16 @@ export default function SubscriptionPage() {
           </div>
         )}
 
-        {/* ── Restore purchases (native IAP required by Apple guidelines) ─── */}
-        {useNativeIAP && (
-          <div className="mt-6 flex justify-center">
-            <button
-              onClick={handleRestore}
-              disabled={iap.loading}
-              className="text-xs text-[var(--text-subtle)] underline underline-offset-2 hover:text-[var(--text-muted)] transition-colors disabled:opacity-40"
-            >
-              {iap.loading ? "確認中..." : "購入を復元する"}
-            </button>
-          </div>
-        )}
+        {/* ── Restore purchases (required by Apple guidelines) ────────────── */}
+        <div className="mt-6 flex justify-center">
+          <button
+            onClick={() => restorePurchases()}
+            disabled={isLoading}
+            className="text-xs text-[var(--text-subtle)] underline underline-offset-2 hover:text-[var(--text-muted)] transition-colors disabled:opacity-40"
+          >
+            {isLoading ? "確認中..." : "購入を復元する"}
+          </button>
+        </div>
 
         {/* ── Renewal date ────────────────────────────────────────────────── */}
         {subscription?.current_period_end && (

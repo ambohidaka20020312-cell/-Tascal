@@ -1,3 +1,5 @@
+import { useRevenueCat } from "../../hooks/useRevenueCat";
+
 type UpgradeReason = "task_limit" | "ai_limit" | "insights" | "generic";
 
 interface UpgradePromptProps {
@@ -35,6 +37,8 @@ const PLAN_FEATURES = [
 ];
 
 export default function UpgradePrompt({ isOpen, onClose, reason = "generic", message }: UpgradePromptProps) {
+  const { purchasePro, isLoading, error } = useRevenueCat();
+
   if (!isOpen) return null;
 
   const { title, body } = MESSAGES[reason];
@@ -76,11 +80,22 @@ export default function UpgradePrompt({ isOpen, onClose, reason = "generic", mes
             </tbody>
           </table>
 
+          {error && (
+            <p className="mb-3 text-xs text-red-500 text-center">{error}</p>
+          )}
           <button
-            disabled
-            className="w-full h-10 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.15em] uppercase rounded-lg opacity-50 cursor-not-allowed"
+            onClick={() => purchasePro()}
+            disabled={isLoading}
+            className="w-full h-10 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.15em] uppercase rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            App Storeにて近日公開
+            {isLoading ? (
+              <>
+                <span className="w-3.5 h-3.5 border-2 border-[var(--bg-primary)] border-t-transparent rounded-full animate-spin" />
+                処理中...
+              </>
+            ) : (
+              "Proにアップグレード — ¥480/月"
+            )}
           </button>
         </div>
       </div>
