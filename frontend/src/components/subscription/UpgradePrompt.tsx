@@ -1,5 +1,3 @@
-import { useNavigate } from "react-router-dom";
-
 type UpgradeReason = "task_limit" | "ai_limit" | "insights" | "generic";
 
 interface UpgradePromptProps {
@@ -37,7 +35,6 @@ const PLAN_FEATURES = [
 ];
 
 export default function UpgradePrompt({ isOpen, onClose, reason = "generic", message }: UpgradePromptProps) {
-  const navigate = useNavigate();
   if (!isOpen) return null;
 
   const { title, body } = MESSAGES[reason];
@@ -80,10 +77,10 @@ export default function UpgradePrompt({ isOpen, onClose, reason = "generic", mes
           </table>
 
           <button
-            onClick={() => { navigate("/subscription"); onClose(); }}
-            className="w-full h-10 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.15em] uppercase rounded-lg hover:opacity-80 transition-opacity"
+            disabled
+            className="w-full h-10 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.15em] uppercase rounded-lg opacity-50 cursor-not-allowed"
           >
-            Proにアップグレード — ¥480/月
+            App Storeにて近日公開
           </button>
         </div>
       </div>

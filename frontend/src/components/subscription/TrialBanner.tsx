@@ -4,7 +4,7 @@ import { useTrialBanner } from "../../hooks/useTrialBanner";
 
 export default function TrialBanner() {
   const { t } = useTranslation();
-  const { isTrialActive, trialDaysLeft, startTrial, isLoading } = useTrialBanner();
+  const { isTrialActive, trialDaysLeft } = useTrialBanner();
 
   if (isTrialActive) {
     return (
@@ -31,11 +31,10 @@ export default function TrialBanner() {
       style={{ height: 36 }}
     >
       <button
-        onClick={() => startTrial()}
-        disabled={isLoading}
-        className="text-xs text-[var(--text-primary)] font-semibold hover:opacity-70 transition-opacity disabled:opacity-40"
+        disabled
+        className="text-xs text-[var(--text-primary)] font-semibold opacity-50 cursor-not-allowed"
       >
-        {t("subscription.trial_banner")}
+        App Storeにて近日公開
       </button>
     </div>
   );
