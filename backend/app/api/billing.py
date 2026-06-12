@@ -82,7 +82,10 @@ PLANS = [
 
 
 def get_stripe():
-    stripe.api_key = current_app.config["STRIPE_SECRET_KEY"]
+    stripe_key = current_app.config.get("STRIPE_SECRET_KEY")
+    if not stripe_key:
+        return None
+    stripe.api_key = stripe_key
     return stripe
 
 
@@ -121,6 +124,8 @@ def create_checkout():
     cancel_url = data.get("cancel_url") or f"{origin}/app/plans"
 
     s = get_stripe()
+    if s is None:
+        return jsonify({"error": {"code": "NOT_AVAILABLE", "message": "課金機能は現在準備中です"}}), 503
     session_params = dict(
         customer_email=user.email,
         mode="subscription",
@@ -149,6 +154,8 @@ def customer_portal():
         return jsonify({"error": {"code": "NO_SUBSCRIPTION", "message": "サブスクリプションが見つかりません"}}), 404
 
     s = get_stripe()
+    if s is None:
+        return jsonify({"error": {"code": "NOT_AVAILABLE", "message": "課金機能は現在準備中です"}}), 503
     session = s.billing_portal.Session.create(
         customer=user.stripe_customer_id,
         return_url=request.get_json().get("return_url"),
