@@ -1,3 +1,7 @@
+import secrets
+
+import jwt as pyjwt
+import requests as http_requests
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import create_access_token, create_refresh_token, jwt_required, get_jwt_identity, get_jwt
 from ..models.user import User
@@ -188,6 +192,75 @@ def update_profile():
 
     db.session.commit()
     return jsonify({"data": {"user": user.to_dict()}, "message": "プロフィールを更新しました"})
+
+
+def _verify_apple_token(identity_token: str) -> dict:
+    """Verify an Apple Sign-In identity token and return its payload."""
+    keys_resp = http_requests.get("https://appleid.apple.com/auth/keys", timeout=10)
+    keys_resp.raise_for_status()
+    keys = keys_resp.json()["keys"]
+
+    header = pyjwt.get_unverified_header(identity_token)
+    key_data = next((k for k in keys if k["kid"] == header["kid"]), None)
+    if not key_data:
+        raise ValueError("Apple public key not found for kid: " + header.get("kid", ""))
+
+    from jwt.algorithms import RSAAlgorithm
+    public_key = RSAAlgorithm.from_jwk(key_data)
+
+    payload = pyjwt.decode(
+        identity_token,
+        public_key,
+        algorithms=["RS256"],
+        audience="app.tascal.personal",
+        issuer="https://appleid.apple.com",
+    )
+    return payload
+
+
+@bp.post("/apple")
+def apple_signin():
+    data = request.get_json() or {}
+    identity_token = data.get("identity_token")
+    name = data.get("name") or "Tascalユーザー"
+
+    if not identity_token:
+        return jsonify({"error": {"code": "MISSING_TOKEN", "message": "identity_tokenが必要です"}}), 400
+
+    try:
+        payload = _verify_apple_token(identity_token)
+    except Exception as e:
+        current_app.logger.warning("Apple token verification failed: %s", e)
+        return jsonify({"error": {"code": "INVALID_TOKEN", "message": "Appleトークンの検証に失敗しました"}}), 401
+
+    apple_id = payload["sub"]
+    email = payload.get("email") or f"{apple_id}@privaterelay.appleid.com"
+
+    user = User.query.filter_by(apple_id=apple_id).first()
+    if not user:
+        user = User(
+            email=email,
+            name=name,
+            apple_id=apple_id,
+            email_verified=True,
+            plan="free",
+        )
+        user.set_password(secrets.token_hex(32))
+        db.session.add(user)
+        db.session.commit()
+        log_action(user.id, "auth.apple_register", extra={"apple_id": apple_id})
+        db.session.commit()
+
+    access_token = create_access_token(identity=str(user.id))
+    refresh_token = create_refresh_token(identity=str(user.id))
+
+    return jsonify({
+        "data": {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "user": user.to_dict(),
+        }
+    })
 
 
 def _send_verify_email(email: str, token: str):
