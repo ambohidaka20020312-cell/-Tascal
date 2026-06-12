@@ -193,13 +193,6 @@ const PLANS = [
     features: ["無制限タスク", "AI最適化無制限", "高度な分析", "広告非表示"],
     accent: true,
   },
-  {
-    name: "Team",
-    price: "¥1,480",
-    period: "/人/月",
-    features: ["Pro機能すべて", "チーム共有（最大5名）", "チームチャット"],
-    accent: false,
-  },
 ];
 
 export default function LandingPage() {
@@ -279,7 +272,7 @@ export default function LandingPage() {
           <p className="text-center text-gray-500 mb-14 text-base">
             まずは無料で始めよう。アップグレードはいつでも。
           </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-center">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-center max-w-2xl mx-auto">
             {PLANS.map((p) => (
               <div
                 key={p.name}
