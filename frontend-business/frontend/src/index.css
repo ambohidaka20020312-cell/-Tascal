@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8f8f8;
+  --bg-tertiary: #f0f0f0;
+  --text-primary: #111111;
+  --text-muted: #555555;
+  --text-subtle: #999999;
+  --border: #e4e4e4;
+  --accent: #111111;
+}
+
+.dark {
+  --bg-primary: #15202b;
+  --bg-secondary: #1e2732;
+  --bg-tertiary: #253341;
+  --text-primary: #e7e9ea;
+  --text-muted: #8b98a5;
+  --text-subtle: #536471;
+  --border: #2f3336;
+  --accent: #e7e9ea;
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  letter-spacing: 0.02em;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* ── Accessibility ───────────────────────────────────────────── */
+
+/* フォーカスリング — モノクロームでも見える */
+:focus-visible {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* スクリーンリーダー専用テキスト */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* モーション低減設定を尊重 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* FullCalendar theme overrides */
+.fc { --fc-border-color: var(--border); --fc-today-bg-color: var(--bg-secondary); --fc-page-bg-color: var(--bg-primary); --fc-neutral-bg-color: var(--bg-secondary); --fc-event-bg-color: var(--accent); --fc-event-border-color: transparent; --fc-event-text-color: var(--bg-primary); }
+.fc .fc-button { background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-primary); font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; padding: 6px 12px; box-shadow: none !important; }
+.fc .fc-button:hover { background: var(--bg-tertiary); }
+.fc .fc-button-active { background: var(--text-primary) !important; color: var(--bg-primary) !important; border-color: var(--text-primary) !important; }
+.fc .fc-button-primary:not(:disabled):active { background: var(--text-primary) !important; border-color: var(--text-primary) !important; }
+.fc .fc-toolbar-title { font-size: 14px; font-weight: 300; letter-spacing: 0.1em; color: var(--text-primary); }
+.fc .fc-daygrid-day-number { color: var(--text-muted); font-size: 11px; }
+.fc .fc-col-header-cell-cushion { color: var(--text-subtle); font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; font-weight: 400; }
+.fc-theme-standard td, .fc-theme-standard th { border-color: var(--border); }
+.fc-theme-standard .fc-scrollgrid { border-color: var(--border); }
+
+.fc-day-holiday .fc-daygrid-day-number { color: #ef4444; }
+.fc-day-holiday { background-color: rgba(239,68,68,0.04) !important; }
