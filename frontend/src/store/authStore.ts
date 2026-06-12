@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { authApi } from "../utils/api";
+import { SignInWithApple, SignInWithAppleOptions } from "@capacitor-community/apple-sign-in";
+import api, { authApi } from "../utils/api";
 import analytics from "../utils/analytics";
 
 interface User {
@@ -20,6 +21,7 @@ interface AuthState {
   updateUser: (patch: Partial<User>) => void;
   logout: () => Promise<void>;
   isAuthenticated: () => boolean;
+  appleSignIn: () => Promise<void>;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -40,4 +42,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ user: null });
   },
   isAuthenticated: () => !!get().user,
+  appleSignIn: async () => {
+    const options: SignInWithAppleOptions = {
+      clientId: "app.tascal.personal",
+      redirectURI: "https://tascal-api.onrender.com/auth/apple/callback",
+      scopes: "email name",
+      state: Math.random().toString(36).substring(2),
+    };
+    const result = await SignInWithApple.authorize(options);
+    const { data } = await api.post("/auth/apple", {
+      identity_token: result.response.identityToken,
+      name: result.response.givenName || "Tascalユーザー",
+    });
+    const { access_token, refresh_token, user } = data.data ?? data;
+    localStorage.setItem("access_token", access_token);
+    localStorage.setItem("refresh_token", refresh_token);
+    const store = get();
+    store.setUser(user);
+  },
 }));
