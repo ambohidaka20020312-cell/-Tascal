@@ -303,11 +303,7 @@ export default function AppLayout({ children }: AppLayoutProps) {
               <footer className="border-t border-[var(--border)] bg-[var(--bg-secondary)]">
                 {isFree && (
                   <div className="flex justify-center px-4 pt-4">
-                    <AdBanner
-                      slot={import.meta.env.VITE_ADSENSE_FOOTER_SLOT ?? "0000000000"}
-                      format="leaderboard"
-                      className="w-full max-w-[728px]"
-                    />
+                    <AdBanner className="w-full max-w-[728px]" />
                   </div>
                 )}
                 <div className="px-4 py-4 sm:px-6 lg:px-8">

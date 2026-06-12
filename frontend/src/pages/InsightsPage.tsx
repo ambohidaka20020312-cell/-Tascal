@@ -360,7 +360,7 @@ export default function InsightsPage() {
       </div>
 
       {/* Ad slot for free plan users — between chart sections */}
-      <AdBanner slot="INSIGHTS_SLOT" format="rectangle" className="my-4 min-h-[250px]" />
+      <AdBanner className="my-4 min-h-[250px]" />
 
       {/* Priority breakdown */}
       <div className="border border-[var(--border)] rounded-xl p-5">
