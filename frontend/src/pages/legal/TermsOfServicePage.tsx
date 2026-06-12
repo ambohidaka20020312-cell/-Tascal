@@ -57,7 +57,7 @@ export default function TermsOfServicePage() {
       </p>
       <ul className="text-sm text-[var(--text-muted)] space-y-1 pl-4 list-disc mb-4">
         <li><strong>Freeプラン</strong> — タスク20件/月、AI最適化3回/日。広告が表示されます。</li>
-        <li><strong>Proプラン（¥980/月）</strong> — 無制限タスク、AI最適化無制限、高度な分析、広告非表示。</li>
+        <li><strong>Proプラン（¥480/月）</strong> — 無制限タスク、AI最適化無制限、高度な分析、広告非表示。</li>
         <li><strong>Teamプラン（¥2,980/月）</strong> — Pro機能に加え、最大5名のチーム共有機能。</li>
       </ul>
       <p className="text-sm text-[var(--text-muted)] leading-relaxed mb-4">

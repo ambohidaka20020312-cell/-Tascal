@@ -113,7 +113,7 @@ export default function AdminDashboard() {
                 <p className="text-blue-300 text-sm font-medium mb-1">MRR概算</p>
                 <p className="text-4xl font-bold text-white">{formatCurrency(stats.revenue.mrr_estimate)}</p>
                 <p className="text-blue-300 text-xs mt-2">
-                  Personal Pro: {stats.revenue.personal_pro_count}件 × ¥980 ＋
+                  Personal Pro: {stats.revenue.personal_pro_count}件 × ¥480 ＋
                   Business: {stats.revenue.business_count}件 × ¥1,480
                 </p>
               </div>

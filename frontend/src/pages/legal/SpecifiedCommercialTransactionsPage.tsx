@@ -29,7 +29,7 @@ export default function SpecifiedCommercialTransactionsPage() {
               value={
                 <>
                   <p>Freeプラン：無料</p>
-                  <p className="mt-1">Proプラン：¥980／月（税込）または ¥9,800／年（税込）</p>
+                  <p className="mt-1">Proプラン：¥480／月（税込）または ¥4,800／年（税込）</p>
                   <p className="mt-1">Teamプラン：¥2,980／月（税込）または ¥29,800／年（税込）</p>
                 </>
               }
