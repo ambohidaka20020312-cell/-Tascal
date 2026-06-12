@@ -1,10 +1,8 @@
-import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useState } from "react";
 import { useAuthStore } from "../store/authStore";
-import { useSubscription, useCheckout, usePortal } from "../hooks/useBilling";
+import { useSubscription } from "../hooks/useBilling";
 import { useIAP } from "../hooks/useIAP";
 import { isWeb } from "../utils/platform";
-import analytics from "../utils/analytics";
 
 // ─── Feature rows ─────────────────────────────────────────────────────────────
 interface FeatureRow {
@@ -45,14 +43,11 @@ function normalisePlan(plan: AnyPlan): PlanKey {
 
 // ─── Main component ────────────────────────────────────────────────────────────
 export default function SubscriptionPage() {
-  const [searchParams] = useSearchParams();
   const [annual, setAnnual] = useState(false);
   const [iapError, setIapError] = useState("");
 
   const user = useAuthStore((s) => s.user);
   const { data: subscription, isLoading } = useSubscription();
-  const checkout = useCheckout();
-  const portal = usePortal();
   const iap = useIAP();
 
   const useNativeIAP = !isWeb() && iap.available;
@@ -60,51 +55,6 @@ export default function SubscriptionPage() {
   const rawPlan: AnyPlan = ((subscription?.plan ?? user?.plan ?? "free") as AnyPlan);
   const currentPlan: PlanKey = normalisePlan(rawPlan);
   const isPaid = currentPlan !== "free";
-
-  // Feedback on Stripe redirect return (web only)
-  useEffect(() => {
-    if (!isWeb()) return;
-    if (searchParams.get("success") === "true") {
-      alert("プランのアップグレードが完了しました！");
-    }
-    if (searchParams.get("canceled") === "true") {
-      alert("チェックアウトがキャンセルされました。");
-    }
-  }, [searchParams]);
-
-  async function handleUpgrade(plan: "pro") {
-    analytics.track("upgrade_clicked", { plan, is_native: useNativeIAP });
-    if (useNativeIAP) {
-      // Native: use RevenueCat / Apple IAP
-      setIapError("");
-      const pkgId = "$rc_monthly";
-      const offering = iap.offerings[0];
-      const pkg = offering?.packages.find(
-        (p) => p.identifier === pkgId || p.packageType === "MONTHLY"
-      ) ?? offering?.packages[0];
-      if (!pkg) {
-        setIapError("購入プランが見つかりません。後でもう一度お試しください。");
-        return;
-      }
-      try {
-        await iap.purchase(pkg);
-      } catch {
-        // error is set inside hook
-      }
-    } else {
-      // Web: Stripe checkout
-      checkout.mutate(plan);
-    }
-  }
-
-  function handlePortal() {
-    if (useNativeIAP) {
-      // Native: direct to OS subscription settings
-      window.open("https://apps.apple.com/account/subscriptions", "_blank");
-    } else {
-      portal.mutate();
-    }
-  }
 
   async function handleRestore() {
     setIapError("");
@@ -153,31 +103,23 @@ export default function SubscriptionPage() {
       upgradeOrder.indexOf(plan) > upgradeOrder.indexOf(currentPlan);
 
     if (isUpgrade) {
-      const trialAvailable = plan === "pro" && !subscription?.trial_used;
-      const label = checkout.isPending
-        ? "処理中..."
-        : trialAvailable
-        ? "14日間無料で試す"
-        : "アップグレード";
       return (
         <button
-          disabled={checkout.isPending}
-          onClick={() => handleUpgrade(plan as "pro")}
-          className="w-full h-10 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.15em] uppercase rounded-lg hover:opacity-80 transition-opacity disabled:opacity-40"
+          disabled
+          className="w-full h-10 bg-[var(--text-primary)] text-[var(--bg-primary)] text-xs font-semibold tracking-[0.15em] uppercase rounded-lg opacity-50 cursor-not-allowed"
         >
-          {label}
+          App Storeにて近日公開
         </button>
       );
     }
 
-    // Downgrade → Stripe customer portal
+    // Downgrade — IAP managed by Apple; direct to OS settings
     return (
       <button
-        disabled={portal.isPending}
-        onClick={handlePortal}
-        className="w-full h-10 text-[var(--text-subtle)] text-xs tracking-[0.1em] underline underline-offset-2 hover:text-[var(--text-primary)] transition-colors disabled:opacity-40"
+        onClick={() => window.open("https://apps.apple.com/account/subscriptions", "_blank")}
+        className="w-full h-10 text-[var(--text-subtle)] text-xs tracking-[0.1em] underline underline-offset-2 hover:text-[var(--text-primary)] transition-colors"
       >
-        {portal.isPending ? "処理中..." : "ダウングレード"}
+        ダウングレード
       </button>
     );
   }
@@ -363,10 +305,10 @@ export default function SubscriptionPage() {
           </table>
         </div>
 
-        {/* ── Checkout / IAP error ────────────────────────────────────────── */}
-        {(iapError || iap.error || checkout.isError) && (
+        {/* ── IAP error ───────────────────────────────────────────────────── */}
+        {(iapError || iap.error) && (
           <p className="mt-4 text-center text-xs text-red-500">
-            {iapError || iap.error || (checkout.error as Error)?.message || "決済エラーが発生しました。もう一度お試しください。"}
+            {iapError || iap.error || "エラーが発生しました。もう一度お試しください。"}
           </p>
         )}
 
@@ -374,16 +316,13 @@ export default function SubscriptionPage() {
         {isPaid && (
           <div className="mt-8 flex flex-col items-center gap-3">
             <p className="text-xs text-[var(--text-subtle)] tracking-wide">
-              {useNativeIAP
-                ? "サブスクリプションはiOS設定から管理できます。"
-                : "支払い方法・キャンセルはStripeポータルから管理できます。"}
+              App Storeのサブスクリプション設定からご確認ください。
             </p>
             <button
-              disabled={portal.isPending}
-              onClick={handlePortal}
-              className="px-5 h-9 border border-[var(--border)] text-[var(--text-primary)] text-xs tracking-[0.15em] uppercase rounded-lg hover:bg-[var(--bg-secondary)] transition-colors disabled:opacity-40"
+              onClick={() => window.open("https://apps.apple.com/account/subscriptions", "_blank")}
+              className="px-5 h-9 border border-[var(--border)] text-[var(--text-primary)] text-xs tracking-[0.15em] uppercase rounded-lg hover:bg-[var(--bg-secondary)] transition-colors"
             >
-              {portal.isPending ? "処理中..." : "プランを管理する"}
+              プランを管理する
             </button>
           </div>
         )}
@@ -401,8 +340,8 @@ export default function SubscriptionPage() {
           </div>
         )}
 
-        {/* ── Renewal date (web / Stripe) ─────────────────────────────────── */}
-        {!useNativeIAP && subscription?.current_period_end && (
+        {/* ── Renewal date ────────────────────────────────────────────────── */}
+        {subscription?.current_period_end && (
           <p className="mt-4 text-center text-xs text-[var(--text-subtle)]">
             次回更新日:{" "}
             {new Date(subscription.current_period_end).toLocaleDateString("ja-JP")}
